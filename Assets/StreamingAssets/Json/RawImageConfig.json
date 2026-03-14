@@ -1,0 +1,770 @@
+{
+  "AdditionPage_BG": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": 0.0,
+      "_y": 0.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 1920.0,
+      "_y": 1080.0
+    }
+  },
+  "AdditionPage_MainText_Image": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": 0.0,
+      "_y": 231.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 1000.0,
+      "_y": 150.0
+    }
+  },
+  "AdditionPage_Title_Image": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": -563.0,
+      "_y": 423.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 500.0,
+      "_y": 100.0
+    }
+  },
+  "BattlePage_BG": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": 0.0,
+      "_y": 0.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 1920.0,
+      "_y": 1080.0
+    }
+  },
+  "CountingPage_BG": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": 0.0,
+      "_y": 0.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 1920.0,
+      "_y": 1080.0
+    }
+  },
+  "CountPage_MainText_Image": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": 0.0,
+      "_y": 133.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 1000.0,
+      "_y": 250.0
+    }
+  },
+  "CountPage_Title_Image": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": -500.0,
+      "_y": 423.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 600.0,
+      "_y": 150.0
+    }
+  },
+  "DivisionPage_BG": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": 0.0,
+      "_y": 0.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 1920.0,
+      "_y": 1080.0
+    }
+  },
+  "DivisionPage_MainText_Image": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": 0.0,
+      "_y": 207.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 1300.0,
+      "_y": 150.0
+    }
+  },
+  "DivisionPage_Title_Image": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": -500.0,
+      "_y": 423.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 600.0,
+      "_y": 150.0
+    }
+  },
+  "DragArea": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": -550.0,
+      "_y": -20.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 250.0,
+      "_y": 250.0
+    }
+  },
+  "DragArea (1)": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": -550.0,
+      "_y": -20.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 250.0,
+      "_y": 250.0
+    }
+  },
+  "DragArea (10)": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": -550.0,
+      "_y": -20.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 250.0,
+      "_y": 250.0
+    }
+  },
+  "DragArea (11)": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": -550.0,
+      "_y": -20.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 250.0,
+      "_y": 250.0
+    }
+  },
+  "DragArea (12)": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": -550.0,
+      "_y": -20.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 250.0,
+      "_y": 250.0
+    }
+  },
+  "DragArea (13)": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": -550.0,
+      "_y": -20.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 250.0,
+      "_y": 250.0
+    }
+  },
+  "DragArea (14)": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": -550.0,
+      "_y": -20.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 250.0,
+      "_y": 250.0
+    }
+  },
+  "DragArea (2)": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": -550.0,
+      "_y": -20.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 250.0,
+      "_y": 250.0
+    }
+  },
+  "DragArea (3)": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": -550.0,
+      "_y": -20.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 250.0,
+      "_y": 250.0
+    }
+  },
+  "DragArea (4)": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": -550.0,
+      "_y": -20.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 250.0,
+      "_y": 250.0
+    }
+  },
+  "DragArea (5)": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": -550.0,
+      "_y": -20.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 250.0,
+      "_y": 250.0
+    }
+  },
+  "DragArea (6)": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": -550.0,
+      "_y": -20.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 250.0,
+      "_y": 250.0
+    }
+  },
+  "DragArea (7)": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": -550.0,
+      "_y": -20.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 250.0,
+      "_y": 250.0
+    }
+  },
+  "DragArea (8)": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": -550.0,
+      "_y": -20.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 250.0,
+      "_y": 250.0
+    }
+  },
+  "DragArea (9)": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": -550.0,
+      "_y": -20.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 250.0,
+      "_y": 250.0
+    }
+  },
+  "DragObject": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": -8.982934E-06,
+      "_y": 4.79451671E-07,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 100.0,
+      "_y": 100.0
+    }
+  },
+  "DragObject (1)": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": -8.982934E-06,
+      "_y": 4.79451671E-07,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 100.0,
+      "_y": 100.0
+    }
+  },
+  "DragObject (10)": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": -8.982934E-06,
+      "_y": 4.79451671E-07,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 100.0,
+      "_y": 100.0
+    }
+  },
+  "DragObject (11)": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": -8.982934E-06,
+      "_y": 4.79451671E-07,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 100.0,
+      "_y": 100.0
+    }
+  },
+  "DragObject (12)": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": -8.982934E-06,
+      "_y": 4.79451671E-07,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 100.0,
+      "_y": 100.0
+    }
+  },
+  "DragObject (13)": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": -8.982934E-06,
+      "_y": 4.79451671E-07,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 100.0,
+      "_y": 100.0
+    }
+  },
+  "DragObject (14)": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": -8.982934E-06,
+      "_y": 4.79451671E-07,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 100.0,
+      "_y": 100.0
+    }
+  },
+  "DragObject (2)": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": -8.982934E-06,
+      "_y": 4.79451671E-07,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 100.0,
+      "_y": 100.0
+    }
+  },
+  "DragObject (3)": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": -8.982934E-06,
+      "_y": 4.79451671E-07,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 100.0,
+      "_y": 100.0
+    }
+  },
+  "DragObject (4)": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": -8.982934E-06,
+      "_y": 4.79451671E-07,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 100.0,
+      "_y": 100.0
+    }
+  },
+  "DragObject (5)": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": -8.982934E-06,
+      "_y": 4.79451671E-07,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 100.0,
+      "_y": 100.0
+    }
+  },
+  "DragObject (6)": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": -8.982934E-06,
+      "_y": 4.79451671E-07,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 100.0,
+      "_y": 100.0
+    }
+  },
+  "DragObject (7)": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": -8.982934E-06,
+      "_y": 4.79451671E-07,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 100.0,
+      "_y": 100.0
+    }
+  },
+  "DragObject (8)": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": -8.982934E-06,
+      "_y": 4.79451671E-07,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 100.0,
+      "_y": 100.0
+    }
+  },
+  "DragObject (9)": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": -8.982934E-06,
+      "_y": 4.79451671E-07,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 100.0,
+      "_y": 100.0
+    }
+  },
+  "IdlePage_BG": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": 0.0,
+      "_y": 0.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 1920.0,
+      "_y": 1080.0
+    }
+  },
+  "MinusPage_ArrowImage": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": -51.0,
+      "_y": -189.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 100.0,
+      "_y": 100.0
+    }
+  },
+  "MinusPage_BG": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": 0.0,
+      "_y": 0.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 1920.0,
+      "_y": 1080.0
+    }
+  },
+  "MinusPage_LRImage": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": -550.0,
+      "_y": -160.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 300.0,
+      "_y": 300.0
+    }
+  },
+  "MinusPage_LRImage (1)": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": 550.0,
+      "_y": -180.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 300.0,
+      "_y": 300.0
+    }
+  },
+  "MinusPage_MainText_Image": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": 0.0,
+      "_y": 231.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 1000.0,
+      "_y": 100.0
+    }
+  },
+  "MinusPage_Title_Image": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": -563.0,
+      "_y": 423.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 500.0,
+      "_y": 100.0
+    }
+  },
+  "MultiplicationPage_BG": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": 0.0,
+      "_y": 0.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 1920.0,
+      "_y": 1080.0
+    }
+  },
+  "MultiplicationPage_LRImage": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": -550.0,
+      "_y": -20.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 250.0,
+      "_y": 250.0
+    }
+  },
+  "MultiplicationPage_LRImage (1)": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": 550.0,
+      "_y": -20.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 250.0,
+      "_y": 250.0
+    }
+  },
+  "MultiplicationPage_LRImage (2)": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": -550.0,
+      "_y": -300.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 250.0,
+      "_y": 250.0
+    }
+  },
+  "MultiplicationPage_LRImage (3)": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": 550.0,
+      "_y": -300.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 250.0,
+      "_y": 250.0
+    }
+  },
+  "MultiplicationPage_LRImage (4)": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": 0.0,
+      "_y": -150.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 250.0,
+      "_y": 250.0
+    }
+  },
+  "MultiplicationPage_MainText_Image": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": 0.0,
+      "_y": 207.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 1300.0,
+      "_y": 150.0
+    }
+  },
+  "MultiplicationPage_Title_Image": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": -500.0,
+      "_y": 423.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 600.0,
+      "_y": 150.0
+    }
+  },
+  "SelectPage_Addition_Button": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": -50.0,
+      "_y": 110.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 300.0,
+      "_y": 150.0
+    }
+  },
+  "SelectPage_BattleMode_Button": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": 0.0,
+      "_y": -350.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 600.0,
+      "_y": 150.0
+    }
+  },
+  "SelectPage_BG": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": 0.0,
+      "_y": 0.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 1920.0,
+      "_y": 1080.0
+    }
+  },
+  "SelectPage_Division_Button": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": 350.0,
+      "_y": -110.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 300.0,
+      "_y": 150.0
+    }
+  },
+  "SelectPage_Minus_Button": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": -50.0,
+      "_y": -110.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 300.0,
+      "_y": 150.0
+    }
+  },
+  "SelectPage_Multiplication_Button": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": 350.0,
+      "_y": 110.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 300.0,
+      "_y": 150.0
+    }
+  },
+  "SelectPage_NumberCount_Button": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": -500.0,
+      "_y": -5.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 400.0,
+      "_y": 300.0
+    }
+  },
+  "SelectPage_Title_Image": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": 0.0,
+      "_y": 350.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 800.0,
+      "_y": 200.0
+    }
+  },
+  "TutorialEndPage_BG": {
+    "streamingAssets_Path": "",
+    "local_position": {
+      "_x": 0.0,
+      "_y": 0.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 1920.0,
+      "_y": 1080.0
+    }
+  }
+}

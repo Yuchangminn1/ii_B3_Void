@@ -1,0 +1,407 @@
+{
+  "AdditionPage_Main_Text": {
+    "Text": "양쪽 원형 안에 든 숫자공을 가운데로 넣어보세요",
+    "local_position": {
+      "_x": 0.0,
+      "_y": 0.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 900.0,
+      "_y": 400.0
+    },
+    "fontSize": 40,
+    "alignment": "MiddleCenter",
+    "colorHex": "#323232FF"
+  },
+  "AdditionPage_Question_Text": {
+    "Text": "3 + 3",
+    "local_position": {
+      "_x": 0.0,
+      "_y": 0.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 300.0,
+      "_y": 100.0
+    },
+    "fontSize": 50,
+    "alignment": "MiddleCenter",
+    "colorHex": "#323232FF"
+  },
+  "AdditionPage_Title_Text": {
+    "Text": "덧셈 놀이",
+    "local_position": {
+      "_x": 0.0,
+      "_y": 0.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 600.0,
+      "_y": 150.0
+    },
+    "fontSize": 40,
+    "alignment": "MiddleCenter",
+    "colorHex": "#323232FF"
+  },
+  "CountPage_Main_Text": {
+    "Text": "제시된 한글을 숫자로 순서대로 세고\r\n왼쪽 숫자통에 있는 숫자를 오른쪽\r\n숫자통으로 옮기세요\r",
+    "local_position": {
+      "_x": 0.0,
+      "_y": 0.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 900.0,
+      "_y": 400.0
+    },
+    "fontSize": 50,
+    "alignment": "MiddleCenter",
+    "colorHex": "#323232FF"
+  },
+  "CountPage_Question_Text": {
+    "Text": "일,삼,오,칠",
+    "local_position": {
+      "_x": 0.0,
+      "_y": 0.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 300.0,
+      "_y": 150.0
+    },
+    "fontSize": 50,
+    "alignment": "MiddleCenter",
+    "colorHex": "#323232FF"
+  },
+  "CountPage_Title_Text": {
+    "Text": "순서대로 숫자 세기",
+    "local_position": {
+      "_x": 0.0,
+      "_y": 0.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 600.0,
+      "_y": 150.0
+    },
+    "fontSize": 50,
+    "alignment": "MiddleCenter",
+    "colorHex": "#323232FF"
+  },
+  "DivisionPage_Main_Text": {
+    "Text": "가운데 원 안의 숫자공을 사방에 놓인 원에 쪼개보세요",
+    "local_position": {
+      "_x": 0.0,
+      "_y": 0.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 1300.0,
+      "_y": 150.0
+    },
+    "fontSize": 50,
+    "alignment": "MiddleCenter",
+    "colorHex": "#323232FF"
+  },
+  "DivisionPage_Question_Text": {
+    "Text": "8 % 4",
+    "local_position": {
+      "_x": 0.0,
+      "_y": 0.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 400.0,
+      "_y": 80.0
+    },
+    "fontSize": 50,
+    "alignment": "MiddleCenter",
+    "colorHex": "#323232FF"
+  },
+  "DivisionPage_Title_Text": {
+    "Text": "나눗셈 놀이",
+    "local_position": {
+      "_x": 0.0,
+      "_y": 0.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 600.0,
+      "_y": 150.0
+    },
+    "fontSize": 50,
+    "alignment": "MiddleCenter",
+    "colorHex": "#323232FF"
+  },
+  "IdlePage_TitleText": {
+    "Text": "터치로 즐기는 사칙연산",
+    "local_position": {
+      "_x": 0.0,
+      "_y": 169.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 600.0,
+      "_y": 600.0
+    },
+    "fontSize": 50,
+    "alignment": "MiddleCenter",
+    "colorHex": "#323232FF"
+  },
+  "MinusPage_Main_Text": {
+    "Text": "왼쪽 원의 숫자공을 선택해 오른쪽으로 옮겨보세요",
+    "local_position": {
+      "_x": 0.0,
+      "_y": 0.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 900.0,
+      "_y": 400.0
+    },
+    "fontSize": 40,
+    "alignment": "MiddleCenter",
+    "colorHex": "#323232FF"
+  },
+  "MinusPage_Question_Text": {
+    "Text": "5 - 2",
+    "local_position": {
+      "_x": 0.0,
+      "_y": 0.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 300.0,
+      "_y": 100.0
+    },
+    "fontSize": 50,
+    "alignment": "MiddleCenter",
+    "colorHex": "#323232FF"
+  },
+  "MinusPage_Title_Text": {
+    "Text": "뺄셈 놀이",
+    "local_position": {
+      "_x": 0.0,
+      "_y": 0.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 600.0,
+      "_y": 150.0
+    },
+    "fontSize": 40,
+    "alignment": "MiddleCenter",
+    "colorHex": "#323232FF"
+  },
+  "MultiplicationPage_Main_Text": {
+    "Text": "사방에 놓인 원 안에 숫자공을 가운데로 모아보세요",
+    "local_position": {
+      "_x": 0.0,
+      "_y": 0.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 1300.0,
+      "_y": 150.0
+    },
+    "fontSize": 50,
+    "alignment": "MiddleCenter",
+    "colorHex": "#323232FF"
+  },
+  "MultiplicationPage_Question_Text": {
+    "Text": "2 x 4",
+    "local_position": {
+      "_x": 0.0,
+      "_y": 0.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 400.0,
+      "_y": 80.0
+    },
+    "fontSize": 50,
+    "alignment": "MiddleCenter",
+    "colorHex": "#323232FF"
+  },
+  "MultiplicationPage_Title_Text": {
+    "Text": "곱셈 놀이",
+    "local_position": {
+      "_x": 0.0,
+      "_y": 0.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 600.0,
+      "_y": 150.0
+    },
+    "fontSize": 50,
+    "alignment": "MiddleCenter",
+    "colorHex": "#323232FF"
+  },
+  "Page1_Addition_Text": {
+    "Text": "덧셈 놀이",
+    "local_position": {
+      "_x": 0.0,
+      "_y": 0.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 300.0,
+      "_y": 150.0
+    },
+    "fontSize": 50,
+    "alignment": "MiddleCenter",
+    "colorHex": "#323232FF"
+  },
+  "Page1_BattleModeP_Text": {
+    "Text": "사칙연산 대결하기",
+    "local_position": {
+      "_x": 0.0,
+      "_y": 0.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 600.0,
+      "_y": 150.0
+    },
+    "fontSize": 50,
+    "alignment": "MiddleCenter",
+    "colorHex": "#323232FF"
+  },
+  "Page1_Divide_Text": {
+    "Text": "나눗셈 놀이",
+    "local_position": {
+      "_x": 0.0,
+      "_y": 0.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 300.0,
+      "_y": 150.0
+    },
+    "fontSize": 50,
+    "alignment": "MiddleCenter",
+    "colorHex": "#323232FF"
+  },
+  "Page1_Minus_Text": {
+    "Text": "뺄셈 놀이",
+    "local_position": {
+      "_x": 0.0,
+      "_y": 0.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 300.0,
+      "_y": 150.0
+    },
+    "fontSize": 50,
+    "alignment": "MiddleCenter",
+    "colorHex": "#323232FF"
+  },
+  "Page1_Multiplication_Text": {
+    "Text": "곱셈 놀이",
+    "local_position": {
+      "_x": 0.0,
+      "_y": 0.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 300.0,
+      "_y": 150.0
+    },
+    "fontSize": 50,
+    "alignment": "MiddleCenter",
+    "colorHex": "#323232FF"
+  },
+  "Page1_NumberCounting_Text": {
+    "Text": "수 올리기",
+    "local_position": {
+      "_x": 0.0,
+      "_y": 0.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 400.0,
+      "_y": 300.0
+    },
+    "fontSize": 80,
+    "alignment": "MiddleCenter",
+    "colorHex": "#323232FF"
+  },
+  "Page1_Title_Text": {
+    "Text": "게임을 선택하세요",
+    "local_position": {
+      "_x": 0.0,
+      "_y": 0.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 800.0,
+      "_y": 200.0
+    },
+    "fontSize": 50,
+    "alignment": "MiddleCenter",
+    "colorHex": "#323232FF"
+  },
+  "Text (Legacy)": {
+    "Text": "2",
+    "local_position": {
+      "_x": 0.0,
+      "_y": 0.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 300.0,
+      "_y": 300.0
+    },
+    "fontSize": 30,
+    "alignment": "MiddleCenter",
+    "colorHex": "#323232FF"
+  },
+  "TutorialEndPage_ReturnButton_Text": {
+    "Text": "처음으로\n돌아가기",
+    "local_position": {
+      "_x": 0.0,
+      "_y": 0.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 300.0,
+      "_y": 150.0
+    },
+    "fontSize": 50,
+    "alignment": "MiddleCenter",
+    "colorHex": "#323232FF"
+  },
+  "TutorialEndPage_Text1": {
+    "Text": "게임 종료",
+    "local_position": {
+      "_x": 0.0,
+      "_y": 138.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 700.0,
+      "_y": 200.0
+    },
+    "fontSize": 50,
+    "alignment": "MiddleCenter",
+    "colorHex": "#323232FF"
+  },
+  "TutorialEndPage_Text2": {
+    "Text": "참 잘했어요!",
+    "local_position": {
+      "_x": 0.0,
+      "_y": -74.0,
+      "_z": 1.0
+    },
+    "localSize": {
+      "_x": 700.0,
+      "_y": 200.0
+    },
+    "fontSize": 50,
+    "alignment": "MiddleCenter",
+    "colorHex": "#323232FF"
+  }
+}

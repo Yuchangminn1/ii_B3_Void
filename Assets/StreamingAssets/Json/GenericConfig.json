@@ -1,0 +1,9 @@
+{
+  "GameManager": {
+    "intParams": {},
+    "floatParams": {
+      "resetTime": 45.0
+    },
+    "boolParams": {}
+  }
+}
