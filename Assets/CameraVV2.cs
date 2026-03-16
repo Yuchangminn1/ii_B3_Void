@@ -52,6 +52,15 @@ public class CameraVV2 : MonoBehaviour
     [Range(0f, 1f)] public float threshold = 0.4f;
     [Range(0f, 1f)] public float smoothness = 0.1f;
     [Range(0f, 1f)] public float spillReduction = 0.2f; // 단순 컬러키에서는 사용하지 않음
+
+    /*
+    [Header("Shadow / Second Key Settings")]
+    public bool useSecondKey = false;
+    public Color keyColor2 = Color.black;
+    [Range(0f, 1f)] public float threshold2 = 0.4f;
+    [Range(0f, 1f)] public float smoothness2 = 0.1f;
+    */
+
     [Tooltip("웹캠 화면에서 주기적으로 키 컬러를 자동 추출합니다.")]
     public bool autoKeyColor = true;
     [Tooltip("키 컬러 자동 추출 간격(초)")]
@@ -75,11 +84,19 @@ public class CameraVV2 : MonoBehaviour
     public bool activateDisplayOnStart = true;
     [Tooltip("카메라 인덱스별 디스플레이 매핑을 사용합니다.")]
     public bool useCameraDisplayRoutes = true;
+
+    public Text[] SettingTexts;
     [Tooltip("예: cameraIndex=0, displayIndex=1 => 0번 카메라는 1번 디스플레이로 라우팅")]
     public List<CameraDisplayRoute> cameraDisplayRoutes = new List<CameraDisplayRoute>
     {
         new CameraDisplayRoute { cameraIndex = 0, displayIndex = 1 }
     };
+
+    [Header("Debug")]
+    [Tooltip("체크 시 0번 카메라를 무시합니다.")]
+    public bool debugIgnoreCameraZero = false;
+    [Tooltip("이 문자열이 포함된 이름의 카메라는 선택에서 제외합니다.")]
+    public string ignoreDeviceName = "Mac";
 
     WebCamTexture _firstWebcam;
     WebCamTexture _secondWebcam;
@@ -102,6 +119,13 @@ public class CameraVV2 : MonoBehaviour
             return null;
         }
         return shader;
+    }
+
+    IEnumerator AutoKeyStop()
+    {
+        yield return new WaitForSeconds(10f);
+        autoKeyColor = false;
+        autoPlay = false;
     }
 
     Shader ResolveRuntimeShader()
@@ -165,6 +189,10 @@ public class CameraVV2 : MonoBehaviour
 
     void Start()
     {
+        foreach (var text in SettingTexts)
+        {
+            FadeManager.Instance.SetAlphaOne(text);
+        }
         ApplyDisplayRouting();
 
         // 자동 재생 옵션이 켜져 있으면 시작 시 웹캠을 실행
@@ -172,11 +200,46 @@ public class CameraVV2 : MonoBehaviour
         {
             StartWebcam();
         }
+
+        StartCoroutine(StopAutoKeyAfterDelay(30f));
+    }
+
+    IEnumerator StopAutoKeyAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        autoKeyColor = false;
+        foreach (var text in SettingTexts)
+        {
+            FadeManager.Instance.SetAlphaZero(text);
+        }
+        Debug.Log($"[CameraVV] Auto key color stopped after {delay} seconds.");
     }
 
     void Update()
     {
         if (_firstWebcam == null && _secondWebcam == null) return;
+
+        // 키보드 입력으로 Threshold, Smoothness 조절
+        if (Input.GetKeyDown(KeyCode.Q))
+        {
+            threshold = Mathf.Clamp01(threshold + 0.01f);
+            Debug.Log($"Threshold: {threshold}");
+        }
+        if (Input.GetKeyDown(KeyCode.W))
+        {
+            threshold = Mathf.Clamp01(threshold - 0.01f);
+            Debug.Log($"Threshold: {threshold}");
+        }
+        if (Input.GetKeyDown(KeyCode.A))
+        {
+            smoothness = Mathf.Clamp01(smoothness + 0.01f);
+            Debug.Log($"Smoothness: {smoothness}");
+        }
+        if (Input.GetKeyDown(KeyCode.S))
+        {
+            smoothness = Mathf.Clamp01(smoothness - 0.01f);
+            Debug.Log($"Smoothness: {smoothness}");
+        }
 
         ApplyMaterialProperties(_firstMaterial, _firstWebcam);
         ApplyMaterialProperties(_secondMaterial, _secondWebcam);
@@ -288,7 +351,11 @@ public class CameraVV2 : MonoBehaviour
 
     IEnumerator AutoPickKeyColorRoutine()
     {
-        while (true)
+        if (autoKeyColor == false)
+        {
+            yield break;
+        }
+        while (autoKeyColor)
         {
             var sourceWebcam = GetAutoKeySourceWebcam();
             if (sourceWebcam == null)
@@ -307,7 +374,7 @@ public class CameraVV2 : MonoBehaviour
         var wait = new WaitForSeconds(Mathf.Max(1f, autoKeyInterval));
 
         Debug.Log($"Auto Color Value: {keyColor}");
-        while (GetAutoKeySourceWebcam() != null)
+        while (GetAutoKeySourceWebcam() != null && autoKeyColor)
         {
             if (isSetUp == false)
                 TryUpdateKeyColorFromWebcam();
@@ -427,6 +494,14 @@ public class CameraVV2 : MonoBehaviour
         if (material.HasProperty("_KeyColor")) material.SetColor("_KeyColor", keyColor);
         if (material.HasProperty("_Threshold")) material.SetFloat("_Threshold", threshold);
         if (material.HasProperty("_Smooth")) material.SetFloat("_Smooth", smoothness);
+
+        /*
+        if (material.HasProperty("_KeyColor2")) material.SetColor("_KeyColor2", keyColor2);
+        if (material.HasProperty("_Threshold2")) material.SetFloat("_Threshold2", threshold2);
+        if (material.HasProperty("_Smooth2")) material.SetFloat("_Smooth2", smoothness2);
+        if (material.HasProperty("_UseSecondKey")) material.SetFloat("_UseSecondKey", useSecondKey ? 1f : 0f);
+        */
+
         if (material.HasProperty("_Spill")) material.SetFloat("_Spill", spillReduction);
         if (material.HasProperty("_Mirror")) material.SetFloat("_Mirror", mirrorHorizontal ? 1f : 0f);
         if (material.HasProperty("_VFlip")) material.SetFloat("_VFlip", mirrorVertical ^ webcam.videoVerticallyMirrored ? 1f : 0f);
@@ -438,8 +513,8 @@ public class CameraVV2 : MonoBehaviour
     {
         if (targetRawImage == null || webcam == null) return;
 
-        var rt = targetRawImage.rectTransform;
-        rt.localEulerAngles = new Vector3(0f, 0f, -webcam.videoRotationAngle);
+        // var rt = targetRawImage.rectTransform;
+        // rt.localEulerAngles = new Vector3(0f, 0f, -webcam.videoRotationAngle);
     }
 
     void StartOutputWebcam(
@@ -519,27 +594,53 @@ public class CameraVV2 : MonoBehaviour
 
     int FindDeviceIndex(WebCamDevice[] devices, string preferredDeviceName, int requestedCameraIndex, bool allowFallbackToFirstDevice, int disallowCameraIndex)
     {
+        // 내부 헬퍼: 사용 가능한지 체크
+        bool IsUsable(int index, string name)
+        {
+            if (index == disallowCameraIndex) return false;
+
+            // 디버그 옵션이 켜져 있을 때만 예외 처리
+            if (debugIgnoreCameraZero && index == 0) return false;
+
+            // 이름으로 거르기
+            if (!string.IsNullOrEmpty(ignoreDeviceName) && name.Contains(ignoreDeviceName))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        // 1. 선호 이름(preferredDeviceName) 검색
         if (!string.IsNullOrEmpty(preferredDeviceName))
         {
             for (int i = 0; i < devices.Length; i++)
             {
-                if (devices[i].name.Contains(preferredDeviceName) && i != disallowCameraIndex)
+                if (!IsUsable(i, devices[i].name)) continue;
+
+                if (devices[i].name.Contains(preferredDeviceName))
                 {
                     return i;
                 }
             }
         }
 
-        if (requestedCameraIndex >= 0 && requestedCameraIndex < devices.Length && requestedCameraIndex != disallowCameraIndex)
+        // 2. 요청 인덱스(requestedCameraIndex) 확인
+        //    요청된 인덱스라 하더라도 무시 조건(MacBook Pro 등)에 걸리면 건너뛰고 Fallback으로 감
+        if (requestedCameraIndex >= 0 && requestedCameraIndex < devices.Length)
         {
-            return requestedCameraIndex;
+            if (IsUsable(requestedCameraIndex, devices[requestedCameraIndex].name))
+            {
+                return requestedCameraIndex;
+            }
         }
 
+        // 3. Fallback: 조건에 맞는 아무 카메라나 앞에서부터 찾기
         if (allowFallbackToFirstDevice && devices.Length > 0)
         {
             for (int i = 0; i < devices.Length; i++)
             {
-                if (i != disallowCameraIndex)
+                if (IsUsable(i, devices[i].name))
                 {
                     return i;
                 }

@@ -6,6 +6,12 @@ Shader "Custom/WebcamChromaKey"
         _KeyColor ("Key Color", Color) = (0, 1, 0, 1)
         _Threshold ("Threshold", Range(0,1)) = 0.4
         _Smooth ("Smoothness", Range(0,1)) = 0.1
+
+        _KeyColor2 ("Key Color 2", Color) = (0, 0, 0, 0)
+        _Threshold2 ("Threshold 2", Range(0,1)) = 0.4
+        _Smooth2 ("Smoothness 2", Range(0,1)) = 0.1
+        _UseSecondKey ("Use Second Key", Float) = 0
+        
         _Spill ("Spill Reduction (unused)", Range(0,1)) = 0.2
         _Mirror ("Mirror Horizontal", Float) = 0
         _VFlip ("Vertical Flip", Float) = 0
@@ -35,6 +41,12 @@ Shader "Custom/WebcamChromaKey"
             float4 _KeyColor;
             float _Threshold;
             float _Smooth;
+
+            float4 _KeyColor2;
+            float _Threshold2;
+            float _Smooth2;
+            float _UseSecondKey;
+
             float _Spill;
             float _Mirror;
             float _VFlip;
@@ -71,15 +83,27 @@ Shader "Custom/WebcamChromaKey"
             {
                 fixed4 col = tex2D(_MainTex, i.uv);
                 float3 c = col.rgb;
-                float3 k = _KeyColor.rgb;
+                float3 k1 = _KeyColor.rgb;
 
                 // 단순 컬러키: RGB 거리로 특정 색을 투명 처리
                 // dist가 작으면 키 색에 가깝다 → 투명
-                float dist = distance(c, k);
+                float dist1 = distance(c, k1);
 
                 // 마스크: 0(키 색 영역, 투명) ~ 1(전경 유지)
-                float mask = saturate((dist - _Threshold) / max(_Smooth, 1e-5));
-                float alpha = mask;
+                float mask1 = saturate((dist1 - _Threshold) / max(_Smooth, 1e-5));
+                
+                float finalMask = mask1;
+
+                if (_UseSecondKey > 0.5)
+                {
+                    float3 k2 = _KeyColor2.rgb;
+                    float dist2 = distance(c, k2);
+                    float mask2 = saturate((dist2 - _Threshold2) / max(_Smooth2, 1e-5));
+                    
+                    finalMask = min(finalMask, mask2);
+                }
+
+                float alpha = finalMask;
 
                 // 경계 선명도(콘트라스트) 조절: 1은 기본, 값이 클수록 경계가 또렷해짐
                 alpha = saturate((alpha - 0.5) * _EdgeContrast + 0.5);
