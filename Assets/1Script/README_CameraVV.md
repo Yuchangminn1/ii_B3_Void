@@ -1,17 +1,20 @@
 # CameraVV 사용 안내 (한국어)
 
-이 컴포넌트는 웹캠 영상을 받아 특정 색을 투명으로 처리(컬러키)하여 UI RawImage 또는 MeshRenderer에 출력합니다.
+이 컴포넌트는 웹캠 영상을 받아 특정 색을 투명으로 처리(컬러키)하여 UI RawImage 2개에 각각 출력합니다. RawImage를 지정하지 않으면 현재 오브젝트의 RawImage 또는 MeshRenderer를 첫 번째 출력으로 사용합니다.
 
 ## 설치 및 준비
 
 - 본 리포지토리에는 셰이더 파일이 포함되어 있습니다: `Assets/Shaders/WebcamChromaKey.shader`
-- `CameraVV` 스크립트를 출력 대상 오브젝트에 붙입니다.
-  - UI 경로: `Canvas` → `RawImage` 생성 → `CameraVV` 추가
-  - 3D 경로: `Quad` 등 MeshRenderer가 있는 오브젝트 생성 → `CameraVV` 추가
+- `CameraVV` 스크립트를 빈 오브젝트 또는 UI 관리 오브젝트에 붙입니다.
+- `Canvas` 아래에 `RawImage` 2개를 만들고 `firstRawImage`, `secondRawImage`에 연결합니다.
+- 각 슬롯에 연결할 카메라는 `firstCameraIndex`, `secondCameraIndex` 또는 `firstDeviceName`, `secondDeviceName`으로 지정합니다.
 
 ## 주요 옵션 설명
 
-- `deviceName`: 사용할 웹캠 이름(부분 문자열 허용). 비워두면 첫 번째 기기를 사용합니다.
+- `firstRawImage`/`secondRawImage`: 첫 번째, 두 번째 카메라 화면을 표시할 UI RawImage입니다.
+- `firstCameraIndex`/`secondCameraIndex`: 각 RawImage에 연결할 카메라 인덱스입니다.
+- `firstDeviceName`/`secondDeviceName`: 카메라 이름으로 직접 매칭할 때 사용합니다. 이름이 비어 있으면 카메라 인덱스를 사용합니다.
+- `deviceName`: 이전 단일 출력 세팅과의 호환용이며, `firstDeviceName`이 비어 있을 때 첫 번째 출력에 사용됩니다.
 - `requestedWidth`/`requestedHeight`/`requestedFPS`: 요청 해상도 및 프레임레이트.
 - `autoPlay`: 시작 시 자동으로 웹캠을 실행합니다.
 - `mirrorHorizontal`/`mirrorVertical`: 좌우/상하 반전 옵션. 일부 기기에서 상하 반전은 자동 감지와 합쳐져 적용됩니다.
@@ -30,9 +33,11 @@
 
 ## 사용 방법
 
-1. 오브젝트에 `CameraVV`를 붙인 뒤 플레이하면(또는 `autoPlay`가 켜져 있으면) 웹캠이 시작됩니다.
-2. 인스펙터에서 `keyColor`, `threshold`, `smoothness`를 조절하고 필요하면 `opaqueToBlack`을 켜거나 `edgeContrast`를 올려 경계를 또렷하게 만듭니다.
-3. UI `RawImage`는 스크립트가 자동으로 회전 각도를 맞추며, 셰이더의 `mirror/flip` 옵션도 동작합니다.
+1. 오브젝트에 `CameraVV`를 붙이고 `firstRawImage`, `secondRawImage`를 연결합니다.
+2. `firstCameraIndex = 0`, `secondCameraIndex = 1`처럼 각 화면에 사용할 카메라를 지정합니다.
+3. 플레이하면(또는 `autoPlay`가 켜져 있으면) 각 RawImage에 해당 카메라 화면이 출력됩니다.
+4. 인스펙터에서 `keyColor`, `threshold`, `smoothness`를 조절하고 필요하면 `opaqueToBlack`을 켜거나 `edgeContrast`를 올려 경계를 또렷하게 만듭니다.
+5. UI `RawImage`는 스크립트가 자동으로 회전 각도를 맞추며, 셰이더의 `mirror/flip` 옵션도 동작합니다.
 
 ## 트러블슈팅
 
