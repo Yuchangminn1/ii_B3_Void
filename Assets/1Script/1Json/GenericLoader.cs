@@ -6,6 +6,8 @@ public class JsonGenericUpData
     public Dictionary<string, int> intParams;
     public Dictionary<string, float> floatParams;
     public Dictionary<string, bool> boolParams;
+    public Dictionary<string, string> stringParams;
+
 }
 public interface IJsonGenericTarget
 {

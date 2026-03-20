@@ -11,9 +11,8 @@ public class PageButton : MonoBehaviour
 
 
     [Header("페이지 시작시 보일지")]
-    public bool isStartActive;
+    bool isStartActive = false;
 
-    float _fadeDuration = 0.5f;
 
     Graphic _currentGraphics;
 
@@ -42,6 +41,7 @@ public class PageButton : MonoBehaviour
     {
         _currentGraphics.raycastTarget = false;
         FadeManager.Instance.SetAlphaZero(_currentGraphics);
+        _button.interactable = false;
         if (isStartActive)
         {
             StartCoroutine(EnableButtonDelay());
@@ -55,6 +55,8 @@ public class PageButton : MonoBehaviour
         yield return enableDelay;
 
         _currentGraphics.raycastTarget = true;
+        _button.interactable = true;
+
         // _currentGraphics.color = Color.white;
 
         FadeManager.Instance.SetAlphaOne(_currentGraphics);
@@ -63,33 +65,37 @@ public class PageButton : MonoBehaviour
 
     void Start()
     {
-        _button.onClick.AddListener(StartTrigger);
+        _button.onClick.AddListener(SST);
+    }
+
+    public void SST()
+    {
+        sequenceScript.TriggerOn();
     }
 
     void StartTrigger()
     {
         Debug.Log("Page Button Clicked");
         onClickEvent?.Invoke();
-        sequenceScript?.TriggerOn();
+        sequenceScript.TriggerOn();
 
         _currentGraphics.raycastTarget = false;
-        FadeManager.Instance.TargetFade(_currentGraphics, 0f, _fadeDuration);
+        FadeManager.Instance.TargetFade(_currentGraphics, 0f);
         if (text != null)
 
-            FadeManager.Instance.TargetFade(text, 0f, _fadeDuration);
+            FadeManager.Instance.TargetFade(text, 0f);
 
-        SoundManager.Instance.PlayEffectSound(EffectSoundNum.ButtonSound, 3f);
+        SoundManager.Instance.PlayEffectSound(EffectSoundNum.ConfirmSound, 3f);
 
     }
     IEnumerator SetRayCastTargetToDelay(Graphic graphic)
     {
         yield return delayWaitForSecond;
-        FadeManager.Instance.TargetFade(graphic, 1f, _fadeDuration);
+        FadeManager.Instance.TargetFade(graphic, 1f);
         if (text != null)
-            FadeManager.Instance.TargetFade(text, 1f, _fadeDuration);
-
-        yield return delayWaitForSecond;
+            FadeManager.Instance.TargetFade(text, 1f);
         graphic.raycastTarget = true;
+        _button.interactable = true;
 
     }
 

@@ -14,6 +14,8 @@ public class IdleButton : MonoBehaviour, IJsonGenericTarget
 
     JsonGenericUpData _genericData = new JsonGenericUpData();
 
+    SetUpCoroutine _pageController;
+
 
     void Awake()
     {
@@ -27,6 +29,7 @@ public class IdleButton : MonoBehaviour, IJsonGenericTarget
         {
             button.onClick.AddListener(OnIdleButton);
         }
+        _pageController = GetComponentInParent<SetUpCoroutine>();
     }
 
 
@@ -42,7 +45,7 @@ public class IdleButton : MonoBehaviour, IJsonGenericTarget
         {
             _idleCount = 0;
             Debug.Log("Button Idle");
-            PageController.Instance.IdleButton();
+            _pageController.IdleButton();
         }
     }
 

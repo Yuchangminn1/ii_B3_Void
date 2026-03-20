@@ -1,9 +1,69 @@
 {
   "GameManager": {
+    "intParams": {
+      "displayLeft": 1,
+      "displayRight": 0
+    },
+    "floatParams": {
+      "resetTime": 20.0,
+      "page4TimerDefaultTime": 3.0
+    },
+    "boolParams": {},
+    "stringParams": {}
+  },
+  "Image5_Ring_Left": {
     "intParams": {},
     "floatParams": {
-      "resetTime": 45.0
+      "ledTime1": 2.0,
+      "ledTime2": 1.5
     },
-    "boolParams": {}
+    "boolParams": {},
+    "stringParams": {}
+  },
+
+  "Image5_Ring_Right": {
+    "intParams": {},
+    "floatParams": {
+      "ledTime1": 2.0,
+      "ledTime2": 1.5
+    },
+    "boolParams": {},
+    "stringParams": {}
+  },
+
+  "ArduinoManager": {
+    "intParams": {},
+    "floatParams": {},
+    "boolParams": {},
+    "stringParams": {
+      "LeftPlayerArduinoButton": "COM12",
+      "RightPlayerArduinoButton": "COM3",
+      "TouchNode": "COM9",
+      "LEDNode": "COM8"
+    }
+  },
+
+  "SoundManager": {
+    "intParams": {},
+    "floatParams": {
+      "bgmVolume": 0.4,
+
+      "BaseVolume": 1.2,
+      "SaveSoundVolume": 1.0,
+      "SoulPieceSoundVolume": 1.0,
+      "ConfirmSoundVolume": 1.0,
+      "PopupSoundVolume": 1.0,
+      "ActiveSoundVolume": 1.0,
+      "StepTextSoundVolume": 1.0,
+      "GreenHandSoundVolume": 1.0,
+      "WhiteLEDSoundVolume": 1.0,
+      "SecondSound3Volume": 1.0,
+      "SecondSound5Volume": 1.0,
+      "QuestionSoundVolume": 1.0,
+      "StartSoundVolume": 1.0,
+      "TimerSound100Volume": 1.0
+    },
+    "boolParams": {},
+    "stringParams": {}
   }
 }

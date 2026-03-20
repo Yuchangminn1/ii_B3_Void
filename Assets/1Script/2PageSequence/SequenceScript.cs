@@ -1,4 +1,5 @@
 using System.Collections;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.Video;
@@ -6,29 +7,48 @@ using UnityEngine.Video;
 public abstract class SequenceScript : MonoBehaviour
 {
 
-    public Coroutine coroutine;
+    int _currentIndex = 0;
+    public int CurrentIndex
+    {
+        get { return _currentIndex; }
+        set { _currentIndex = value; }
+    }
 
-    public int currentIndex = 0;
 
     public AudioSource audioSource;
 
-    [SerializeField] protected bool isTrigger = true;
+    public VideoPlayer nextVedeoPlayer;
 
+    public Coroutine coroutine;
+    [Header("시퀀스 리셋 이후 콜백")]
+
+    public UnityEvent OnSequenceStart;
+    [Header("시퀀스 트리거 이후 콜백")]
+    public UnityEvent triggerCallback;
+
+    [Header("다음 넘어가는 콜백")]
+    public UnityEvent nextSequenceCallback;
+
+    [Header("현재 트리거 여부 ")]
+    [SerializeField] protected bool isTrigger = true;
+    [Header("자동 트리거 여부")]
     [SerializeField] protected bool originTrigger;
+    [Header("다음 트리거 넘어가는 딜레이 default -1")]
 
     [SerializeField] protected float nextDelayTime = -1f;
 
 
     WaitForFixedUpdate waitFixedUpdate = new WaitForFixedUpdate();
 
+    WaitForSeconds textUpdateDelay = new WaitForSeconds(0.1f);
+
     WaitForSeconds waitNextDelay;
-    [Header("OnSequenceEnd")]
-    public UnityEvent sequenceCallback;
-
-    public VideoPlayer nextVedeoPlayer;
-
 
     protected bool isInitialize = false;
+
+    bool isWaiting = false;
+
+    Coroutine _triggerForceOnCoroutine = null;
 
 
 
@@ -41,7 +61,6 @@ public abstract class SequenceScript : MonoBehaviour
         {
             waitNextDelay = new WaitForSeconds(nextDelayTime);
         }
-
 
         AwakeSetup();
 
@@ -59,40 +78,99 @@ public abstract class SequenceScript : MonoBehaviour
     }
 
 
-
+    public bool TriggerOnBool()
+    {
+        if (isWaiting)
+            isTrigger = true;
+        return isWaiting;
+    }
     public IEnumerator StartSequence()
     {
         //초기화 전도 대기
         while (!isInitialize)
         {
-            yield return waitFixedUpdate;
+            yield return textUpdateDelay;
         }
         isTrigger = originTrigger;
+        isWaiting = true;
+        GameManager.Instance.GoToIdleCheck();
         //특정 트리거 필요하면 대기 
+        OnSequenceStart?.Invoke();
+
+
         while (!isTrigger)
         {
             //Debug.Log($"{this.name}Wait isTrigger");
             yield return waitFixedUpdate;
         }
-        if (audioSource != null) audioSource.Play();
+        isWaiting = false;
+
+        //Debug.Log($"{this.name} Trigger");
+        if (audioSource != null)
+            audioSource.Play();
+
+        triggerCallback?.Invoke();
 
         yield return coroutine = StartCoroutine(RunSequence());
 
-        if (sequenceCallback != null) sequenceCallback.Invoke();
 
         yield return WaitNextDelay();
 
         EndPageSequence();
     }
 
+    public void AddTriggerCallback(UnityAction action)
+    {
+        triggerCallback.AddListener(action);
+    }
+
+    // public void AddTrigger(SequenceScript sequenceScript)
+    // {
+    //     if (isSubPageSequence)
+    //         sequenceScript.AddTriggerCallback(TriggerOn);
+    // }
+
+
+    public void TriggerFroceOn()
+    {
+        if (gameObject.activeInHierarchy)
+            return;
+        isTrigger = true;
+        isWaiting = true;
+        if (_triggerForceOnCoroutine != null)
+            StopCoroutine(_triggerForceOnCoroutine);
+        _triggerForceOnCoroutine = StartCoroutine(TriggerForceOnCoroutine());
+
+    }
     public void TriggerOn()
     {
         isTrigger = true;
     }
 
+    IEnumerator TriggerForceOnCoroutine()
+    {
+
+        while (isWaiting && gameObject.activeInHierarchy)
+        {
+            yield return CoroutineReturnManager.GetWaitForSeconds(0.1f);
+            isTrigger = true;
+        }
+        _triggerForceOnCoroutine = null;
+    }
     protected abstract IEnumerator RunSequence();
 
-    protected abstract void AwakeSetup();
+    protected virtual void AwakeSetup()
+    {
+        Initialize();
+    }
+
+
+
+
+    protected virtual void Initialize()
+    {
+        ;
+    }
     /// <summary>
     /// 디버그용
     /// </summary>
@@ -100,9 +178,27 @@ public abstract class SequenceScript : MonoBehaviour
 
     protected virtual void EndPageSequence()
     {
-        GameManager.Instance.ResetCoroutine();
         if (nextVedeoPlayer != null) nextVedeoPlayer.Prepare();
-        PageController.Instance.NextSequence();
 
+        isTrigger = originTrigger;
+        nextSequenceCallback?.Invoke();
     }
+
+    public void AddNextSequenceCallback(UnityAction action)
+    {
+        nextSequenceCallback.AddListener(action);
+    }
+
+    void OnDisable()
+    {
+        if (_triggerForceOnCoroutine != null)
+        {
+            StopCoroutine(_triggerForceOnCoroutine);
+            _triggerForceOnCoroutine = null;
+        }
+        StopAllCoroutines();
+    }
+
+
+
 }

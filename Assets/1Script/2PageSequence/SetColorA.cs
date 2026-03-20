@@ -25,43 +25,30 @@ public class SetColorA : MonoBehaviour
 
     Coroutine initializeCoroutine = null;
 
-    public Page pageSequenceController;
+    public MainPage pageSequenceController;
 
 
 
     IEnumerator DelayToInitialize()
     {
-        // pairObject 전체를 순회하며 Graphic 수집 (비활성 포함)
+
         graphics.AddRange(GetComponentsInChildren<Graphic>(true));
         canvasGroups.AddRange(GetComponentsInChildren<CanvasGroup>(true));
 
-        // // graphics 리스트 초기화 후 수집본 추가
-        // if (graphics == null)
-        // {
-        //     graphics = new List<Graphic>(collected.Count + 16);
-        // }
-        // else
-        // {
-        //     graphics.Clear();
-        // }
-
-        // graphics.AddRange(collected);
         yield return new WaitForSeconds(1f);
-
-        //graphics.AddRange(GetComponentsInChildren<Graphic>(true));
-
 
         flags = new bool[graphics.Count];
         raytargets = new bool[graphics.Count];
-        if (canvasGroups.Count > 0)
-        {
-            canvasalphas = new float[canvasGroups.Count];
+        // if (canvasGroups.Count > 0)
+        // {
+        //     canvasalphas = new float[canvasGroups.Count];
 
-            for (int i = 0; i < canvasGroups.Count; i++)
-            {
-                canvasalphas[i] = canvasGroups[i].alpha;
-            }
-        }
+        //     for (int i = 0; i < canvasGroups.Count; i++)
+        //     {
+        //         canvasalphas[i] = canvasGroups[i].alpha;
+
+        //     }
+        // }
 
 
         for (int i = 0; i < graphics.Count; i++)
@@ -89,7 +76,7 @@ public class SetColorA : MonoBehaviour
         }
         if (pageSequenceController == null)
         {
-            pageSequenceController = GetComponent<Page>();
+            pageSequenceController = GetComponent<MainPage>();
 
         }
         initializeCoroutine = StartCoroutine(DelayToInitialize());
@@ -119,13 +106,12 @@ public class SetColorA : MonoBehaviour
             }
 
         }
-        if (canvasGroups.Count > 0)
+        foreach (CanvasGroup canvasGroup in canvasGroups)
         {
-            for (int i = 0; i < canvasGroups.Count; i++)
-            {
-                canvasGroups[i].alpha = canvasalphas[i];
-            }
+            canvasGroup.alpha = 0f;
+            canvasGroup.blocksRaycasts = false;
         }
+
 
         coroutine = null;
         yield return null;

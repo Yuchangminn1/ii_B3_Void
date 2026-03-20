@@ -41,7 +41,7 @@ MonoBehaviour:
       colorIndex: 3
       isIconRecursive: 0
       isColorRecursive: 0
-    - iconNameOrGuid: 
+    - iconNameOrGuid: SceneAsset Icon
       colorIndex: 1
       isIconRecursive: 0
       isColorRecursive: 0

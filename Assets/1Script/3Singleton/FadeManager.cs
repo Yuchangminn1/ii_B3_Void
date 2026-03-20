@@ -23,6 +23,16 @@ public class FadeManager : MonoBehaviour
         }
     }
 
+    float _fadeDuration = 0.05f;
+
+    public float FadeDuration
+    {
+        get { return _fadeDuration; }
+        set { _fadeDuration = value; }
+    }
+
+
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -33,6 +43,11 @@ public class FadeManager : MonoBehaviour
         DontDestroyOnLoad(gameObject);
     }
 
+    void Start()
+    {
+        _fadeDuration = 0.05f;
+    }
+
     private readonly WaitForSeconds _delayWait = new WaitForSeconds(1f);
 
     // -------------------------------------------------------
@@ -41,62 +56,83 @@ public class FadeManager : MonoBehaviour
     public void ToggleFade(Graphic graphic, float fadeTime = 1f)
     {
         if (graphic == null) return;
+        if (fadeTime == 1f)
+        {
+            fadeTime = _fadeDuration;
+        }
         StartCoroutine(FadeCoroutine(new[] { graphic }, fadeTime, toggleMode: true));
     }
 
     public void ToggleFade(Graphic[] graphics, float fadeTime = 1f)
     {
         if (graphics == null || graphics.Length == 0) return;
+        if (fadeTime == 1f)
+        {
+            fadeTime = _fadeDuration;
+        }
         StartCoroutine(FadeCoroutine(graphics, fadeTime, toggleMode: true));
     }
 
     public void ToggleFade(CanvasGroup canvas, float fadeTime = 1f)
     {
         if (canvas == null) return;
+        if (fadeTime == 1f)
+        {
+            fadeTime = _fadeDuration;
+        }
         StartCoroutine(FadeCoroutine(new List<CanvasGroup> { canvas }, fadeTime, toggleMode: true));
     }
 
     public void ToggleFade(List<CanvasGroup> canvases, float fadeTime = 1f)
     {
         if (canvases == null || canvases.Count == 0) return;
+        if (fadeTime == 1f)
+        {
+            fadeTime = _fadeDuration;
+        }
         StartCoroutine(FadeCoroutine(canvases, fadeTime, toggleMode: true));
     }
 
     public void TargetFade(Graphic graphic, float targetAlpha, float fadeTime = 1f)
     {
+
         if (graphic == null) return;
+        if (fadeTime == 1f)
+        {
+            fadeTime = _fadeDuration;
+        }
         StartCoroutine(FadeCoroutine(new[] { graphic }, fadeTime, targetAlpha));
     }
 
     public void TargetFade(Graphic[] graphics, float targetAlpha, float fadeTime = 1f)
     {
         if (graphics == null || graphics.Length == 0) return;
+        if (fadeTime == 1f)
+        {
+            fadeTime = _fadeDuration;
+        }
         StartCoroutine(FadeCoroutine(graphics, fadeTime, targetAlpha));
     }
 
     public void TargetFade(CanvasGroup canvas, float targetAlpha, float fadeTime = 1f)
     {
         if (canvas == null) return;
+        if (fadeTime == 1f)
+        {
+            fadeTime = _fadeDuration;
+        }
         StartCoroutine(FadeCoroutine(new List<CanvasGroup> { canvas }, fadeTime, targetAlpha));
     }
 
     public void TargetFade(List<CanvasGroup> canvases, float targetAlpha, float fadeTime = 1f)
     {
         if (canvases == null || canvases.Count == 0) return;
+        if (fadeTime == 1f)
+        {
+            fadeTime = _fadeDuration;
+        }
         StartCoroutine(FadeCoroutine(canvases, fadeTime, targetAlpha));
     }
-
-    // public void ButtonDelayToggleFade(Graphic graphic)
-    // {
-    //     if (graphic == null) return;
-    //     StartCoroutine(ButtonDelay(graphic));
-    // }
-
-    // private IEnumerator ButtonDelay(Graphic graphic)
-    // {
-    //     yield return _delayWait;
-    //     StartCoroutine(FadeCoroutine(new[] { graphic }, 0.5f, toggleMode: true));
-    // }
 
     // -------------------------------------------------------
     //  공통 코루틴 (Graphic용)
@@ -173,6 +209,15 @@ public class FadeManager : MonoBehaviour
         {
             if (groups[i] == null) continue;
             groups[i].alpha = end[i];
+            if (groups[i].alpha == 0f)
+            {
+                groups[i].blocksRaycasts = false;
+            }
+            else if (groups[i].alpha == 1f)
+            {
+                groups[i].blocksRaycasts = true;
+            }
+
         }
     }
 
@@ -184,6 +229,16 @@ public class FadeManager : MonoBehaviour
         if (graphic == null) return;
         var c = graphic.color;
         graphic.color = new Color(c.r, c.g, c.b, 0f);
+    }
+    public void SetAlphaZero(CanvasGroup graphic)
+    {
+        if (graphic == null) return;
+        graphic.alpha = 0f;
+    }
+    public void SetAlphaOne(CanvasGroup graphic)
+    {
+        if (graphic == null) return;
+        graphic.alpha = 1f;
     }
     public void SetAlphaZero(SpriteRenderer renderer)
     {
@@ -232,6 +287,19 @@ public class FadeManager : MonoBehaviour
     {
         foreach (var g in graphics)
             ToggleCut(g);
+    }
+
+    public void ToggleCut(CanvasGroup canvasGroup)
+    {
+        if (canvasGroup == null) return;
+        if (canvasGroup.alpha > 0.1f) canvasGroup.alpha = 0f;
+        else canvasGroup.alpha = 1f;
+    }
+
+    public void ToggleCut(CanvasGroup[] canvasGroups)
+    {
+        foreach (var canvasGroup in canvasGroups)
+            ToggleCut(canvasGroup);
     }
 
     void OnDestroy()

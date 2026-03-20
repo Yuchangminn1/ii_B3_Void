@@ -8,85 +8,91 @@ public class SequenceFade : SequenceScript
     [Tooltip("컷 효과를 적용할 Graphic 배열 (예: UI 이미지 등)")]
 
     public List<Graphic> CutGraphics;
+    public List<CanvasGroup> CutCanvasGroups;
+
 
     public List<Graphic> FadeInGraphics;
 
     public List<Graphic> FadeOutGraphics;
 
+    [Header("In 나타남")]
+
     public List<CanvasGroup> FadeInCanvasGroups;
+    [Header("Out 사라짐")]
 
 
     public List<CanvasGroup> FadeOutCanvasGroups;
 
 
-    public float _waitforStartDelay = -1f;
+    [Header("0보다 클 경우 이 스크립트만 따로 시간 적용")] public float CustomFadeDuration = -1f;
 
 
 
-
-    [Tooltip("페이드 효과의 지속 시간 (초)")] public float fadeDuration = 1f;
-
-    WaitForSeconds _fadeWait;
-    WaitForSeconds _fadeOutDelay = new WaitForSeconds(0.1f);
-
-    WaitForSeconds _startDelayTime;
-
-    public UnityEvent OnFadeStart;
-
-
-
-
-    protected override void AwakeSetup()
+    protected override void Initialize()
     {
-        Initialize();
-
-    }
-
-    private void Initialize()
-    {
-        _fadeWait = new WaitForSeconds(fadeDuration);
-        if (_waitforStartDelay > 0f)
-            _startDelayTime = new WaitForSeconds(_waitforStartDelay);
-
+        base.Initialize();
+        if (CustomFadeDuration < 0)
+        {
+            CustomFadeDuration = FadeManager.Instance.FadeDuration;
+        }
     }
 
     protected override IEnumerator RunSequence()
     {
-        if (_waitforStartDelay > 0f)
-            yield return _startDelayTime;
-        OnFadeStart?.Invoke();
         StartCutEffect();
 
 
-        StartFadeEffect(FadeInGraphics, FadeInCanvasGroups);
-        yield return _fadeWait;
-        yield return _fadeOutDelay;
 
+        yield return StartFadeEffect(FadeOutGraphics, FadeOutCanvasGroups, 0f);
 
-        StartFadeEffect(FadeOutGraphics, FadeOutCanvasGroups);
-        yield return _fadeWait;
+        yield return StartFadeEffect(FadeInGraphics, FadeInCanvasGroups, 1f);
+
 
         // 모든 페이드 효과가 완료될 때까지 기다립니다.
     }
 
 
 
-    private void StartFadeEffect(List<Graphic> graphics, List<CanvasGroup> canvasGroups)
+    private IEnumerator StartFadeEffect(List<Graphic> graphics, List<CanvasGroup> canvasGroups, float targetAlpha)
     {
-        if (graphics.Count > 0)
+        if ((graphics == null || graphics.Count == 0) && (canvasGroups == null || canvasGroups.Count == 0))
         {
-            for (int i = 0; i < graphics.Count; i++)
-            {
-                FadeManager.Instance.ToggleFade(graphics[i], fadeDuration);
-            }
+            yield break;
         }
-        // 모든 그래픽에 대해 페이드 효과를 동시에 시작합니다.
-
-        if (canvasGroups.Count > 0)
+        else
         {
-            for (int i = 0; i < canvasGroups.Count; i++)
+            if (CustomFadeDuration > 0f)
             {
-                FadeManager.Instance.ToggleFade(canvasGroups[i], fadeDuration);
+                if (graphics.Count > 0)
+                {
+                    for (int i = 0; i < graphics.Count; i++)
+                        FadeManager.Instance.TargetFade(graphics[i], targetAlpha, CustomFadeDuration);
+                }
+                // 모든 그래픽에 대해 페이드 효과를 동시에 시작합니다.
+
+                if (canvasGroups.Count > 0)
+                {
+                    for (int i = 0; i < canvasGroups.Count; i++)
+                        FadeManager.Instance.TargetFade(canvasGroups[i], targetAlpha, CustomFadeDuration);
+                }
+                yield return CoroutineReturnManager.GetWaitForSeconds(CustomFadeDuration);
+            }
+            else
+            {
+                if (graphics.Count > 0)
+                {
+                    for (int i = 0; i < graphics.Count; i++)
+                        FadeManager.Instance.TargetFade(graphics[i], targetAlpha);
+                }
+                // 모든 그래픽에 대해 페이드 효과를 동시에 시작합니다.
+
+                if (canvasGroups.Count > 0)
+                {
+                    for (int i = 0; i < canvasGroups.Count; i++)
+                        FadeManager.Instance.TargetFade(canvasGroups[i], targetAlpha);
+                }
+                yield return CoroutineReturnManager.GetWaitForSeconds(FadeManager.Instance.FadeDuration);
+
             }
         }
 
@@ -94,7 +100,7 @@ public class SequenceFade : SequenceScript
 
     private void StartCutEffect()
     {
-        if (CutGraphics.Count < 1)
+        if (CutGraphics.Count < 1 && CutCanvasGroups.Count < 1)
         {
             //Debug.Log("graphics is Null ");
             return;
@@ -103,6 +109,10 @@ public class SequenceFade : SequenceScript
         for (int i = 0; i < CutGraphics.Count; i++)
         {
             FadeManager.Instance.ToggleCut(CutGraphics[i]);
+        }
+        for (int i = 0; i < CutCanvasGroups.Count; i++)
+        {
+            FadeManager.Instance.ToggleCut(CutCanvasGroups[i]);
         }
     }
 

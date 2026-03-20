@@ -37,6 +37,11 @@ public class JsonManager : MonoBehaviour
 
     GenericLoader _genericLoader = new GenericLoader("Json/GenericConfig.JSON");
     public GenericLoader GetGenericLoader { get { return _genericLoader; } }
+
+    QuestionLoader _questionLoader = new QuestionLoader("Json/QuestionConfig.json");
+    public QuestionLoader GetQuestionLoader { get { return _questionLoader; } }
+
+
     void Awake()
     {
         if (instance == null)
@@ -86,8 +91,9 @@ public class JsonManager : MonoBehaviour
 
         // _rawImageLoader.Load();
 
-        // _genericLoader.Load();
+        _genericLoader.Load();
 
+        _questionLoader.Load();
 
 
         // Text[] tempText = FindObjectsOfType<Text>();
@@ -116,11 +122,21 @@ public class JsonManager : MonoBehaviour
         //     //Debug.Log("Register RawImage: " + t.gameObject.name);
         //     _rawImageLoader.Register(t.gameObject.name, t);
         // }
-        // var tempGenericTargets = FindObjectsOfType<MonoBehaviour>().OfType<IJsonGenericTarget>();
-        // foreach (IJsonGenericTarget t in tempGenericTargets)
-        // {
-        //     _genericLoader.Register(((Component)t).gameObject.name, t);
-        // }
+        var tempGenericTargets = FindObjectsOfType<MonoBehaviour>().OfType<IJsonGenericTarget>();
+        foreach (IJsonGenericTarget t in tempGenericTargets)
+        {
+            Debug.Log("Register GenericTarget: " + ((Component)t).gameObject.name);
+            _genericLoader.Register(((Component)t).gameObject.name, t);
+        }
+        var tempQuestionTargets = FindObjectsOfType<MonoBehaviour>().OfType<IQuestionTarget>();
+        foreach (IQuestionTarget t in tempQuestionTargets)
+        {
+            Debug.Log("Register QuestionTarget: " + ((Component)t).gameObject.name);
+            _questionLoader.Register(((Component)t).gameObject.name, t);
+        }
+
+
+
 
     }
 

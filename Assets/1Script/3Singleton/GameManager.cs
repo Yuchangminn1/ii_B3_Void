@@ -3,8 +3,23 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+
+
+
+public enum GameMode
+{
+    Playing,
+    Stop
+}
+
 public class GameManager : MonoBehaviour, IJsonGenericTarget
 {
+    [Serializable]
+    private struct CanvasDisplayBinding
+    {
+        public Canvas canvas;
+    }
+
     public static GameManager Instance
     {
         get
@@ -27,21 +42,26 @@ public class GameManager : MonoBehaviour, IJsonGenericTarget
 
     static GameManager instance;
 
-    Action actionStartCreate;
+    Queue<IEnumerator> queueStartCreate = new Queue<IEnumerator>();
 
-    Action actionStartInitialize;
+    Queue<IEnumerator> queueStartInitialize = new Queue<IEnumerator>();
 
-    Action actionProgramStart;
+    Queue<IEnumerator> queueProgramStart = new Queue<IEnumerator>();
     private KeyCode CursorToggleKey = KeyCode.M;
     private bool startHidden = false;
 
+    GameMode _currentGameMode = GameMode.Playing;
 
-    WaitForFixedUpdate waitForFixedUpdate = new WaitForFixedUpdate();
+    public GameMode CurrentGameMode { get { return _currentGameMode; } set { _currentGameMode = value; } }
 
-    WaitForSeconds startDelay = new WaitForSeconds(2f);
+
+    SetUpCoroutine[] _pageControllers;
+
+    [SerializeField] private int[] targetDisplayIndices = new int[] { 1, 0 };
+    [SerializeField] private CanvasDisplayBinding[] canvasDisplayBindings;
 
     //todo 제너릭 제이슨 만들어서 뺴기 
-    float _resetTime = 45f;
+    float _resetTime = 20f;
 
     WaitForSeconds resetDelay;
 
@@ -56,36 +76,59 @@ public class GameManager : MonoBehaviour, IJsonGenericTarget
 
     public bool IsStarted { get { return isStart; } set { isStart = value; } }
 
-    IEnumerator ResetPage()
+
+    public float Page4TimerDefaultTime = 1f;
+
+    public void SetGameModePlay()
+    {
+        _currentGameMode = GameMode.Playing;
+    }
+    public void SetGameModeStop()
+    {
+        _currentGameMode = GameMode.Stop;
+    }
+
+    IEnumerator GoToIdleCoroutine()
     {
         if (resetDelay == null)
         {
             resetDelay = new WaitForSeconds(_resetTime);
         }
+        PopupManager.Instance.ClosePopup();
         //Debug.Log("Resetting Page in " + _resetTime + " seconds...");
         yield return resetDelay;
-        if (PageController.Instance.CurrentPage != 0 || PageController.Instance.GetCurrentPage().currentindex != 0)
+
+        bool isIdle = true;
+        foreach (var pageController in _pageControllers)
         {
-            PageController.Instance.CurrentPage = 0;
-            Debug.Log("Page Reset");
+            if (PageController.Instance.IsIdle() == false)
+            {
+                isIdle = false;
+                break;
+            }
         }
+        if (isIdle == false)
+        {
+            PopupManager.Instance.ResetPopUpOpen();
+        }
+
         resetCoroutine = null;
     }
 
 
 
-    public void ActionAddCreate(Action action)
+    public void AddCreate(IEnumerator action)
     {
-        actionStartCreate += action;
+        queueStartCreate.Enqueue(action);
     }
 
-    public void ActionAddInitialize(Action action)
+    public void AddInitialize(IEnumerator action)
     {
-        actionStartInitialize += action;
+        queueStartInitialize.Enqueue(action);
     }
-    public void ActionAddProgramStart(Action action)
+    public void AddProgramStart(IEnumerator action)
     {
-        actionProgramStart += action;
+        queueProgramStart.Enqueue(action);
     }
 
 
@@ -94,15 +137,72 @@ public class GameManager : MonoBehaviour, IJsonGenericTarget
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        StartCoroutine(StartRiytube());
-        Apply(startHidden);
-        Debug.Log("연결된 모니터 수: " + Display.displays.Length);
 
-        // Display 1은 기본 활성화
-        // Display 2 이상을 활성화하려면 Activate() 호출
-        for (int i = 1; i < Display.displays.Length; i++)
+    }
+
+    // displayIndices[display] = canvasIndex
+    // 예: [1, 0] => Display0 <- Canvas1, Display1 <- Canvas0
+    private void ActivateDisplaysByVariable(int[] displayIndices)
+    {
+        if (canvasDisplayBindings == null || canvasDisplayBindings.Length == 0)
         {
-            Display.displays[i].Activate();
+            Debug.LogWarning("canvasDisplayBindings가 비어있어 디스플레이 매핑을 적용하지 않습니다.");
+            return;
+        }
+
+        if (displayIndices == null || displayIndices.Length == 0)
+        {
+            // 매핑이 없으면 기본적으로 같은 인덱스끼리 매핑 (Display0 <- Canvas0)
+            int fallbackCount = Mathf.Min(Display.displays.Length, canvasDisplayBindings.Length);
+            for (int displayIndex = 0; displayIndex < fallbackCount; displayIndex++)
+            {
+                if (canvasDisplayBindings[displayIndex].canvas == null)
+                {
+                    continue;
+                }
+
+                Display.displays[displayIndex].Activate();
+                canvasDisplayBindings[displayIndex].canvas.targetDisplay = displayIndex;
+
+                if (canvasDisplayBindings[displayIndex].canvas.renderMode == RenderMode.ScreenSpaceCamera &&
+                    canvasDisplayBindings[displayIndex].canvas.worldCamera != null)
+                {
+                    canvasDisplayBindings[displayIndex].canvas.worldCamera.targetDisplay = displayIndex;
+                }
+            }
+            return;
+        }
+
+        Debug.Log("디스플레이-캔버스 매핑: " + string.Join(", ", displayIndices));
+
+        int displayCount = Mathf.Min(Display.displays.Length, displayIndices.Length);
+        for (int displayIndex = 0; displayIndex < displayCount; displayIndex++)
+        {
+            int canvasIndex = displayIndices[displayIndex];
+
+            if (canvasIndex < 0 || canvasIndex >= canvasDisplayBindings.Length)
+            {
+                Debug.LogWarning($"Display {displayIndex}에 대한 canvasIndex {canvasIndex}가 유효하지 않습니다. (범위: 0 ~ {canvasDisplayBindings.Length - 1})");
+                continue;
+            }
+
+            Canvas targetCanvas = canvasDisplayBindings[canvasIndex].canvas;
+            if (targetCanvas == null)
+            {
+                Debug.LogWarning($"Display {displayIndex}에 연결할 Canvas[{canvasIndex}]가 비어있습니다.");
+                continue;
+            }
+
+            Display.displays[displayIndex].Activate();
+            targetCanvas.targetDisplay = displayIndex;
+
+            // Screen Space - Camera 모드에서는 카메라 display도 같이 맞춰줘야 실제 출력이 바뀝니다.
+            if (targetCanvas.renderMode == RenderMode.ScreenSpaceCamera && targetCanvas.worldCamera != null)
+            {
+                targetCanvas.worldCamera.targetDisplay = displayIndex;
+            }
+
+            Debug.Log($"Display {displayIndex} <- Canvas[{canvasIndex}] '{targetCanvas.name}'");
         }
     }
     private void Awake()
@@ -119,7 +219,7 @@ public class GameManager : MonoBehaviour, IJsonGenericTarget
     {
         if (Input.GetMouseButtonUp(0))
         {
-            ResetCoroutine();
+            GoToIdleCheck();
         }
         if (Input.GetKeyDown(CursorToggleKey))
         {
@@ -132,13 +232,13 @@ public class GameManager : MonoBehaviour, IJsonGenericTarget
         }
     }
 
-    public void ResetCoroutine()
+    public void GoToIdleCheck()
     {
         if (resetCoroutine != null)
         {
             StopCoroutine(resetCoroutine);
         }
-        resetCoroutine = StartCoroutine(ResetPage());
+        resetCoroutine = StartCoroutine(GoToIdleCoroutine());
     }
 
     private void Apply(bool show)
@@ -146,27 +246,54 @@ public class GameManager : MonoBehaviour, IJsonGenericTarget
         Cursor.visible = show;
     }
 
-    IEnumerator StartRiytube()
+    IEnumerator ProgramStart()
     {
-        yield return startDelay;
-        actionStartCreate?.Invoke();
+        yield return CoroutineReturnManager.GetWaitForSeconds(5f);//시작 대기 시간
+        while (queueStartCreate.Count > 0)
+            yield return StartCoroutine(queueStartCreate.Dequeue());
 
-        yield return waitForFixedUpdate;
-        actionStartInitialize?.Invoke();
+        while (queueStartInitialize.Count > 0)
+            yield return StartCoroutine(queueStartInitialize.Dequeue());
 
-        yield return waitForFixedUpdate;
-        actionProgramStart?.Invoke();
+        while (queueProgramStart.Count > 0)
+            yield return StartCoroutine(queueProgramStart.Dequeue());
+
+
+
+        Apply(startHidden);
+        Debug.Log("연결된 모니터 수: " + Display.displays.Length);
+
+        _pageControllers = FindObjectsByType<SetUpCoroutine>(FindObjectsSortMode.None);
+#if UNITY_EDITOR == false
+        ActivateDisplaysByVariable(targetDisplayIndices);
+#endif
     }
 
     public void Initialize(JsonGenericUpData data)
     {
         _genericData = data;
         data.floatParams.TryGetValue("resetTime", out _resetTime);
+
+        targetDisplayIndices = new int[2];
+        targetDisplayIndices[0] = data.intParams.TryGetValue("displayLeft", out int displayValueLeft) ? displayValueLeft : 0;
+        targetDisplayIndices[1] = data.intParams.TryGetValue("displayRight", out int displayValueRight) ? displayValueRight : 1;
+        data.floatParams.TryGetValue("page4TimerDefaultTime", out Page4TimerDefaultTime);
+        if (targetDisplayIndices[0] == targetDisplayIndices[1])
+        {
+            targetDisplayIndices[0] = 0;
+            targetDisplayIndices[1] = 1;
+            Debug.LogWarning("왼쪽과 오른쪽 제이슨 디스플레이 인덱스가 동일합니다. 올바른 인덱스를 설정해주세요.");
+        }
+
         if (_resetTime < 1)
         {
             _resetTime = 45f;
         }
+        PopupManager.Instance.ResetPopupDelay = _resetTime;
         resetDelay = new WaitForSeconds(_resetTime);
+
+        StartCoroutine(ProgramStart());
+
     }
     public JsonGenericUpData Data()
     {
@@ -175,6 +302,7 @@ public class GameManager : MonoBehaviour, IJsonGenericTarget
         _genericData.boolParams = new Dictionary<string, bool>();
 
         _genericData.floatParams["resetTime"] = _resetTime;
+        _genericData.floatParams["page4TimerDefaultTime"] = Page4TimerDefaultTime;
         return _genericData;
     }
 }
