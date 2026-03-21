@@ -17,6 +17,7 @@ Shader "Custom/WebcamChromaKey"
         _VFlip ("Vertical Flip", Float) = 0
         _OpaqueToBlack ("Opaque to Black", Float) = 0
         _EdgeContrast ("Edge Contrast", Range(1,10)) = 1
+        _NoiseFilter ("Noise Filter", Range(0,1)) = 1
     }
 
     SubShader
@@ -37,6 +38,7 @@ Shader "Custom/WebcamChromaKey"
 
             sampler2D _MainTex;
             float4 _MainTex_ST;
+            float4 _MainTex_TexelSize;
 
             float4 _KeyColor;
             float _Threshold;
@@ -52,6 +54,7 @@ Shader "Custom/WebcamChromaKey"
             float _VFlip;
             float _OpaqueToBlack;
             float _EdgeContrast;
+            float _NoiseFilter;
 
             struct appdata
             {
@@ -81,40 +84,41 @@ Shader "Custom/WebcamChromaKey"
 
             fixed4 frag(v2f i) : SV_Target
             {
-                fixed4 col = tex2D(_MainTex, i.uv);
-                float3 c = col.rgb;
-                float3 k1 = _KeyColor.rgb;
+                float keyLuma = dot(_KeyColor.rgb, float3(0.299, 0.587, 0.114));
 
-                // 단순 컬러키: RGB 거리로 특정 색을 투명 처리
-                // dist가 작으면 키 색에 가깝다 → 투명
-                float dist1 = distance(c, k1);
+                float2 t = _MainTex_TexelSize.xy;
+                float2 uv = i.uv;
 
-                // 마스크: 0(키 색 영역, 투명) ~ 1(전경 유지)
-                float mask1 = saturate((dist1 - _Threshold) / max(_Smooth, 1e-5));
-                
-                float finalMask = mask1;
+                // 3x3 평균으로 자잘한 노이즈를 먼저 완화
+                float l00 = dot(tex2D(_MainTex, uv + float2(-t.x, -t.y)).rgb, float3(0.299, 0.587, 0.114));
+                float l01 = dot(tex2D(_MainTex, uv + float2( 0.0,  -t.y)).rgb, float3(0.299, 0.587, 0.114));
+                float l02 = dot(tex2D(_MainTex, uv + float2( t.x,  -t.y)).rgb, float3(0.299, 0.587, 0.114));
+                float l10 = dot(tex2D(_MainTex, uv + float2(-t.x,  0.0)).rgb, float3(0.299, 0.587, 0.114));
+                float l11 = dot(tex2D(_MainTex, uv).rgb,                          float3(0.299, 0.587, 0.114));
+                float l12 = dot(tex2D(_MainTex, uv + float2( t.x,  0.0)).rgb, float3(0.299, 0.587, 0.114));
+                float l20 = dot(tex2D(_MainTex, uv + float2(-t.x,  t.y)).rgb, float3(0.299, 0.587, 0.114));
+                float l21 = dot(tex2D(_MainTex, uv + float2( 0.0,   t.y)).rgb, float3(0.299, 0.587, 0.114));
+                float l22 = dot(tex2D(_MainTex, uv + float2( t.x,   t.y)).rgb, float3(0.299, 0.587, 0.114));
 
-                if (_UseSecondKey > 0.5)
-                {
-                    float3 k2 = _KeyColor2.rgb;
-                    float dist2 = distance(c, k2);
-                    float mask2 = saturate((dist2 - _Threshold2) / max(_Smooth2, 1e-5));
-                    
-                    finalMask = min(finalMask, mask2);
-                }
+                float avgLuma = (l00 + l01 + l02 + l10 + l11 + l12 + l20 + l21 + l22) / 9.0;
+                float filteredCenter = lerp(l11, avgLuma, _NoiseFilter);
 
-                float alpha = finalMask;
+                // 3x3 다수결(majority vote): 흰/투명 점 노이즈, 검정 점 노이즈를 모두 줄임
+                float whiteCount = 0.0;
+                whiteCount += step(keyLuma, l00);
+                whiteCount += step(keyLuma, l01);
+                whiteCount += step(keyLuma, l02);
+                whiteCount += step(keyLuma, l10);
+                whiteCount += step(keyLuma, filteredCenter);
+                whiteCount += step(keyLuma, l12);
+                whiteCount += step(keyLuma, l20);
+                whiteCount += step(keyLuma, l21);
+                whiteCount += step(keyLuma, l22);
 
-                // 경계 선명도(콘트라스트) 조절: 1은 기본, 값이 클수록 경계가 또렷해짐
-                alpha = saturate((alpha - 0.5) * _EdgeContrast + 0.5);
+                float isWhiteTransparent = step(4.5, whiteCount);
 
-                // 스필 감소는 사용하지 않음(단순 컬러키 요구사항)
-                float3 rgb = c;
-                if (_OpaqueToBlack > 0.5)
-                {
-                    // 불투명(전경) 영역을 검은색으로 출력, 알파는 mask 유지
-                    rgb = float3(0.0, 0.0, 0.0);
-                }
+                float3 rgb = float3(0.0, 0.0, 0.0);
+                float alpha = 1.0 - isWhiteTransparent;
 
                 return float4(rgb, alpha);
             }

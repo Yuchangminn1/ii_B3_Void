@@ -248,6 +248,7 @@ public class GameManager : MonoBehaviour, IJsonGenericTarget
 
     IEnumerator ProgramStart()
     {
+        Debug.Log("프로그램 시작 준비 중...");
         yield return CoroutineReturnManager.GetWaitForSeconds(5f);//시작 대기 시간
         while (queueStartCreate.Count > 0)
             yield return StartCoroutine(queueStartCreate.Dequeue());

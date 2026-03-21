@@ -5,20 +5,20 @@ using UnityEngine;
 public class ScoreStampContainer : ResultStampContainer
 {
     int currentStampIndex = -1;
-    int score = 0;
+    //int score = 0;
 
-    public Arduino_Touch_Page4[] arduino_Touch_Page4s;
+    //public Arduino_Touch_Page4[] arduino_Touch_Page4s;
 
 
 
     override protected void Start()
     {
         base.Start();
-        arduino_Touch_Page4s = FindObjectsOfType<Arduino_Touch_Page4>();
-        foreach (var arduino in arduino_Touch_Page4s)
-        {
-            arduino.AddOnscoreChange(ScoreStamp);
-        }
+        // arduino_Touch_Page4s = FindObjectsOfType<Arduino_Touch_Page4>();
+        // foreach (var arduino in arduino_Touch_Page4s)
+        // {
+        //     arduino.AddOnscoreChange(ScoreStamp);
+        // }
 
     }
 

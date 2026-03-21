@@ -26,7 +26,6 @@ public class Arduino_SelectButton : Arduino
     };
 
 
-    bool _isUse = false;
 
 
     public Action _onDebugPlayerLeft;
@@ -205,11 +204,11 @@ public class Arduino_SelectButton : Arduino
 
                 touchDelayCoroutine = StartCoroutine(TouchDelay());
 
-                ArduinoTouchManager.Instance.UseTouchInput = false;
+                //ArduinoTouchManager.Instance.UseTouchInput = false;
 
                 PopupManager.Instance.SetInputType(InputType.Button);
 
-                ArduinoLEDManager.Instance.SendLEDAllOff();
+                //ArduinoLEDManager.Instance.SendLEDAllOff();
 
 
                 Debug.Log("LEDAllOn 명령 전송: " + stream.PortName);

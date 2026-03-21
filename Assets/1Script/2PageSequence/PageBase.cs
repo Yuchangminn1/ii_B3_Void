@@ -28,7 +28,6 @@ public class PageBase : MonoBehaviour
 
     Coroutine _mainCoroutine;
 
-    Coroutine _currentPageResetCoroutine = null;
 
     CanvasGroup _canvasGroup;
 

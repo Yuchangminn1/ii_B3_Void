@@ -88,7 +88,7 @@ public class SetUpCoroutine : MonoBehaviour
         {
             _onRestRequest?.Invoke();
             UserDataManager.Instance.Reset();
-            ArduinoLEDManager.Instance.SendLEDAllOff();
+            //ArduinoLEDManager.Instance.SendLEDAllOff();
 
         }
 

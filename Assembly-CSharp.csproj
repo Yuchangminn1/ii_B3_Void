@@ -69,13 +69,9 @@
     <Compile Include="Assets\1Script\ChangeText.cs" />
     <Compile Include="Assets\1Script\MoveUI.cs" />
     <Compile Include="Assets\1Script\1Json\JsonManager.cs" />
-    <Compile Include="Assets\1Script\NextTimer.cs" />
     <Compile Include="Assets\1Script\PopupManager.cs" />
-    <Compile Include="Assets\1Script\RingLEDController.cs" />
     <Compile Include="Assets\1Script\2PageSequence\SequenceTriggers.cs" />
     <Compile Include="Assets\1Script\CanvasGC.cs" />
-    <Compile Include="Assets\1Script\Arduino\Arduino_Touch_Page4.cs" />
-    <Compile Include="Assets\1Script\OneShotTouch.cs" />
     <Compile Include="Assets\1Script\2PageSequence\SequenceTime.cs" />
     <Compile Include="Assets\1Script\Singleton.cs" />
     <Compile Include="Assets\1Script\2PageSequence\PageBase.cs" />
@@ -88,7 +84,6 @@
     <Compile Include="Assets\1Script\Buttons\IdleButton.cs" />
     <Compile Include="Assets\1Script\ButtonScript.cs" />
     <Compile Include="Assets\1Script\Buttons\ExitButton.cs" />
-    <Compile Include="Assets\1Script\Arduino\ArduinoTouchManager.cs" />
     <Compile Include="Assets\1Script\1Json\GenericLoader.cs" />
     <Compile Include="Assets\Unity-Logs-Viewer\Reporter\MultiKeyDictionary.cs" />
     <Compile Include="Assets\1Script\3Singleton\UserDataManager.cs" />
@@ -99,13 +94,11 @@
     <Compile Include="Assets\1Script\2PageSequence\SequenceFade.cs" />
     <Compile Include="Assets\1Script\ColorBallImage.cs" />
     <Compile Include="Assets\1Script\PageController.cs" />
-    <Compile Include="Assets\1Script\RingLEDController_Page4.cs" />
     <Compile Include="Assets\1Script\StampCountText.cs" />
     <Compile Include="Assets\Scritps\Log\TimeStampLogHandler.cs" />
     <Compile Include="Assets\Unity-Logs-Viewer\Reporter\ReporterGUI.cs" />
     <Compile Include="Assets\1Script\SoundObject.cs" />
     <Compile Include="Assets\1Script\Timer.cs" />
-    <Compile Include="Assets\1Script\Arduino\TouchChecker.cs" />
     <Compile Include="Assets\1Script\Arduino\Arduino_SelectButton.cs" />
     <Compile Include="Assets\Unity-Logs-Viewer\Reporter\ReporterMessageReceiver.cs" />
     <Compile Include="Assets\1Script\2PageSequence\PlayerPageController.cs" />
@@ -113,7 +106,6 @@
     <Compile Include="Assets\1Script\2PageSequence\SequenceVideoPlayer.cs" />
     <Compile Include="Assets\1Script\1Json\JsonLoaderBase.cs" />
     <Compile Include="Assets\1Script\WaitCheck.cs" />
-    <Compile Include="Assets\1Script\3Singleton\LEDData.cs" />
     <Compile Include="Assets\1Script\NameText.cs" />
     <Compile Include="Assets\1Script\QuestionScript.cs" />
     <Compile Include="Assets\1Script\AnswerStamp.cs" />
@@ -124,7 +116,6 @@
     <Compile Include="Assets\Unity-Logs-Viewer\Reporter\Reporter.cs" />
     <Compile Include="Assets\1Script\3Singleton\CoroutineRunner.cs" />
     <Compile Include="Assets\1Script\RawImageFaderGroup.cs" />
-    <Compile Include="Assets\1Script\Arduino\ArduinoLEDManager.cs" />
     <Compile Include="Assets\Scritps\Log\InstallTimeStampLogger.cs" />
     <Compile Include="Assets\1Script\WaitCheckManager.cs" />
     <Compile Include="Assets\1Script\ResultStampContainer.cs" />
@@ -136,9 +127,7 @@
     <Compile Include="Assets\1Script\3Singleton\FadeManager.cs" />
     <Compile Include="Assets\1Script\TriggerContainer.cs" />
     <Compile Include="Assets\1Script\2PageSequence\MainPage.cs" />
-    <Compile Include="Assets\1Script\RingLEDHand.cs" />
     <Compile Include="Assets\CameraVV.cs" />
-    <Compile Include="Assets\1Script\Arduino\Arduino_Timer.cs" />
     <Compile Include="Assets\1Script\3Singleton\SoundManager.cs" />
     <Compile Include="Assets\1Script\Arduino\Arduino_Manager.cs" />
     <Compile Include="Assets\1Script\1Json\QuestionLoader.cs" />

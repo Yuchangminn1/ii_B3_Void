@@ -8,18 +8,18 @@ public class ScoreText : MonoBehaviour
     Text _text;
 
     readonly int maxScore = 50;
-    public Arduino_Touch_Page4[] arduino_Touch_Page4s;
+    //public Arduino_Touch_Page4[] arduino_Touch_Page4s;
 
     int currentScore = 0;
     // Start is called before the first frame update
     void Start()
     {
         _text = GetComponent<Text>();
-        arduino_Touch_Page4s = FindObjectsOfType<Arduino_Touch_Page4>();
-        foreach (var arduino in arduino_Touch_Page4s)
-        {
-            arduino.AddOnscoreChange(ScoreStamp);
-        }
+        // arduino_Touch_Page4s = FindObjectsOfType<Arduino_Touch_Page4>();
+        // foreach (var arduino in arduino_Touch_Page4s)
+        // {
+        //     arduino.AddOnscoreChange(ScoreStamp);
+        // }
     }
 
 

@@ -13,7 +13,7 @@ public class NameText : MonoBehaviour
 
     string currentText = "";
 
-    bool isTextSet = false;
+    //bool isTextSet = false;
 
 
 

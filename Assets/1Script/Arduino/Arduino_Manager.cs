@@ -36,11 +36,11 @@ public class Arduino_Manager : MonoBehaviour, IJsonGenericTarget
             arduino.StartArduino();
         }
 
-        ArduinoTouchManager.Instance.SerialPortNames = _touchNode;
-        ArduinoTouchManager.Instance.StartArduino();
+        // ArduinoTouchManager.Instance.SerialPortNames = _touchNode;
+        // ArduinoTouchManager.Instance.StartArduino();
 
-        ArduinoLEDManager.Instance.SerialPortNames = _ledNode;
-        ArduinoLEDManager.Instance.StartArduino();
+        // ArduinoLEDManager.Instance.SerialPortNames = _ledNode;
+        // ArduinoLEDManager.Instance.StartArduino();
 
 
     }

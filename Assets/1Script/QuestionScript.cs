@@ -7,7 +7,6 @@ public class QuestionScript : MonoBehaviour
 {
     const int MAX_QUESTION_COUNT = 15;
 
-    int currentIndex = 0;
 
     // string[] questions = {
     //     "Q. 나는 상대방의 기분을 헤아리기 위해 많은 에너지를 쏟는다.",
@@ -43,7 +42,7 @@ public class QuestionScript : MonoBehaviour
 
     public GameObject ResetCarrier;
 
-    Direction _currentDirection;
+    public Direction CurrentDirection;
 
 
 
@@ -67,14 +66,14 @@ public class QuestionScript : MonoBehaviour
     }
     void Start()
     {
-        _currentDirection = GetComponentInParent<TouchChecker>().currentDirection;
+
     }
 
 
 
     public void Reset()
     {
-        if (_currentDirection == Direction.Left)
+        if (CurrentDirection == Direction.Left)
             QuestionManager.Instance.CurrentIndex = 0;
         QuestionText.text = QuestionManager.Instance.CurrentQuestionText;
     }
@@ -93,7 +92,7 @@ public class QuestionScript : MonoBehaviour
         //마지막 질문 넘어서 다음장으로
 
 
-        if (_currentDirection == Direction.Left)
+        if (CurrentDirection == Direction.Left)
             QuestionManager.Instance.CurrentIndex++;
 
         yield return CoroutineReturnManager.GetWaitForSeconds(0.5f);

@@ -75,7 +75,7 @@ public class PageController : Singleton<PageController>
             if (pageNum == 0)
             {
                 OnReset?.Invoke();
-                ArduinoLEDManager.Instance.SendLEDAllOff();
+                //ArduinoLEDManager.Instance.SendLEDAllOff();
 
             }
 
@@ -122,6 +122,7 @@ public class PageController : Singleton<PageController>
 
     public IEnumerator StartPrograms()
     {
+        Debug.Log("페이지 컨트롤러 프로그램 시작 준비 중...");
         yield return CoroutineReturnManager.GetWaitForSeconds(2f);
         yield return null;
 

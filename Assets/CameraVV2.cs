@@ -9,6 +9,7 @@ public class CameraVV2 : MonoBehaviour
     [System.Serializable]
     public class CameraDisplayRoute
     {
+        [Header("Camera Display Route")]
         [Tooltip("WebCamTexture.devices의 카메라 인덱스")]
         public int cameraIndex = 0;
         [Tooltip("매핑할 디스플레이 인덱스(0=메인)")]
@@ -39,18 +40,29 @@ public class CameraVV2 : MonoBehaviour
     // --------------------------------------------
 
     [Header("Webcam Settings")]
+    [Tooltip("기본으로 사용할 웹캠 이름. 비워두면 카메라 인덱스 기준으로 선택합니다.")]
     public string deviceName = "";
+    [Tooltip("요청 웹캠 가로 해상도")]
     public int requestedWidth = 1280;
+    [Tooltip("요청 웹캠 세로 해상도")]
     public int requestedHeight = 720;
+    [Tooltip("요청 웹캠 FPS")]
     public int requestedFPS = 30;
+    [Tooltip("시작 시 자동으로 웹캠 재생")]
     public bool autoPlay = true;
+    [Tooltip("좌우 반전 출력")]
     public bool mirrorHorizontal = true;
+    [Tooltip("상하 반전 출력")]
     public bool mirrorVertical = false;
 
     [Header("Color Key Settings")]
+    [Tooltip("이 색의 밝기를 기준으로 검정/투명을 분리합니다.")]
     public Color keyColor = Color.green;
+    [Tooltip("기준 보정값(현재 이진화 모드에서는 영향이 적을 수 있음)")]
     [Range(0f, 1f)] public float threshold = 0.4f;
+    [Tooltip("경계 완화값(현재 이진화 모드에서는 영향이 적을 수 있음)")]
     [Range(0f, 1f)] public float smoothness = 0.1f;
+    [Tooltip("스필 감소 값(현재 셰이더에서는 사용하지 않음)")]
     [Range(0f, 1f)] public float spillReduction = 0.2f; // 단순 컬러키에서는 사용하지 않음
 
     /*
@@ -65,9 +77,14 @@ public class CameraVV2 : MonoBehaviour
     public bool autoKeyColor = true;
     [Tooltip("키 컬러 자동 추출 간격(초)")]
     [Range(1f, 120f)] public float autoKeyInterval = 5f;
+
     [Header("Output Settings")]
+    [Tooltip("전경 영역을 검정으로 강제 출력합니다.")]
     public bool opaqueToBlack = true; // 전경(불투명) 영역을 검은색으로 출력
+    [Tooltip("경계 대비값(현재 이진화 모드에서는 영향이 적을 수 있음)")]
     [Range(1f, 10f)] public float edgeContrast = 1f; // 경계 선명도(콘트라스트)
+    [Tooltip("3x3 기반 점 노이즈 필터 강도. 높을수록 자글자글한 노이즈가 줄어듭니다.")]
+    [Range(0f, 1f)] public float noiseFilter = 1f; // 3x3 기반 점 노이즈 필터 강도
 
     [Header("Shader Settings")]
     [Tooltip("빌드에서 스트립되지 않도록 인스펙터에 직접 할당 권장 (예: Assets/WebcamChromaKey.shader)")]
@@ -85,6 +102,7 @@ public class CameraVV2 : MonoBehaviour
     [Tooltip("카메라 인덱스별 디스플레이 매핑을 사용합니다.")]
     public bool useCameraDisplayRoutes = true;
 
+    [Tooltip("설정 상태를 표시할 UI 텍스트 배열")]
     public Text[] SettingTexts;
     [Tooltip("예: cameraIndex=0, displayIndex=1 => 0번 카메라는 1번 디스플레이로 라우팅")]
     public List<CameraDisplayRoute> cameraDisplayRoutes = new List<CameraDisplayRoute>
@@ -201,7 +219,7 @@ public class CameraVV2 : MonoBehaviour
             StartWebcam();
         }
 
-        StartCoroutine(StopAutoKeyAfterDelay(30f));
+        StartCoroutine(StopAutoKeyAfterDelay(10f));
     }
 
     IEnumerator StopAutoKeyAfterDelay(float delay)
@@ -441,6 +459,7 @@ public class CameraVV2 : MonoBehaviour
     public void SetSpill(float v) { spillReduction = v; }
     public void SetOpaqueToBlack(bool v) { opaqueToBlack = v; }
     public void SetEdgeContrast(float v) { edgeContrast = v; }
+    public void SetNoiseFilter(float v) { noiseFilter = Mathf.Clamp01(v); }
 
     void ApplyDisplayRouting()
     {
@@ -507,6 +526,7 @@ public class CameraVV2 : MonoBehaviour
         if (material.HasProperty("_VFlip")) material.SetFloat("_VFlip", mirrorVertical ^ webcam.videoVerticallyMirrored ? 1f : 0f);
         if (material.HasProperty("_OpaqueToBlack")) material.SetFloat("_OpaqueToBlack", opaqueToBlack ? 1f : 0f);
         if (material.HasProperty("_EdgeContrast")) material.SetFloat("_EdgeContrast", edgeContrast);
+        if (material.HasProperty("_NoiseFilter")) material.SetFloat("_NoiseFilter", noiseFilter);
     }
 
     void ApplyRawImageRotation(RawImage targetRawImage, WebCamTexture webcam)

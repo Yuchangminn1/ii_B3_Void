@@ -27,7 +27,7 @@ public class ServerData : MonoBehaviour
 
     int deviceNum = 0;
     public int DeviceNum { get { return deviceNum; } set { deviceNum = value; } }
-    string code = "B1";
+    string code = "B3";
     public string Code { get { return code; } set { code = value; } }
     public event Action onCoroutineEnd;
     public Coroutine severCoroutine;

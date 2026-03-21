@@ -220,7 +220,6 @@ public class UserDataManager : MonoBehaviour
 
     private Dictionary<string, string> userDataCache = null;
 
-    private bool isCurrentSessionEmpty = false;
     Player[] players = new Player[2];
 
     public string[] contentCodes;
@@ -252,11 +251,10 @@ public class UserDataManager : MonoBehaviour
 
     public int deviceNum = 1;
 
-    int _lastAddScoreIndex = -1;
 
     void Start()
     {
-        ArduinoTouchManager.Instance.OnAllPlayerTouchStateChanged += Page5DoubleCheck;
+        //ArduinoTouchManager.Instance.OnAllPlayerTouchStateChanged += Page5DoubleCheck;
 
     }
 
@@ -539,7 +537,7 @@ public class UserDataManager : MonoBehaviour
             StartCoroutine(RequestCartridgeInfo());
 
 
-            LEDData.Instance.SetLedPair();
+            //LEDData.Instance.SetLedPair();
 
 
         }
@@ -550,19 +548,19 @@ public class UserDataManager : MonoBehaviour
             return;// false;
         }
     }
-    public void Page5DoubleCheck(bool touchLeft, bool touchRight)
-    {
-        if (PageController.Instance.CurrentPage != 5) return;
-        if (touchLeft && touchRight)
-        {
-            if (_lastAddScoreIndex == LEDData.Instance.GetLEDIndex()) return;
+    // public void Page5DoubleCheck(bool touchLeft, bool touchRight)
+    // {
+    //     if (PageController.Instance.CurrentPage != 5) return;
+    //     if (touchLeft && touchRight)
+    //     {
+    //         if (_lastAddScoreIndex == LEDData.Instance.GetLEDIndex()) return;
 
-            players[0].Score += 1;
+    //         players[0].Score += 1;
 
-            _lastAddScoreIndex = LEDData.Instance.GetLEDIndex();
-        }
+    //         _lastAddScoreIndex = LEDData.Instance.GetLEDIndex();
+    //     }
 
-    }
+    // }
 
     public void ParseCurrentSessionData(string responseText)
     {
@@ -571,7 +569,6 @@ public class UserDataManager : MonoBehaviour
         {
             return;
         }
-        isCurrentSessionEmpty = false;
 
         if (string.IsNullOrWhiteSpace(responseText))
         {
@@ -640,8 +637,7 @@ public class UserDataManager : MonoBehaviour
             { "STATE", "HAS_USER" }
         };
         userInitializeCoroutine = StartCoroutine(RequestInitializeUserDataTest(userDataCache["UID"]));
-        LEDData.Instance.SetLedPair();
-        _lastAddScoreIndex = -1;
+        //LEDData.Instance.SetLedPair();
 
         Debug.Log($"현재 세션 캐시 완료: uid={userDataCache["UID"]}, code={userDataCache["CODE"]}, idx_content={userDataCache["IDX_CONTENT"]}");
     }
