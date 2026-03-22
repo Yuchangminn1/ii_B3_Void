@@ -220,6 +220,7 @@ public class UserDataManager : MonoBehaviour
 
     private Dictionary<string, string> userDataCache = null;
 
+    private bool isCurrentSessionEmpty = false;
     Player[] players = new Player[2];
 
     public string[] contentCodes;
@@ -245,12 +246,15 @@ public class UserDataManager : MonoBehaviour
 
     public int ContentNum { get { return contentNum; } }
 
+    int _relation = 1;
+
 
 
     public int[] stamp { get; private set; } = new int[contentNum];
 
     public int deviceNum = 1;
 
+    int _lastAddScoreIndex = -1;
 
     void Start()
     {
@@ -302,6 +306,7 @@ public class UserDataManager : MonoBehaviour
     }
     public IEnumerator ResetUserCoroutine()
     {
+        yield break;
         yield return ServerData.Instance.RequestDataCoroutine($"http://192.168.0.252:8500/api/resetStart.cfm?idx_user={userDataCache["IDX_USER"]}&code={ServerData.Instance.Code}", Answer);
 
     }
@@ -317,20 +322,24 @@ public class UserDataManager : MonoBehaviour
     }
 
 
-    public IEnumerator RequestInitializeUserData(string userUID)
-    {
-        yield return ServerData.Instance.RequestDataCoroutine("http://211.110.44.104:8500/api/" + $"checkIDX.cfm?uid={userUID}&device={ServerData.Instance.DeviceNum}&Code={ServerData.Instance.Code}", ParseJsonData);
-    }
+
 
     public IEnumerator RequestInitializeUserDataTest(string userUID)
     {
         yield return ServerData.Instance.RequestDataCoroutine($"http://192.168.0.252:8500/api/getUser.cfm?uid={userUID}", ParseJsonData);
     }
 
+    public IEnumerator RequestCartridgeData(string userUID)
+    {
+        yield return ServerData.Instance.RequestDataCoroutine($"http://192.168.0.252:8500/api/getUser.cfm?uid={userUID}", ParseJsonData);
+    }
 
 
     public IEnumerator RequestRoomClear()
     {
+        yield break;
+
+
         if (userDataCache == null) yield break;
         yield return ServerData.Instance.RequestDataCoroutine($"http://192.168.0.252:8500/api/exitRoom.cfm?code={ServerData.Instance.Code}&idx_user={userDataCache["IDX_USER"]}", Answer);
 
@@ -350,6 +359,7 @@ public class UserDataManager : MonoBehaviour
 
     public IEnumerator RequestContentEnd()
     {
+        yield break;
         if (userDataCache == null) yield break;
         yield return ServerData.Instance.RequestDataCoroutine($"http://192.168.0.252:8500/api/updateTime.cfm?idx_user={userDataCache["IDX_USER"]}&option=end&code={ServerData.Instance.Code}", Answer);
     }
@@ -537,7 +547,6 @@ public class UserDataManager : MonoBehaviour
             StartCoroutine(RequestCartridgeInfo());
 
 
-            //LEDData.Instance.SetLedPair();
 
 
         }
@@ -569,6 +578,7 @@ public class UserDataManager : MonoBehaviour
         {
             return;
         }
+        isCurrentSessionEmpty = false;
 
         if (string.IsNullOrWhiteSpace(responseText))
         {
@@ -638,6 +648,7 @@ public class UserDataManager : MonoBehaviour
         };
         userInitializeCoroutine = StartCoroutine(RequestInitializeUserDataTest(userDataCache["UID"]));
         //LEDData.Instance.SetLedPair();
+        _lastAddScoreIndex = -1;
 
         Debug.Log($"현재 세션 캐시 완료: uid={userDataCache["UID"]}, code={userDataCache["CODE"]}, idx_content={userDataCache["IDX_CONTENT"]}");
     }
@@ -673,7 +684,7 @@ public class UserDataManager : MonoBehaviour
     public void TestKey()
     {
         Reset();
-        StartCoroutine(RequestInitializeUserDataTest("6733904752"));
+        StartCoroutine(RequestInitializeUserDataTest("2C39C73258"));
 
         //SetPlayers("길동");
     }
@@ -727,10 +738,14 @@ public class UserDataManager : MonoBehaviour
                 Debug.Log($"코드 {code}의 END_{code} 값 = {endValue}");
                 clearContentCount++;
             }
-
-
-
         }
+        Debug.Log($"RELATION = {FindValue("RELATION")}");
+        //_relation = int.Parse(FindValue("RELATION")?.Trim() ?? "1");
+        //Debug.Log($"RELATION = {_relation}");
+
+        //QuestionManager.Instance.SetRELATION(_relation);
+
+
 
 
         Debug.Log($"총 피스 수 계산: {pieceCount}, 클리어된 콘텐츠 수: {clearContentCount} ");

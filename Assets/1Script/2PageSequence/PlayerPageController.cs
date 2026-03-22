@@ -224,6 +224,7 @@ public class SetUpCoroutine : MonoBehaviour
 
     public void DebugTrigger()
     {
+        Debug.Log($"{name}Debug Triggered");
         GetCurrentPage().CurrentIndexTriggerON();
     }
 

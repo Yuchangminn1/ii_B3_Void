@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Arduino_Manager : MonoBehaviour, IJsonGenericTarget
+public class Arduino_Manager : Singleton<Arduino_Manager>, IJsonGenericTarget
 {
 
     public Arduino_SelectButton[] arduino_SelectButtons;
@@ -15,6 +15,9 @@ public class Arduino_Manager : MonoBehaviour, IJsonGenericTarget
     string _ledNode;
 
     JsonGenericUpData _genericData = new JsonGenericUpData();
+
+
+
 
 
     void Start()

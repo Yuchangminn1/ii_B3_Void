@@ -193,8 +193,7 @@ public class ServerData : MonoBehaviour
 
     public IEnumerator RequestDataCoroutine(string _url, Action<string> _callback)
     {
-        if (testmode)
-            yield break;
+
         const int maxRetryCount = 5;
         string lastError = string.Empty;
 
@@ -232,6 +231,45 @@ public class ServerData : MonoBehaviour
 
     }
 
+    public IEnumerator RequestDebugDataCoroutine(string _url, Action<string> _callback)
+    {
+
+        const int maxRetryCount = 5;
+        string lastError = string.Empty;
+
+        for (int retry = 1; retry <= maxRetryCount; retry++)
+        {
+            using (var www = UnityWebRequest.Get(_url))
+            {
+                www.timeout = 10;
+                www.downloadHandler = new DownloadHandlerBuffer();
+
+                float serverTime = Time.time;
+                yield return www.SendWebRequest();
+
+                if (Time.time - serverTime > 2f)
+                {
+                    Debug.LogWarning($"{_url} / 서버 요청 지연 시간" + TimeSpan.FromSeconds(Time.time - serverTime).ToString(@"hh\\:mm\\:ss"));
+                }
+
+                if (www.result == UnityWebRequest.Result.Success)
+                {
+                    _callback?.Invoke(www.downloadHandler.text);
+                    onCoroutineEnd?.Invoke();
+                    yield break;
+                }
+
+                lastError = www.error;
+                Debug.LogWarning($"요청 실패 재시도 ({retry}/{maxRetryCount}) : {_url} | {www.error}");
+            }
+        }
+
+        Debug.LogError($"요청 최종 실패 ({maxRetryCount}회) : {_url} | {lastError}");
+        _callback?.Invoke(null);
+        onCoroutineEnd?.Invoke();
+
+
+    }
 
 
 }

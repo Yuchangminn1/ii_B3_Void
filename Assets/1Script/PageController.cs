@@ -40,12 +40,14 @@ public class PageController : Singleton<PageController>
                 }
             }
 
-            if (Input.GetKeyDown(KeyCode.N))
+
+        }
+
+        if (Input.GetKeyDown(KeyCode.N))
+        {
+            foreach (var playerController in playerControllers)
             {
-                foreach (var playerController in playerControllers)
-                {
-                    playerController.DebugTrigger();
-                }
+                playerController.DebugTrigger();
             }
         }
 
