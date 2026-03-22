@@ -26,6 +26,8 @@ public class ServerData : MonoBehaviour
     }
 
     int deviceNum = 0;
+
+    bool testmode = true;
     public int DeviceNum { get { return deviceNum; } set { deviceNum = value; } }
     string code = "B3";
     public string Code { get { return code; } set { code = value; } }
@@ -191,6 +193,8 @@ public class ServerData : MonoBehaviour
 
     public IEnumerator RequestDataCoroutine(string _url, Action<string> _callback)
     {
+        if (testmode)
+            yield break;
         const int maxRetryCount = 5;
         string lastError = string.Empty;
 
