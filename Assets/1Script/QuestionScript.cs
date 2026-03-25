@@ -7,6 +7,8 @@ public class QuestionScript : MonoBehaviour
 {
     const int MAX_QUESTION_COUNT = 15;
 
+    public ShootPieceContainer shootPieceContainer;
+
 
     // string[] questions = {
     //     "Q. 나는 상대방의 기분을 헤아리기 위해 많은 에너지를 쏟는다.",
@@ -45,6 +47,9 @@ public class QuestionScript : MonoBehaviour
     public Direction CurrentDirection;
 
 
+    int[] cameraIndex = new int[] { 4, 9, 14 };
+
+
 
 
     void Awake()
@@ -60,6 +65,7 @@ public class QuestionScript : MonoBehaviour
         Reset();
 
         QuestionText.text = QuestionManager.Instance.CurrentQuestionText;
+        Debug.Log($"현재 질문 : {QuestionText.text}");
 
         ResetCarrier?.SetActive(true);
 
@@ -90,6 +96,13 @@ public class QuestionScript : MonoBehaviour
     public IEnumerator NextQuestionCoroutine()
     {
         //마지막 질문 넘어서 다음장으로
+
+        if (QuestionManager.Instance.CurrentIndex == cameraIndex[0] || QuestionManager.Instance.CurrentIndex == cameraIndex[1] || QuestionManager.Instance.CurrentIndex == cameraIndex[2])
+        {
+            shootPieceContainer?.ReturnShoot();
+            yield return CoroutineReturnManager.GetWaitForSeconds(4f);
+
+        }
 
 
         if (CurrentDirection == Direction.Left)
