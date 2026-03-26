@@ -123,6 +123,7 @@ public class CameraVV2 : MonoBehaviour
     Renderer _targetRenderer;
     RawImage _selfRawImage;
     Coroutine _autoKeyRoutine;
+    Coroutine _autoKeyTimeoutRoutine;
     static readonly HashSet<int> _activatedDisplays = new HashSet<int>();
     int _selectedPrimaryCameraIndex = -1;
 
@@ -219,17 +220,54 @@ public class CameraVV2 : MonoBehaviour
             StartWebcam();
         }
 
-        StartCoroutine(StopAutoKeyAfterDelay(10f));
+        if (autoKeyColor)
+        {
+            StartAutoKeyForSeconds(10f);
+        }
+    }
+
+    void StartAutoKeyForSeconds(float seconds)
+    {
+        autoKeyColor = true;
+
+        if (_autoKeyRoutine == null && GetAutoKeySourceWebcam() != null)
+        {
+            _autoKeyRoutine = StartCoroutine(AutoPickKeyColorRoutine());
+        }
+
+        if (_autoKeyTimeoutRoutine != null)
+        {
+            StopCoroutine(_autoKeyTimeoutRoutine);
+        }
+
+        _autoKeyTimeoutRoutine = StartCoroutine(StopAutoKeyAfterDelay(seconds));
+
+        foreach (var text in SettingTexts)
+        {
+            FadeManager.Instance.SetAlphaOne(text);
+        }
+
+        Debug.Log($"[CameraVV] Auto key color started for {seconds} seconds.");
     }
 
     IEnumerator StopAutoKeyAfterDelay(float delay)
     {
         yield return new WaitForSeconds(delay);
+
         autoKeyColor = false;
+        _autoKeyTimeoutRoutine = null;
+
+        if (_autoKeyRoutine != null)
+        {
+            StopCoroutine(_autoKeyRoutine);
+            _autoKeyRoutine = null;
+        }
+
         foreach (var text in SettingTexts)
         {
             FadeManager.Instance.SetAlphaZero(text);
         }
+
         Debug.Log($"[CameraVV] Auto key color stopped after {delay} seconds.");
     }
 
@@ -250,13 +288,37 @@ public class CameraVV2 : MonoBehaviour
         }
         if (Input.GetKeyDown(KeyCode.A))
         {
+            StartAutoKeyForSeconds(10f);
+        }
+        if (Input.GetKeyDown(KeyCode.E))
+        {
             smoothness = Mathf.Clamp01(smoothness + 0.01f);
             Debug.Log($"Smoothness: {smoothness}");
         }
-        if (Input.GetKeyDown(KeyCode.S))
+        if (Input.GetKeyDown(KeyCode.R))
         {
             smoothness = Mathf.Clamp01(smoothness - 0.01f);
             Debug.Log($"Smoothness: {smoothness}");
+        }
+        if (Input.GetKeyDown(KeyCode.T))
+        {
+            opaqueToBlack = !opaqueToBlack;
+            Debug.Log($"OpaqueToBlack: {opaqueToBlack}");
+        }
+        if (Input.GetKeyDown(KeyCode.Y))
+        {
+            edgeContrast = Mathf.Clamp(edgeContrast + 0.1f, 1f, 10f);
+            Debug.Log($"EdgeContrast: {edgeContrast}");
+        }
+        if (Input.GetKeyDown(KeyCode.U))
+        {
+            edgeContrast = Mathf.Clamp(edgeContrast - 0.1f, 1f, 10f);
+            Debug.Log($"EdgeContrast: {edgeContrast}");
+        }
+        if (Input.GetKeyDown(KeyCode.I))
+        {
+            noiseFilter = Mathf.Clamp01(noiseFilter + 0.1f);
+            Debug.Log($"NoiseFilter: {noiseFilter}");
         }
 
         ApplyMaterialProperties(_firstMaterial, _firstWebcam);
@@ -344,6 +406,14 @@ public class CameraVV2 : MonoBehaviour
             StopCoroutine(_autoKeyRoutine);
             _autoKeyRoutine = null;
         }
+
+        if (_autoKeyTimeoutRoutine != null)
+        {
+            StopCoroutine(_autoKeyTimeoutRoutine);
+            _autoKeyTimeoutRoutine = null;
+        }
+
+        autoKeyColor = false;
     }
 
     void OnDisable()

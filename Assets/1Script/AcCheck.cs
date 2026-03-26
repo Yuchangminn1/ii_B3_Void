@@ -1,5 +1,3 @@
-using System.Collections;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -16,10 +14,14 @@ public class AcCheck : MonoBehaviour
     [Header("Threshold")]
     [Tooltip("기준 텍스처에서 이 값보다 투명하면 무시")]
     [SerializeField, Range(0f, 1f)] float baseMinAlpha = 0.01f;
-    [Tooltip("기준 텍스처에서 흰색으로 볼 임계값. 높을수록 더 엄격하게 흰색만 제외")]
-    [SerializeField, Range(0f, 1f)] float whiteThreshold = 0.95f;
     [Tooltip("겹쳐진 텍스처에서 이 값보다 투명하면 덮이지 않은 것으로 처리")]
     [SerializeField, Range(0f, 1f)] float overlayMinAlpha = 0.01f;
+    [Tooltip("타겟(overlay)에서 검은 영역만 계산에 사용")]
+    [SerializeField] bool overlayBlackOnly = true;
+    [Tooltip("검정 판정 밝기 임계값. 낮을수록 더 어두운 픽셀만 통과")]
+    [SerializeField, Range(0f, 0.5f)] float blackLumaThreshold = 0.15f;
+    [Tooltip("검정 RGB 임계값. luma 대신 RGB 상한으로도 통과 판정")]
+    [SerializeField, Range(0, 255)] int blackRgbThreshold = 70;
 
     [Header("Update")]
     [Tooltip("분석 주기(초)")]
@@ -28,7 +30,7 @@ public class AcCheck : MonoBehaviour
     [SerializeField, Range(1, 16)] int sampleStep = 2;
 
     [Header("Output")]
-    [Tooltip("타겟 텍스처의 흰색 제외 영역 중 기준 이미지 안에 들어온 비율(%)")]
+    [Tooltip("타겟 텍스처의 유효 알파 영역 중 기준 이미지 안에 들어온 비율(%)")]
     [SerializeField, Range(0f, 100f)] float detectedPercent;
     [Tooltip("분모로 계산된 타겟 픽셀 수")]
     [SerializeField] int debugTotalPixels;
@@ -55,27 +57,12 @@ public class AcCheck : MonoBehaviour
         }
     }
 
-    // void Update()
-    // {
-    //     if (Time.unscaledTime < _nextUpdateTime) return;
-
-    //     _nextUpdateTime = Time.unscaledTime + Mathf.Max(0.02f, updateInterval);
-    //     UpdateColorPercent();
-    // }
-
-    void Start()
+    void Update()
     {
-        StartCoroutine(QQQ());
-    }
-    IEnumerator QQQ()
-    {
-        while (true)
-        {
-            _nextUpdateTime = Time.unscaledTime + Mathf.Max(0.02f, updateInterval);
-            UpdateColorPercent();
-            yield return CoroutineReturnManager.GetWaitForSeconds(0.1f);
-        }
+        if (Time.unscaledTime < _nextUpdateTime) return;
 
+        _nextUpdateTime = Time.unscaledTime + Mathf.Max(0.02f, updateInterval);
+        UpdateColorPercent();
     }
 
     void OnDestroy()
@@ -142,7 +129,7 @@ public class AcCheck : MonoBehaviour
             for (int x = overlayXMin; x <= overlayXMax; x += step)
             {
                 Color32 overlayPixel = overlayPixels[row + x];
-                if (!IsCountedPixel(overlayPixel, overlayMinAlpha)) continue;
+                if (!IsOverlayTargetPixel(overlayPixel)) continue;
 
                 total++;
 
@@ -152,7 +139,7 @@ public class AcCheck : MonoBehaviour
 
                 Color32 sampledBasePixel;
                 if (!TrySampleRawImageAtWorldPoint(targetRawImage, basePixels, baseWidth, baseHeight, worldPoint, out sampledBasePixel)) continue;
-                if (!IsCountedPixel(sampledBasePixel, baseMinAlpha)) continue;
+                if (!HasVisibleAlpha(sampledBasePixel, baseMinAlpha)) continue;
 
                 matched++;
             }
@@ -180,15 +167,25 @@ public class AcCheck : MonoBehaviour
         }
     }
 
-    bool IsCountedPixel(Color32 pixel, float minAlpha)
+    bool HasVisibleAlpha(Color32 pixel, float minAlpha)
     {
         if (pixel.a / 255f < minAlpha) return false;
+        return true;
+    }
+
+    bool IsOverlayTargetPixel(Color32 pixel)
+    {
+        if (!HasVisibleAlpha(pixel, overlayMinAlpha)) return false;
+        if (!overlayBlackOnly) return true;
 
         float red = pixel.r / 255f;
         float green = pixel.g / 255f;
         float blue = pixel.b / 255f;
-        bool isWhite = red >= whiteThreshold && green >= whiteThreshold && blue >= whiteThreshold;
-        return !isWhite;
+        float luma = red * 0.299f + green * 0.587f + blue * 0.114f;
+
+        bool passByLuma = luma <= blackLumaThreshold;
+        bool passByRgb = pixel.r <= blackRgbThreshold && pixel.g <= blackRgbThreshold && pixel.b <= blackRgbThreshold;
+        return passByLuma || passByRgb;
     }
 
     bool TrySampleRawImageAtWorldPoint(RawImage rawImage, Color32[] pixels, int width, int height, Vector3 worldPoint, out Color32 pixel)

@@ -77,6 +77,7 @@
     <Compile Include="Assets\1Script\2PageSequence\PageBase.cs" />
     <Compile Include="Assets\1Script\3Singleton\GameManager.cs" />
     <Compile Include="Assets\1Script\ShhotPiecePosContainer.cs" />
+    <Compile Include="Assets\1Script\CamraVisible.cs" />
     <Compile Include="Assets\1Script\CoroutineReturnManager.cs" />
     <Compile Include="Assets\Unity-Logs-Viewer\Reporter\Test\Rotate.cs" />
     <Compile Include="Assets\1Script\LinkScript.cs" />
