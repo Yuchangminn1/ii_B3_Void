@@ -71,7 +71,8 @@ public class ShootPiece : MonoBehaviour
 
     public void OriginSet()
     {
-        _rawImage.color = Color.clear;
+        if (_rawImage != null)
+            _rawImage.color = Color.clear;
 
         if (originPos == Vector3.zero)
         {
