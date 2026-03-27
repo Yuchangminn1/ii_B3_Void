@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
@@ -6,11 +7,11 @@ using UnityEngine.UI;
 public class Timer : MonoBehaviour
 {
     public float defultTime = 1f;
-    public UnityEvent onTimerEnd;
+    Action onTimerEnd;
 
     protected float time = 0f;
 
-    public float Time2 => time;
+    // public float Time2 => time;
 
     protected Text _timerText;
 
@@ -19,7 +20,13 @@ public class Timer : MonoBehaviour
     public bool isDownCount = false;
 
 
-    public Direction CurrentDirection = Direction.Right;
+    public Direction CurrentDirection = Direction.Left;
+
+
+    public void AddOnEndListener(Action action)
+    {
+        onTimerEnd += action;
+    }
 
 
 
@@ -27,7 +34,7 @@ public class Timer : MonoBehaviour
 
     void Awake()
     {
-        _timerText = GetComponent<Text>();
+        _timerText = GetComponentInChildren<Text>();
     }
 
     virtual protected void OnEnable()
@@ -60,27 +67,29 @@ public class Timer : MonoBehaviour
         {
             IsCounting = false;
             onTimerEnd?.Invoke();
+
+            onTimerEnd = null;
         }
     }
 
-    public void SetTimerText(string text)
-    {
-        _timerText.fontSize = 95;
-        if (text == "시작!")
-        {
-            if (CurrentDirection == Direction.Left)
-                SoundManager.Instance.PlayEffectSound(EffectSoundNum.StartSound);
-        }
+    // public void SetTimerText(string text)
+    // {
+    //     //_timerText.fontSize = 95;
+    //     if (text == "시작!")
+    //     {
+    //         if (CurrentDirection == Direction.Left)
+    //             SoundManager.Instance.PlayEffectSound(EffectSoundNum.StartSound);
+    //     }
 
-        _timerText.text = text;
-    }
+    //     _timerText.text = text;
+    // }
 
-    public void ResetTime()
-    {
-        time = defultTime;
-        _timerText.text = $"{time}";
-        IsCounting = false;
-    }
+    // public void ResetTime()
+    // {
+    //     time = defultTime;
+    //     _timerText.text = $"{time}";
+    //     IsCounting = false;
+    // }
 
 
 
@@ -119,45 +128,45 @@ public class Timer : MonoBehaviour
         IsCounting = true;
     }
 
-    public void SetTime(int setTime)
-    {
-        _timerText.text = $"{setTime}";
-    }
-    public void SetTime(float setTime)
-    {
-        if (time > 0 && setTime < 0)
-        {
-            onTimerEnd?.Invoke();
-        }
-        if (setTime < 0)
-        {
-            time = 0f;
-        }
-        else
-        {
-            time = setTime;
-            if (isDownCount)
-            {
-                if (setTime < 1f)
-                    _timerText.text = $"";
-                else
-                    _timerText.text = $"{Mathf.FloorToInt(setTime)}";
-            }
+    // public void SetTime(int setTime)
+    // {
+    //     _timerText.text = $"{setTime}";
+    // }
+    // public void SetTime(float setTime)
+    // {
+    //     if (time > 0 && setTime < 0)
+    //     {
+    //         onTimerEnd?.Invoke();
+    //     }
+    //     if (setTime < 0)
+    //     {
+    //         time = 0f;
+    //     }
+    //     else
+    //     {
+    //         time = setTime;
+    //         if (isDownCount)
+    //         {
+    //             if (setTime < 1f)
+    //                 _timerText.text = $"";
+    //             else
+    //                 _timerText.text = $"{Mathf.FloorToInt(setTime)}";
+    //         }
 
-            else
-            {
-                if (setTime < 0.5f)
-                    _timerText.text = $"";
-                else
-                    _timerText.text = $"{Mathf.CeilToInt(setTime)}";
-            }
-
-
+    //         else
+    //         {
+    //             if (setTime < 0.5f)
+    //                 _timerText.text = $"";
+    //             else
+    //                 _timerText.text = $"{Mathf.CeilToInt(setTime)}";
+    //         }
 
 
-        }
 
-    }
+
+    //     }
+
+    //}
 
 
 }

@@ -1,3 +1,5 @@
+using System;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -10,6 +12,8 @@ public class AcCheck : MonoBehaviour
     [Header("Overlay")]
     [Tooltip("기준 이미지 안에 들어와야 하는 타겟 RawImage")]
     public RawImage overlayRawImage;
+
+    public Direction CurrentDirection;
 
     [Header("Threshold")]
     [Tooltip("기준 텍스처에서 이 값보다 투명하면 무시")]
@@ -49,6 +53,10 @@ public class AcCheck : MonoBehaviour
     public int DebugTotalPixels => debugTotalPixels;
     public int DebugMatchedPixels => debugMatchedPixels;
 
+    bool _isCheck = false;
+
+    Action onClear;
+
     void Awake()
     {
         if (targetRawImage == null)
@@ -59,11 +67,39 @@ public class AcCheck : MonoBehaviour
 
     void Update()
     {
+        if (Input.GetKeyDown(KeyCode.LeftArrow))
+        {
+            if (CurrentDirection == Direction.Left)
+            {
+                DebugClear();
+            }
+        }
+        else if (Input.GetKeyDown(KeyCode.RightArrow))
+        {
+            if (CurrentDirection == Direction.Right)
+            {
+                DebugClear();
+            }
+        }
+
+        if (_isCheck == false)
+            return;
         if (Time.unscaledTime < _nextUpdateTime) return;
 
         _nextUpdateTime = Time.unscaledTime + Mathf.Max(0.02f, updateInterval);
         UpdateColorPercent();
     }
+
+    public void StartCheck()
+    {
+        _isCheck = true;
+    }
+
+    public void StopCheck()
+    {
+        _isCheck = false;
+    }
+
 
     void OnDestroy()
     {
@@ -78,6 +114,23 @@ public class AcCheck : MonoBehaviour
             Destroy(_overlayReadbackTexture);
             _overlayReadbackTexture = null;
         }
+    }
+    public void AddOnClearListener(Action listener)
+    {
+        if (onClear != null && onClear.GetInvocationList().Contains(listener))
+        {
+            return;
+        }
+        onClear += listener;
+    }
+
+    public void RemoveOnClearListener(Action listener)
+    {
+        if (onClear == null || !onClear.GetInvocationList().Contains(listener))
+        {
+            return;
+        }
+        onClear -= listener;
     }
 
     public void UpdateColorPercent()
@@ -145,7 +198,7 @@ public class AcCheck : MonoBehaviour
             }
         }
 
-        detectedPercent = total > 0 ? matched * 100f / total : 0f;
+        detectedPercent = total > 0 ? (matched * 100f / total) + 10f : 0f;
         debugTotalPixels = total;
         debugMatchedPixels = matched;
 
@@ -153,6 +206,21 @@ public class AcCheck : MonoBehaviour
         {
             outputText.text = string.Format(outputFormat, detectedPercent);
         }
+
+        if (detectedPercent >= 100f)
+        {
+            StopCheck();
+
+            onClear?.Invoke();
+        }
+    }
+
+    public void DebugClear()
+    {
+        StopCheck();
+        detectedPercent = 100f;
+        outputText.text = string.Format(outputFormat, detectedPercent);
+        onClear?.Invoke();
     }
 
     void ResetResult()

@@ -19,6 +19,9 @@ public class ShootPiece : MonoBehaviour
     RawImage _rawImage;
 
     [SerializeField] RawImage targetImage;
+
+    [SerializeField] RawImage returnImage;
+
     [SerializeField] float moveDuration = 0.5f;
     [SerializeField] float arcHeight = 180f;
     [SerializeField] bool matchTargetSize = true;
@@ -37,8 +40,19 @@ public class ShootPiece : MonoBehaviour
             _rawImage.color = Color.white;
         }
     }
+    public void ColorClear()
+    {
+        if (_rawImage != null)
+        {
+            _rawImage.color = Color.clear;
+        }
+    }
 
+    public void ResetPosition()
+    {
+        _rawImage.transform.localPosition = originPos;
 
+    }
 
 
     public void Reset()
@@ -145,37 +159,21 @@ public class ShootPiece : MonoBehaviour
 
     public void ReturnPieceShot()
     {
-        if (targetImage == null)
-        {
-            return;
-        }
+        StartCoroutine(ReturnCoroutine());
+    }
 
-        if (originPos == Vector3.zero)
-        {
-            originPos = transform.localPosition;
-        }
+    IEnumerator ReturnCoroutine()
+    {
+        _rawImage.color = Color.clear;
 
-        RectTransform selfRect = transform as RectTransform;
-        Vector2 startSize = Vector2.zero;
-        Vector2 endSize = Vector2.zero;
-        bool shouldMatchSize = false;
+        yield return CoroutineReturnManager.GetWaitForSeconds(0.5f);
 
-        if (selfRect != null && hasOriginSize && matchTargetSize)
-        {
-            startSize = selfRect.sizeDelta;
-            endSize = originSize;
-            shouldMatchSize = true;
-        }
+        _rawImage.rectTransform.position = returnImage.rectTransform.position;
+        _rawImage.rectTransform.sizeDelta = returnImage.rectTransform.sizeDelta;
+        _rawImage.color = Color.white;
 
-        if (moveCoroutine != null)
-        {
-            StopCoroutine(moveCoroutine);
-        }
 
-        Vector3 start = transform.localPosition;
-        Vector3 end = originPos;
 
-        moveCoroutine = StartCoroutine(MoveBezier(start, end, selfRect, shouldMatchSize, startSize, endSize));
     }
 
 

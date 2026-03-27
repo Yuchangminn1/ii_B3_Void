@@ -91,15 +91,28 @@ public class ShootPieceContainer : MonoBehaviour
     {
         for (int i = CurrnetIndex - 1; i > -1; i--)
         {
+
             Left_ShootPieces[i].ReturnPieceShot();
             Right_ShootPieces[i].ReturnPieceShot();
             if (i == breakingIndex[0] || i == breakingIndex[1] || i == breakingIndex[2])
             {
                 break;
             }
-            yield return new WaitForSeconds(0.25f);
+            yield return new WaitForSeconds(1f);
 
         }
+        yield return new WaitForSeconds(0.75f);
+
+        for (int i = CurrnetIndex - 1; i > -1; i--)
+        {
+            Left_ShootPieces[i].ColorClear();
+            Left_ShootPieces[i].ResetPosition();
+            Right_ShootPieces[i].ColorClear();
+            Right_ShootPieces[i].ResetPosition();
+        }
+
+
+
     }
 
 }

@@ -9,6 +9,10 @@ public class QuestionScript : MonoBehaviour
 
     public ShootPieceContainer shootPieceContainer;
 
+    public Timer timer;
+
+    public QuestionShadow questionShadow;
+
 
     // string[] questions = {
     //     "Q. 나는 상대방의 기분을 헤아리기 위해 많은 에너지를 쏟는다.",
@@ -36,6 +40,8 @@ public class QuestionScript : MonoBehaviour
 
     public PageBase pageBase;
 
+    public RawImage[] MergedPieceImages;
+
 
 
     WaitForSeconds delayWait = new WaitForSeconds(1f);
@@ -47,8 +53,9 @@ public class QuestionScript : MonoBehaviour
     public Direction CurrentDirection;
 
 
-    int[] cameraIndex = new int[] { 4, 9, 14 };
+    int[] cameraIndex = new int[] { 5, 10, 15 };
 
+    bool _shadowCheck = false;
 
 
 
@@ -93,20 +100,71 @@ public class QuestionScript : MonoBehaviour
         _nextQuestionCoroutine = StartCoroutine(NextQuestionCoroutine());
     }
 
+    public void ShowShadow()
+    {
+        _shadowCheck = true;
+    }
+
     public IEnumerator NextQuestionCoroutine()
     {
         //마지막 질문 넘어서 다음장으로
 
-        if (QuestionManager.Instance.CurrentIndex == cameraIndex[0] || QuestionManager.Instance.CurrentIndex == cameraIndex[1] || QuestionManager.Instance.CurrentIndex == cameraIndex[2])
-        {
-            shootPieceContainer?.ReturnShoot();
-            yield return CoroutineReturnManager.GetWaitForSeconds(4f);
 
-        }
 
 
         if (CurrentDirection == Direction.Left)
             QuestionManager.Instance.CurrentIndex++;
+        yield return CoroutineReturnManager.GetWaitForSeconds(0.1f);
+
+
+        if (QuestionManager.Instance.CurrentIndex == cameraIndex[0] || QuestionManager.Instance.CurrentIndex == cameraIndex[1] || QuestionManager.Instance.CurrentIndex == cameraIndex[2])
+        {
+            _shadowCheck = false;
+            if (CurrentDirection == Direction.Left)
+
+                yield return StartCoroutine(shootPieceContainer?.ReturnShootCoroutine());
+
+            else
+            {
+                yield return CoroutineReturnManager.GetWaitForSeconds(5.75f);
+            }
+
+            FadeManager.Instance.SetAlphaOne(MergedPieceImages[QuestionManager.Instance.CurrentIndex / 5 - 1]);
+
+            int count = 0;
+
+            while (count < 5 && questionShadow.IsClear == false)
+            {
+
+                if (timer != null)
+                {
+                    timer.AddOnEndListener(ShowShadow);
+                    questionShadow.ShowShadow(QuestionManager.Instance.CurrentIndex / 5 - 1);
+
+                    if (CurrentDirection == Direction.Left)
+                    {
+
+                        timer.StartTimer();
+
+                    }
+
+                }
+
+                while (_shadowCheck == false)
+                {
+                    yield return CoroutineReturnManager.GetWaitForSeconds(0.5f);
+                }
+
+                count++;
+
+                //TODO 타이머 굴려야함 
+
+            }
+
+            FadeManager.Instance.SetAlphaZero(MergedPieceImages[QuestionManager.Instance.CurrentIndex / 5 - 1]);
+
+
+        }
 
         yield return CoroutineReturnManager.GetWaitForSeconds(0.5f);
         int currentIndx = QuestionManager.Instance.CurrentIndex;

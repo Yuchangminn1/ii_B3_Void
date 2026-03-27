@@ -78,7 +78,7 @@ public class WaitCheck : MonoBehaviour
             debugX = StartCoroutine(ChangeX());
     }
 
-    void Start()
+    protected virtual void Start()
     {
         Arduino_SelectButton[] buttons = FindObjectsByType<Arduino_SelectButton>(FindObjectsSortMode.None);
 
@@ -182,6 +182,7 @@ public class WaitCheck : MonoBehaviour
 
             if (IsPlayer1On && IsPlayer2On)
             {
+                yield return CoroutineReturnManager.GetWaitForSeconds(2f);
 
                 while (isNext == false)
                 {
@@ -220,7 +221,7 @@ public class WaitCheck : MonoBehaviour
         isTriggerTime = isOn;
     }
 
-    public void StartCheck()
+    public void StartCheck1()
     {
         debugZ = null;
         debugX = null;
