@@ -25,6 +25,8 @@ public class CameraManager : MonoBehaviour
     [Tooltip("현재 선택된 카메라의 설정을 표시할 UI 텍스트")]
     public Text selectedCameraText;
 
+    public CameraVisible cameraVisible;
+
     private int _currentlyControlledIndex = 0;
 
     Shader GetSupportedShader(Shader shader)
@@ -75,6 +77,7 @@ public class CameraManager : MonoBehaviour
             StartAllWebcams();
         }
         UpdateSelectionText();
+        StartFocusCheck();
     }
 
     void Update()
@@ -193,6 +196,36 @@ public class CameraManager : MonoBehaviour
             current.StartAutoKeyForSeconds(10f);
             Debug.Log($"[{current.name}] Auto Key Started for 10 seconds");
         }
+    }
+
+    public IEnumerator StartFocusCheckCoroutine()
+    {
+        while (GameManager.Instance.IsStarted == false)
+        {
+            yield return CoroutineReturnManager.GetWaitForSeconds(0.5f);
+        }
+        yield return CoroutineReturnManager.GetWaitForSeconds(3f);
+        cameraVisible.CameraOn();
+        yield return CoroutineReturnManager.GetWaitForSeconds(1f);
+        foreach (var instance in cameraInstances)
+        {
+            if (instance != null)
+            {
+                instance.StartAutoKeyForSeconds(4f);
+            }
+        }
+
+        yield return CoroutineReturnManager.GetWaitForSeconds(5f);
+
+        cameraVisible.CameraOff();
+
+
+    }
+
+    public void StartFocusCheck()
+    {
+
+        StartCoroutine(StartFocusCheckCoroutine());
     }
 
     void UpdateSelectionText()

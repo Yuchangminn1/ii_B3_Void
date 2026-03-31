@@ -56,31 +56,31 @@ public class WaitCheckManager : MonoBehaviour
 
     public void TagSuccess()
     {
-        int page0_Page = _pageControllers[0].CurrentPage;
+        // int page0_Page = _pageControllers[0].CurrentPage;
 
 
 
-        for (int i = 1; i < _pageControllers.Length; i++)
-        {
+        // for (int i = 1; i < _pageControllers.Length; i++)
+        // {
 
-            if (_pageControllers[i].CurrentPage != page0_Page)
-            {
-                break;
-            }
-            if (i == _pageControllers.Length - 1)
-            {
-                switch (page0_Page)
-                {
-                    case 1:
-                        Page1Check.OnClear();
-                        break;
-                    case 3:
-                        Page3Check.OnClear();
-                        break;
-                }
+        //     if (_pageControllers[i].CurrentPage != page0_Page)
+        //     {
+        //         break;
+        //     }
+        //     // if (i == _pageControllers.Length - 1)
+        //     // {
+        //     //     switch (page0_Page)
+        //     //     {
+        //     //         case 1:
+        //     //             Page1Check.OnClear();
+        //     //             break;
+        //     //         case 3:
+        //     //             Page3Check.OnClear();
+        //     //             break;
+        //     //     }
 
-            }
-        }
+        //     // }
+        // }
 
     }
 }

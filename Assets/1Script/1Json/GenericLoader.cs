@@ -26,6 +26,7 @@ public class GenericLoader : JsonLoaderBase<JsonGenericUpData, IJsonGenericTarge
 
         obj.Initialize(item);
 
+
     }
 
 

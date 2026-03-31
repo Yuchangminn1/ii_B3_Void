@@ -80,9 +80,14 @@ public abstract class SequenceScript : MonoBehaviour
 
     public bool TriggerOnBool()
     {
-        if (isWaiting)
-            isTrigger = true;
+        // if (isWaiting)
+        //     isTrigger = true;
         return isWaiting;
+    }
+    IEnumerator DelayToWaitTrigger()
+    {
+        yield return CoroutineReturnManager.GetWaitForSeconds(0.1f);
+        isWaiting = true;
     }
     public IEnumerator StartSequence()
     {
@@ -92,7 +97,8 @@ public abstract class SequenceScript : MonoBehaviour
             yield return textUpdateDelay;
         }
         isTrigger = originTrigger;
-        isWaiting = true;
+
+        StartCoroutine(DelayToWaitTrigger());
         GameManager.Instance.GoToIdleCheck();
         //특정 트리거 필요하면 대기 
         OnSequenceStart?.Invoke();
@@ -162,6 +168,11 @@ public abstract class SequenceScript : MonoBehaviour
     protected virtual void AwakeSetup()
     {
         Initialize();
+    }
+
+    protected virtual void OnEnable()
+    {
+        isWaiting = false;
     }
 
 

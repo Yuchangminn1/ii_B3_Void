@@ -374,6 +374,14 @@ public class Arduino_SelectButton : Arduino
     }
     public void LEDAllOff()
     {
+        if (stream == null || !stream.IsOpen)
+        {
+            if (!TryOpenPort("LEDAllOff"))
+            {
+                Debug.LogWarning("시리얼 포트가 열려 있지 않음: " + SerialPortNames[0]);
+                return;
+            }
+        }
         if (!_isRunning)
         {
             Debug.LogWarning($"[SelectButton:{ButtonDirection}] LEDAllOff 요청 무시: Arduino가 동작 중이 아님");

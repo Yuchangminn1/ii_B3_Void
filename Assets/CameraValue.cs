@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class CameraValue : MonoBehaviour
+public class CameraValue : MonoBehaviour, IJsonGenericTarget
 {
     [Header("Webcam Settings")]
     public int cameraIndex = 0;
@@ -34,6 +34,9 @@ public class CameraValue : MonoBehaviour
     private RawImage _targetRawImage;
     private Coroutine _autoKeyRoutine;
     private Coroutine _autoKeyTimeoutRoutine;
+
+    JsonGenericUpData _genericData = new JsonGenericUpData();
+
 
     public void Initialize(Shader shader)
     {
@@ -155,6 +158,11 @@ public class CameraValue : MonoBehaviour
         }
     }
 
+    public void AutoFocus()
+    {
+        StartAutoKeyForSeconds(2f);
+    }
+
     // --- Auto Key Color Logic ---
     public void StartAutoKeyForSeconds(float seconds)
     {
@@ -230,5 +238,24 @@ public class CameraValue : MonoBehaviour
             return true;
         }
         return false;
+    }
+
+    public void Initialize(JsonGenericUpData data)
+    {
+        _genericData = data;
+
+        data.floatParams.TryGetValue("threshold", out threshold);
+        data.floatParams.TryGetValue("smoothness", out smoothness);
+    }
+
+    public JsonGenericUpData Data()
+    {
+        _genericData.intParams = new Dictionary<string, int>();
+        _genericData.floatParams = new Dictionary<string, float>();
+        _genericData.boolParams = new Dictionary<string, bool>();
+
+        _genericData.floatParams["threshold"] = threshold;
+        _genericData.floatParams["smoothness"] = smoothness;
+        return _genericData;
     }
 }

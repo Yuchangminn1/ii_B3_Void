@@ -1,24 +1,28 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-
+using UnityEngine.UI;
+public enum TutorialShape
+{
+    Triangle,
+    Moon,
+    Heart
+}
 public class ShootPieceContainer : MonoBehaviour
 {
     int _currnetIndex = 0;
 
-    public int CurrnetIndex
+    public ShowContainer showContainer;
+
+    public Timer _timer;
+
+    public int CurrentIndex
     {
         get
         {
-
             return _currnetIndex;
-
         }
         set
         {
-
-
-
             if (value >= 0 && value < Left_ShootPieces.Length)
             {
                 Left_ShootPieces[value].OriginSet();
@@ -33,16 +37,37 @@ public class ShootPieceContainer : MonoBehaviour
 
     public ShootPiece[] Right_ShootPieces;
 
+    public CameraVisible cameraVisible;
 
-    int[] breakingIndex = new int[] { 0, 5, 10 };
+
+    bool _isClearLeft = false;
+    bool _isClearRight = false;
+
+    const int PieceGroupSize = 5;
+
+    TutorialShape[] leftPlayerTutorialShapeIndex = new TutorialShape[] { TutorialShape.Triangle, TutorialShape.Heart, TutorialShape.Moon };
+    TutorialShape[] rightPlayerTutorialShapeIndex = new TutorialShape[] { TutorialShape.Moon, TutorialShape.Triangle, TutorialShape.Heart };
+
+    public Texture2D[] TriangleTexture;
+
+    public Texture2D[] MoonTexture;
+
+    public Texture2D[] HeartTexture;
+
+    public Texture2D[] OutlineTriangleTexture;
+
+    public Texture2D[] OutlineMoonTexture;
+
+    public Texture2D[] OutlineHeartTexture;
+
+    int count = 0;
 
 
     void OnEnable()
     {
-        CurrnetIndex = 0;
+        CurrentIndex = 0;
         Reset();
     }
-
 
     public void Reset()
     {
@@ -55,64 +80,154 @@ public class ShootPieceContainer : MonoBehaviour
         {
             Right_ShootPieces[i].Reset();
         }
-        CurrnetIndex = 0;
-
+        CurrentIndex = 0;
     }
 
+
+    public bool IsTutorialClear()
+    {
+        return _isClearLeft && _isClearRight;
+    }
 
     public void Shoot()
     {
-        if (CurrnetIndex >= Left_ShootPieces.Length)
+        if (CurrentIndex >= Left_ShootPieces.Length)
         {
             return;
         }
-        StartCoroutine(ShootCoroutine());
+        ShootCoroutine();
     }
 
-    public IEnumerator ShootCoroutine()
+    public void Clear(Direction direction)
     {
-        Left_ShootPieces[CurrnetIndex].ColorWhite();
-        Right_ShootPieces[CurrnetIndex].ColorWhite();
-        yield return new WaitForSeconds(1f);
+        if (direction == Direction.Left)
+        {
+            _isClearLeft = true;
+            showContainer.ShowSideImages(Direction.Left, leftPlayerTutorialShapeIndex[CurrentIndex / PieceGroupSize - 1], true, count);
+            cameraVisible.CameraOffLeft();
 
-        Left_ShootPieces[CurrnetIndex].Reset();
-        Right_ShootPieces[CurrnetIndex].Reset();
-        Left_ShootPieces[CurrnetIndex].PieceShot();
-        Right_ShootPieces[CurrnetIndex].PieceShot();
-        CurrnetIndex++;
+
+
+        }
+        else
+        {
+            _isClearRight = true;
+            showContainer.ShowSideImages(Direction.Right, rightPlayerTutorialShapeIndex[CurrentIndex / PieceGroupSize - 1], true, count);
+            cameraVisible.CameraOffRight();
+        }
     }
 
-    public void ReturnShoot()
+    public void ShootCoroutine()
     {
-        StartCoroutine(ReturnShootCoroutine());
+        Left_ShootPieces[CurrentIndex].Reset();
+        Right_ShootPieces[CurrentIndex].Reset();
+        Left_ShootPieces[CurrentIndex].PieceShot();
+        Right_ShootPieces[CurrentIndex].PieceShot();
+        CurrentIndex++;
     }
+
+
+    public void ShowPiece(Direction direction)
+    {
+        if (direction == Direction.Left)
+        {
+            Left_ShootPieces[CurrentIndex].ColorWhite();
+
+        }
+        else
+        {
+            Right_ShootPieces[CurrentIndex].ColorWhite();
+        }
+    }
+
 
     public IEnumerator ReturnShootCoroutine()
     {
-        for (int i = CurrnetIndex - 1; i > -1; i--)
-        {
 
+        _isClearLeft = false;
+        _isClearRight = false;
+        for (int i = CurrentIndex - PieceGroupSize; i < CurrentIndex; i++)
+        {
             Left_ShootPieces[i].ReturnPieceShot();
             Right_ShootPieces[i].ReturnPieceShot();
-            if (i == breakingIndex[0] || i == breakingIndex[1] || i == breakingIndex[2])
-            {
-                break;
-            }
-            yield return new WaitForSeconds(1f);
+
+            yield return CoroutineReturnManager.GetWaitForSeconds(1f);
 
         }
-        yield return new WaitForSeconds(0.75f);
+        yield return CoroutineReturnManager.GetWaitForSeconds(0.75f);
+        count = 0;
 
-        for (int i = CurrnetIndex - 1; i > -1; i--)
+
+        showContainer.ShowSideImages(Direction.Left, leftPlayerTutorialShapeIndex[CurrentIndex / PieceGroupSize - 1], false, count);
+        showContainer.ShowSideImages(Direction.Right, rightPlayerTutorialShapeIndex[CurrentIndex / PieceGroupSize - 1], false, count);
+
+        cameraVisible.CameraOn();
+
+        showContainer.StartCheck(Direction.Left);
+        showContainer.StartCheck(Direction.Right);
+
+        for (int i = CurrentIndex - PieceGroupSize; i < CurrentIndex; i++)
         {
             Left_ShootPieces[i].ColorClear();
             Left_ShootPieces[i].ResetPosition();
             Right_ShootPieces[i].ColorClear();
             Right_ShootPieces[i].ResetPosition();
         }
+        // 틀렸을 경우 1개씩 제거하며 타이머 초기화 및 시작 
 
+        // 통과시 테두리 맞는걸로 교체 이후 다음 문제로 
+
+        _timer.ResetTimer();
+        _timer.StartTimer();
+
+
+
+        float timerTime = _timer.defaultTime;
+
+        while (timerTime > 0 && !IsTutorialClear())
+        {
+            timerTime -= Time.fixedDeltaTime;
+            yield return CoroutineReturnManager.WaitForFixedUpdate;
+        }
+
+        count++;
+
+        while (count < 5 && !IsTutorialClear())
+        {
+            if (_isClearLeft == false)
+                showContainer.ShowSideImages(Direction.Left, leftPlayerTutorialShapeIndex[CurrentIndex / PieceGroupSize - 1], false, count);
+            if (_isClearRight == false)
+                showContainer.ShowSideImages(Direction.Right, rightPlayerTutorialShapeIndex[CurrentIndex / PieceGroupSize - 1], false, count);
+
+            _timer.ResetTimer();
+            _timer.StartTimer();
+
+            timerTime = _timer.defaultTime;
+
+            while (timerTime > 0 && !IsTutorialClear())
+            {
+                timerTime -= Time.fixedDeltaTime;
+                yield return CoroutineReturnManager.WaitForFixedUpdate;
+            }
+
+            count++;
+        }
+        _timer.ResetTimer();
+
+        yield return CoroutineReturnManager.GetWaitForSeconds(1f);
+
+        showContainer.CurrentImageReset(Direction.Left);
+        showContainer.CurrentImageReset(Direction.Right);
+
+        cameraVisible.CameraOff();
+
+
+
+        _isClearLeft = true;
+        _isClearRight = true;
 
 
     }
 
 }
+

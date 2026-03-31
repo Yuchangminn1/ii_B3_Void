@@ -26,10 +26,12 @@ public class Arduino_Manager : Singleton<Arduino_Manager>, IJsonGenericTarget
     public void Initialize(JsonGenericUpData data)
     {
 
+        Debug.Log("Initializing Arduino Manager with JSON Data");
+
+
         data.stringParams.TryGetValue("LeftPlayerArduinoButton", out _leftPlayerArduinoButton);
         data.stringParams.TryGetValue("RightPlayerArduinoButton", out _rightPlayerArduinoButton);
-        data.stringParams.TryGetValue("TouchNode", out _touchNode);
-        data.stringParams.TryGetValue("LEDNode", out _ledNode);
+
         foreach (var arduino in arduino_SelectButtons)
         {
             if (arduino.ButtonDirection == Direction.Left)
@@ -39,11 +41,7 @@ public class Arduino_Manager : Singleton<Arduino_Manager>, IJsonGenericTarget
             arduino.StartArduino();
         }
 
-        // ArduinoTouchManager.Instance.SerialPortNames = _touchNode;
-        // ArduinoTouchManager.Instance.StartArduino();
 
-        // ArduinoLEDManager.Instance.SerialPortNames = _ledNode;
-        // ArduinoLEDManager.Instance.StartArduino();
 
 
     }
@@ -77,8 +75,7 @@ public class Arduino_Manager : Singleton<Arduino_Manager>, IJsonGenericTarget
 
         _genericData.stringParams["LeftPlayerArduinoButton"] = _leftPlayerArduinoButton;
         _genericData.stringParams["RightPlayerArduinoButton"] = _rightPlayerArduinoButton;
-        _genericData.stringParams["TouchNode"] = _touchNode;
-        _genericData.stringParams["LEDNode"] = _ledNode;
+
         return _genericData;
     }
 }

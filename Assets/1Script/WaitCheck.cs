@@ -10,10 +10,7 @@ public class WaitCheck : MonoBehaviour
 
     public SequenceScript[] Clear_Triggers;
 
-
-    public UnityEvent ClearTrigger = new UnityEvent();
-
-    readonly float CheckImageTime = 1f;
+    protected readonly float CheckImageTime = 1f;
 
     public Graphic[] Player1_Graphic;
     public Graphic[] Player1_Graphic2;
@@ -114,7 +111,7 @@ public class WaitCheck : MonoBehaviour
 
     }
 
-    protected IEnumerator ChangeZ()
+    protected virtual IEnumerator ChangeZ()
     {
         yield return debugWait;
         if (Player1_Trigger == null)
@@ -139,12 +136,14 @@ public class WaitCheck : MonoBehaviour
             }
             IsPlayer1On = true;
 
+            Player1_Trigger.TriggerOn();
+
         }
 
         debugZ = null;
 
     }
-    protected IEnumerator ChangeX()
+    protected virtual IEnumerator ChangeX()
     {
         yield return debugWait;
         if (Player2_Trigger == null)
@@ -167,38 +166,53 @@ public class WaitCheck : MonoBehaviour
             }
             IsPlayer2On = true;
 
+            Player2_Trigger.TriggerOn();
+
         }
 
         debugX = null;
 
     }
-    protected IEnumerator WaitCoroutine()
+    protected virtual IEnumerator WaitCoroutine()
     {
         bool isAllReady = false;
         int count = 0;
         bool isNext = false;
+
+        Debug.Log("WaitCoroutine Start");
         while (isAllReady == false)
         {
 
             if (IsPlayer1On && IsPlayer2On)
             {
-                yield return CoroutineReturnManager.GetWaitForSeconds(2f);
-
+                //yield return CoroutineReturnManager.GetWaitForSeconds(2f);
+                int triggerCount = 0;
                 while (isNext == false)
                 {
+                    triggerCount = 0;
+
                     foreach (var Clear_Trigger in Clear_Triggers)
                     {
                         if (Clear_Trigger.TriggerOnBool() == false)
                         {
+                            yield return CoroutineReturnManager.GetWaitForSeconds(0.1f);
+
                             continue;
                         }
+                        triggerCount++;
+
                     }
-                    isNext = true;
-                    yield return CoroutineReturnManager.GetWaitForSeconds(0.1f);
+                    if (triggerCount == Clear_Triggers.Length)
+                        isNext = true;
+
                 }
-                ClearTrigger.Invoke();
+
                 isAllReady = true;
                 PopupManager.Instance.SetInputType(InputType.Touch);
+                foreach (var Clear_Trigger in Clear_Triggers)
+                {
+                    Clear_Trigger.TriggerOn();
+                }
 
             }
             else
@@ -261,9 +275,9 @@ public class WaitCheck : MonoBehaviour
         _isPlayer1On = false;
         _isPlayer2On = false;
     }
-    public void OnClear()
-    {
-        ClearTrigger.Invoke();
-    }
+    // public void OnClear()
+    // {
+    //     ClearTrigger.Invoke();
+    // }
 
 }

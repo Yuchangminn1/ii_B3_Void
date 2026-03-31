@@ -73,13 +73,13 @@
     <Compile Include="Assets\1Script\CanvasGC.cs" />
     <Compile Include="Assets\1Script\2PageSequence\SequenceTime.cs" />
     <Compile Include="Assets\1Script\Singleton.cs" />
-    <Compile Include="Assets\1Script\MaskSave.cs" />
     <Compile Include="Assets\1Script\2PageSequence\PageBase.cs" />
     <Compile Include="Assets\1Script\3Singleton\GameManager.cs" />
     <Compile Include="Assets\1Script\ShhotPiecePosContainer.cs" />
     <Compile Include="Assets\1Script\CamraVisible.cs" />
     <Compile Include="Assets\1Script\CoroutineReturnManager.cs" />
     <Compile Include="Assets\Unity-Logs-Viewer\Reporter\Test\Rotate.cs" />
+    <Compile Include="Assets\1Script\ShowContainer.cs" />
     <Compile Include="Assets\1Script\LinkScript.cs" />
     <Compile Include="Assets\1Script\1Json\TextLoader.cs" />
     <Compile Include="Assets\1Script\LoopVideo.cs" />
@@ -128,6 +128,7 @@
     <Compile Include="Assets\1Script\Arduino\Arduino.cs" />
     <Compile Include="Assets\1Script\DailyTodo.cs" />
     <Compile Include="Assets\1Script\ScoreStampContainer.cs" />
+    <Compile Include="Assets\1Script\CameraMaskMove.cs" />
     <Compile Include="Assets\1Script\1Json\AudioLoader.cs" />
     <Compile Include="Assets\1Script\3Singleton\FadeManager.cs" />
     <Compile Include="Assets\1Script\TriggerContainer.cs" />
@@ -138,6 +139,7 @@
     <Compile Include="Assets\1Script\1Json\QuestionLoader.cs" />
     <Compile Include="Assets\1Script\2PageSequence\SetColorA.cs" />
     <Compile Include="Assets\1Script\1Json\VideoLoader.cs" />
+    <Compile Include="Assets\1Script\WaitCheckTutorial.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\Resources\WebcamChromaKey.shader" />

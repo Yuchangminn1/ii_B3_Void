@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
@@ -29,7 +30,7 @@ public class AcCheck : MonoBehaviour
 
     [Header("Update")]
     [Tooltip("분석 주기(초)")]
-    [SerializeField, Range(0.02f, 1f)] float updateInterval = 0.1f;
+    [SerializeField, Range(0.5f, 1f)] float updateInterval = 0.5f;
     [Tooltip("샘플링 간격. 1이면 더 정확하지만 무거울 수 있습니다.")]
     [SerializeField, Range(1, 16)] int sampleStep = 2;
 
@@ -44,6 +45,13 @@ public class AcCheck : MonoBehaviour
     [SerializeField] Text outputText;
     [Tooltip("텍스트 포맷 예시: {0:F1}%")]
     [SerializeField] string outputFormat = "{0:F1}%";
+
+
+    float modifier = 0f;
+
+
+
+
 
     float _nextUpdateTime;
     Texture2D _baseReadbackTexture;
@@ -72,6 +80,7 @@ public class AcCheck : MonoBehaviour
             if (CurrentDirection == Direction.Left)
             {
                 DebugClear();
+                FadeManager.Instance.SetAlphaZero(outputText);
             }
         }
         else if (Input.GetKeyDown(KeyCode.RightArrow))
@@ -79,6 +88,7 @@ public class AcCheck : MonoBehaviour
             if (CurrentDirection == Direction.Right)
             {
                 DebugClear();
+                FadeManager.Instance.SetAlphaZero(outputText);
             }
         }
 
@@ -86,18 +96,29 @@ public class AcCheck : MonoBehaviour
             return;
         if (Time.unscaledTime < _nextUpdateTime) return;
 
-        _nextUpdateTime = Time.unscaledTime + Mathf.Max(0.02f, updateInterval);
+        _nextUpdateTime = Time.unscaledTime + Mathf.Max(0.5f, updateInterval);
         UpdateColorPercent();
     }
 
     public void StartCheck()
     {
         _isCheck = true;
+        FadeManager.Instance.SetAlphaOne(outputText);
+        Debug.Log($"{name}Start Check");
     }
 
     public void StopCheck()
     {
         _isCheck = false;
+        FadeManager.Instance.SetAlphaZero(outputText);
+        Debug.Log($"{name}Stop Check");
+
+
+    }
+
+    public void SetTargetRawImage(RawImage rawImage)
+    {
+        targetRawImage = rawImage;
     }
 
 
@@ -198,7 +219,7 @@ public class AcCheck : MonoBehaviour
             }
         }
 
-        detectedPercent = total > 0 ? (matched * 100f / total) + 10f : 0f;
+        detectedPercent = total > 0 ? (matched * 100f / total) + modifier : 0f;
         debugTotalPixels = total;
         debugMatchedPixels = matched;
 
@@ -211,9 +232,17 @@ public class AcCheck : MonoBehaviour
         {
             StopCheck();
 
-            onClear?.Invoke();
+            StartCoroutine(DelayOnClear());
         }
     }
+
+    IEnumerator DelayOnClear()
+    {
+        yield return CoroutineReturnManager.GetWaitForSeconds(1f);
+        onClear?.Invoke();
+    }
+
+
 
     public void DebugClear()
     {

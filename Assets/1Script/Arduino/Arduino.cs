@@ -319,36 +319,36 @@ public class Arduino : MonoBehaviour
                 yield break;
             }
 
-            if (enablePingPong && !isReconnecting)
-            {
-                float now = Time.realtimeSinceStartup;
-                if (now >= nextPingAt)
-                {
-                    try
-                    {
-                        stream.WriteLine(pingMessage);
-                    }
-                    catch (Exception e)
-                    {
-                        NotifyDisconnected(e);
-                        yield break;
-                    }
+            // if (enablePingPong && !isReconnecting)
+            // {
+            //     float now = Time.realtimeSinceStartup;
+            //     if (now >= nextPingAt)
+            //     {
+            //         try
+            //         {
+            //             stream.WriteLine(pingMessage);
+            //         }
+            //         catch (Exception e)
+            //         {
+            //             NotifyDisconnected(e);
+            //             yield break;
+            //         }
 
-                    noResponseCount++;
-                    nextPingAt = now + Mathf.Max(0.1f, pingIntervalSeconds);
+            //         noResponseCount++;
+            //         nextPingAt = now + Mathf.Max(0.1f, pingIntervalSeconds);
 
-                    if (enableSerialDebugLog)
-                        Debug.Log($"[{name}] Ping 전송: {pingMessage} / noResponseCount={noResponseCount}");
+            //         if (enableSerialDebugLog)
+            //             Debug.Log($"[{name}] Ping 전송: {pingMessage} / noResponseCount={noResponseCount}");
 
-                    if (noResponseCount >= Mathf.Max(1, noResponseRestartCount))
-                    {
-                        Debug.LogWarning($"[{name}] 핑퐁 무응답 누적({noResponseCount})으로 포트 재연결 시도");
-                        yield return StartCoroutine(ReopenPortAfterTimeout());
-                        yield return CoroutineReturnManager.GetWaitForSeconds(0.1f);
-                        continue;
-                    }
-                }
-            }
+            //         if (noResponseCount >= Mathf.Max(1, noResponseRestartCount))
+            //         {
+            //             Debug.LogWarning($"[{name}] 핑퐁 무응답 누적({noResponseCount})으로 포트 재연결 시도");
+            //             yield return StartCoroutine(ReopenPortAfterTimeout());
+            //             yield return CoroutineReturnManager.GetWaitForSeconds(0.1f);
+            //             continue;
+            //         }
+            //     }
+            // }
 
             if (IsReadingMessage())
             {
