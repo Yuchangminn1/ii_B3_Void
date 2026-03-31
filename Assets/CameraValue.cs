@@ -23,6 +23,8 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
     public bool opaqueToBlack = true;
     [Range(1f, 10f)] public float edgeContrast = 1f;
     [Range(0f, 1f)] public float noiseFilter = 1f;
+    [Range(0f, 1f)] public float alphaCutoff = 0.5f;
+    [Range(0f, 0.49f)] public float midValueFilter = 0.15f;
 
     [Header("Left Clipping")]
     public int leftClipPixels = 0;
@@ -140,6 +142,8 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
         material.SetFloat("_OpaqueToBlack", opaqueToBlack ? 1f : 0f);
         material.SetFloat("_EdgeContrast", edgeContrast);
         material.SetFloat("_NoiseFilter", noiseFilter);
+        material.SetFloat("_AlphaCutoff", alphaCutoff);
+        material.SetFloat("_MidValueFilter", midValueFilter);
 
         float clipAmount = 0f;
         if (webcamTexture != null && webcamTexture.width > 0)
@@ -246,6 +250,8 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
 
         data.floatParams.TryGetValue("threshold", out threshold);
         data.floatParams.TryGetValue("smoothness", out smoothness);
+        if (data.floatParams.TryGetValue("alphaCutoff", out float loadedAlphaCutoff)) alphaCutoff = loadedAlphaCutoff;
+        if (data.floatParams.TryGetValue("midValueFilter", out float loadedMidValueFilter)) midValueFilter = loadedMidValueFilter;
     }
 
     public JsonGenericUpData Data()
@@ -256,6 +262,8 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
 
         _genericData.floatParams["threshold"] = threshold;
         _genericData.floatParams["smoothness"] = smoothness;
+        _genericData.floatParams["alphaCutoff"] = alphaCutoff;
+        _genericData.floatParams["midValueFilter"] = midValueFilter;
         return _genericData;
     }
 }

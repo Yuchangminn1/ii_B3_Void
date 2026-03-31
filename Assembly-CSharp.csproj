@@ -133,6 +133,7 @@
     <Compile Include="Assets\1Script\3Singleton\FadeManager.cs" />
     <Compile Include="Assets\1Script\TriggerContainer.cs" />
     <Compile Include="Assets\1Script\2PageSequence\MainPage.cs" />
+    <Compile Include="Assets\1Script\TutorialAcCheck.cs" />
     <Compile Include="Assets\1Script\ShootPiece.cs" />
     <Compile Include="Assets\1Script\3Singleton\SoundManager.cs" />
     <Compile Include="Assets\1Script\Arduino\Arduino_Manager.cs" />

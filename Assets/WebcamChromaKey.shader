@@ -18,6 +18,8 @@ Shader "Custom/WebcamChromaKey"
         _OpaqueToBlack ("Opaque to Black", Float) = 0
         _EdgeContrast ("Edge Contrast", Range(1,10)) = 1
         _NoiseFilter ("Noise Filter", Range(0,1)) = 1
+        _AlphaCutoff ("Alpha Cutoff", Range(0,1)) = 0.5
+        _MidValueFilter ("Mid Value Filter", Range(0,0.49)) = 0.15
     }
 
     SubShader
@@ -55,6 +57,8 @@ Shader "Custom/WebcamChromaKey"
             float _OpaqueToBlack;
             float _EdgeContrast;
             float _NoiseFilter;
+            float _AlphaCutoff;
+            float _MidValueFilter;
 
             struct appdata
             {
@@ -84,41 +88,43 @@ Shader "Custom/WebcamChromaKey"
 
             fixed4 frag(v2f i) : SV_Target
             {
-                float keyLuma = dot(_KeyColor.rgb, float3(0.299, 0.587, 0.114));
-
                 float2 t = _MainTex_TexelSize.xy;
                 float2 uv = i.uv;
 
-                // 3x3 평균으로 자잘한 노이즈를 먼저 완화
-                float l00 = dot(tex2D(_MainTex, uv + float2(-t.x, -t.y)).rgb, float3(0.299, 0.587, 0.114));
-                float l01 = dot(tex2D(_MainTex, uv + float2( 0.0,  -t.y)).rgb, float3(0.299, 0.587, 0.114));
-                float l02 = dot(tex2D(_MainTex, uv + float2( t.x,  -t.y)).rgb, float3(0.299, 0.587, 0.114));
-                float l10 = dot(tex2D(_MainTex, uv + float2(-t.x,  0.0)).rgb, float3(0.299, 0.587, 0.114));
-                float l11 = dot(tex2D(_MainTex, uv).rgb,                          float3(0.299, 0.587, 0.114));
-                float l12 = dot(tex2D(_MainTex, uv + float2( t.x,  0.0)).rgb, float3(0.299, 0.587, 0.114));
-                float l20 = dot(tex2D(_MainTex, uv + float2(-t.x,  t.y)).rgb, float3(0.299, 0.587, 0.114));
-                float l21 = dot(tex2D(_MainTex, uv + float2( 0.0,   t.y)).rgb, float3(0.299, 0.587, 0.114));
-                float l22 = dot(tex2D(_MainTex, uv + float2( t.x,   t.y)).rgb, float3(0.299, 0.587, 0.114));
+                float3 k1 = _KeyColor.rgb;
 
-                float avgLuma = (l00 + l01 + l02 + l10 + l11 + l12 + l20 + l21 + l22) / 9.0;
-                float filteredCenter = lerp(l11, avgLuma, _NoiseFilter);
+                float d00 = distance(tex2D(_MainTex, uv + float2(-t.x, -t.y)).rgb, k1);
+                float d01 = distance(tex2D(_MainTex, uv + float2( 0.0,  -t.y)).rgb, k1);
+                float d02 = distance(tex2D(_MainTex, uv + float2( t.x,  -t.y)).rgb, k1);
+                float d10 = distance(tex2D(_MainTex, uv + float2(-t.x,  0.0)).rgb, k1);
+                float d11 = distance(tex2D(_MainTex, uv).rgb,                          k1);
+                float d12 = distance(tex2D(_MainTex, uv + float2( t.x,  0.0)).rgb, k1);
+                float d20 = distance(tex2D(_MainTex, uv + float2(-t.x,  t.y)).rgb, k1);
+                float d21 = distance(tex2D(_MainTex, uv + float2( 0.0,   t.y)).rgb, k1);
+                float d22 = distance(tex2D(_MainTex, uv + float2( t.x,   t.y)).rgb, k1);
 
-                // 3x3 다수결(majority vote): 흰/투명 점 노이즈, 검정 점 노이즈를 모두 줄임
-                float whiteCount = 0.0;
-                whiteCount += step(keyLuma, l00);
-                whiteCount += step(keyLuma, l01);
-                whiteCount += step(keyLuma, l02);
-                whiteCount += step(keyLuma, l10);
-                whiteCount += step(keyLuma, filteredCenter);
-                whiteCount += step(keyLuma, l12);
-                whiteCount += step(keyLuma, l20);
-                whiteCount += step(keyLuma, l21);
-                whiteCount += step(keyLuma, l22);
+                float avgDist = (d00 + d01 + d02 + d10 + d11 + d12 + d20 + d21 + d22) / 9.0;
+                float filteredDist = lerp(d11, avgDist, _NoiseFilter);
 
-                float isWhiteTransparent = step(4.5, whiteCount);
+                float mask1 = saturate((filteredDist - _Threshold) / max(_Smooth, 1e-5));
+                float mask = mask1;
 
-                float3 rgb = float3(0.0, 0.0, 0.0);
-                float alpha = 1.0 - isWhiteTransparent;
+                if (_UseSecondKey > 0.5)
+                {
+                    float mask2 = saturate((distance(tex2D(_MainTex, uv).rgb, _KeyColor2.rgb) - _Threshold2) / max(_Smooth2, 1e-5));
+                    mask = min(mask1, mask2);
+                }
+
+                float alpha = saturate((mask - 0.5) * _EdgeContrast + 0.5);
+
+                float midMin = 0.5 - _MidValueFilter;
+                float midMax = 0.5 + _MidValueFilter;
+                float isMid = step(midMin, alpha) * step(alpha, midMax);
+                alpha = lerp(alpha, 0.0, isMid);
+                alpha = step(_AlphaCutoff, alpha);
+
+                float3 src = tex2D(_MainTex, uv).rgb;
+                float3 rgb = (_OpaqueToBlack > 0.5) ? float3(0.0, 0.0, 0.0) : src;
 
                 return float4(rgb, alpha);
             }

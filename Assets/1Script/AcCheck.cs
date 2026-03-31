@@ -63,7 +63,7 @@ public class AcCheck : MonoBehaviour
 
     bool _isCheck = false;
 
-    Action onClear;
+    protected Action onClear;
 
     void Awake()
     {
@@ -100,10 +100,12 @@ public class AcCheck : MonoBehaviour
         UpdateColorPercent();
     }
 
-    public void StartCheck()
+    public virtual void StartCheck()
     {
         _isCheck = true;
         FadeManager.Instance.SetAlphaOne(outputText);
+        FadeManager.Instance.SetAlphaOne(targetRawImage);
+
         Debug.Log($"{name}Start Check");
     }
 
@@ -111,9 +113,9 @@ public class AcCheck : MonoBehaviour
     {
         _isCheck = false;
         FadeManager.Instance.SetAlphaZero(outputText);
+        //FadeManager.Instance.SetAlphaZero(targetRawImage);
+
         Debug.Log($"{name}Stop Check");
-
-
     }
 
     public void SetTargetRawImage(RawImage rawImage)
@@ -180,39 +182,70 @@ public class AcCheck : MonoBehaviour
             return;
         }
 
+        // RectTransform 정보 가져오기
+        RectTransform targetRectTransform = targetRawImage.rectTransform;
+        RectTransform overlayRectTransform = overlayRawImage.rectTransform;
+        Rect targetRect = targetRectTransform.rect;
+        Rect overlayRect = overlayRectTransform.rect;
+
+        // Overlay 텍스처의 UV 경계
         int overlayXMin;
         int overlayXMax;
         int overlayYMin;
         int overlayYMax;
         GetTextureBounds(overlayRawImage.uvRect, overlayWidth, overlayHeight, out overlayXMin, out overlayXMax, out overlayYMin, out overlayYMax);
 
+        // Base 텍스처의 UV 경계
+        int baseXMin;
+        int baseXMax;
+        int baseYMin;
+        int baseYMax;
+        GetTextureBounds(targetRawImage.uvRect, baseWidth, baseHeight, out baseXMin, out baseXMax, out baseYMin, out baseYMax);
+
         int total = 0;
         int matched = 0;
         int step = Mathf.Max(1, sampleStep);
-        int regionWidth = Mathf.Max(1, overlayXMax - overlayXMin);
-        int regionHeight = Mathf.Max(1, overlayYMax - overlayYMin);
-        RectTransform overlayRectTransform = overlayRawImage.rectTransform;
-        Rect overlayRect = overlayRectTransform.rect;
 
-        for (int y = overlayYMin; y <= overlayYMax; y += step)
+        // Overlay 텍스처의 각 투명하지 않은 픽셀 순회
+        for (int oy = overlayYMin; oy <= overlayYMax; oy += step)
         {
-            int row = y * overlayWidth;
-            float normalizedY = (y - overlayYMin) / (float)regionHeight;
-            float localY = Mathf.Lerp(overlayRect.yMin, overlayRect.yMax, normalizedY);
+            int overlayRow = oy * overlayWidth;
 
-            for (int x = overlayXMin; x <= overlayXMax; x += step)
+            for (int ox = overlayXMin; ox <= overlayXMax; ox += step)
             {
-                Color32 overlayPixel = overlayPixels[row + x];
+                Color32 overlayPixel = overlayPixels[overlayRow + ox];
                 if (!IsOverlayTargetPixel(overlayPixel)) continue;
 
                 total++;
 
-                float normalizedX = (x - overlayXMin) / (float)regionWidth;
-                float localX = Mathf.Lerp(overlayRect.xMin, overlayRect.xMax, normalizedX);
-                Vector3 worldPoint = overlayRectTransform.TransformPoint(new Vector3(localX, localY, 0f));
+                // Overlay 텍스처 좌표 → Overlay로컬좌표 → 월드좌표
+                float overlayUV_X = ox / (float)(overlayWidth - 1);
+                float overlayUV_Y = oy / (float)(overlayHeight - 1);
 
-                Color32 sampledBasePixel;
-                if (!TrySampleRawImageAtWorldPoint(targetRawImage, basePixels, baseWidth, baseHeight, worldPoint, out sampledBasePixel)) continue;
+                float overlayLocalX = Mathf.Lerp(overlayRect.xMin, overlayRect.xMax, overlayUV_X);
+                float overlayLocalY = Mathf.Lerp(overlayRect.yMin, overlayRect.yMax, overlayUV_Y);
+
+                Vector3 worldPoint = overlayRectTransform.TransformPoint(new Vector3(overlayLocalX, overlayLocalY, 0f));
+
+                // 월드좌표 → Target로컬좌표
+                Vector2 targetLocalPoint = targetRectTransform.InverseTransformPoint(worldPoint);
+
+                // Target의 RectTransform rect 범위 확인
+                if (!targetRect.Contains(targetLocalPoint))
+                    continue;
+
+                // Target 로컬좌표 → 정규화 좌표
+                float targetNormalizedX = Mathf.InverseLerp(targetRect.xMin, targetRect.xMax, targetLocalPoint.x);
+                float targetNormalizedY = Mathf.InverseLerp(targetRect.yMin, targetRect.yMax, targetLocalPoint.y);
+
+                // 정규화 좌표를 Target 텍스처 좌표로 변환
+                float baseUV_X = Mathf.Lerp(targetRawImage.uvRect.xMin, targetRawImage.uvRect.xMax, targetNormalizedX);
+                float baseUV_Y = Mathf.Lerp(targetRawImage.uvRect.yMin, targetRawImage.uvRect.yMax, targetNormalizedY);
+
+                int baseTexX = Mathf.Clamp(Mathf.RoundToInt(baseUV_X * (baseWidth - 1)), 0, baseWidth - 1);
+                int baseTexY = Mathf.Clamp(Mathf.RoundToInt(baseUV_Y * (baseHeight - 1)), 0, baseHeight - 1);
+
+                Color32 sampledBasePixel = basePixels[baseTexY * baseWidth + baseTexX];
                 if (!HasVisibleAlpha(sampledBasePixel, baseMinAlpha)) continue;
 
                 matched++;
@@ -236,7 +269,7 @@ public class AcCheck : MonoBehaviour
         }
     }
 
-    IEnumerator DelayOnClear()
+    protected virtual IEnumerator DelayOnClear()
     {
         yield return CoroutineReturnManager.GetWaitForSeconds(1f);
         onClear?.Invoke();
@@ -283,33 +316,6 @@ public class AcCheck : MonoBehaviour
         bool passByLuma = luma <= blackLumaThreshold;
         bool passByRgb = pixel.r <= blackRgbThreshold && pixel.g <= blackRgbThreshold && pixel.b <= blackRgbThreshold;
         return passByLuma || passByRgb;
-    }
-
-    bool TrySampleRawImageAtWorldPoint(RawImage rawImage, Color32[] pixels, int width, int height, Vector3 worldPoint, out Color32 pixel)
-    {
-        pixel = default;
-
-        if (rawImage == null || pixels == null || pixels.Length == 0 || width <= 0 || height <= 0)
-        {
-            return false;
-        }
-
-        RectTransform rectTransform = rawImage.rectTransform;
-        Vector2 localPoint = rectTransform.InverseTransformPoint(worldPoint);
-        Rect rect = rectTransform.rect;
-        if (!rect.Contains(localPoint)) return false;
-
-        float normalizedX = Mathf.InverseLerp(rect.xMin, rect.xMax, localPoint.x);
-        float normalizedY = Mathf.InverseLerp(rect.yMin, rect.yMax, localPoint.y);
-
-        Rect uvRect = rawImage.uvRect;
-        float u = Mathf.Lerp(uvRect.xMin, uvRect.xMax, normalizedX);
-        float v = Mathf.Lerp(uvRect.yMin, uvRect.yMax, normalizedY);
-
-        int x = Mathf.Clamp(Mathf.RoundToInt(u * (width - 1)), 0, width - 1);
-        int y = Mathf.Clamp(Mathf.RoundToInt(v * (height - 1)), 0, height - 1);
-        pixel = pixels[y * width + x];
-        return true;
     }
 
     bool TryGetPixelsFromRawImage(RawImage rawImage, ref Texture2D readbackCache, out Color32[] pixels, out int width, out int height)

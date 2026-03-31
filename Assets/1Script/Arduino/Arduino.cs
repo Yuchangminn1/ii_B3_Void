@@ -267,6 +267,7 @@ public class Arduino : MonoBehaviour
 
         stream = null;
 
+
         int reconnectAttempt = 0;
         int maxAttempts = Mathf.Max(1, maxReconnectAttempts);
 
@@ -274,6 +275,8 @@ public class Arduino : MonoBehaviour
         {
             yield return CoroutineReturnManager.GetWaitForSeconds(reconnectDelaySeconds);
             reconnectAttempt++;
+            yield return CoroutineReturnManager.GetWaitForSeconds(1f);
+
 
             if (!TryOpenPort("TimeoutReconnect"))
             {
