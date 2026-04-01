@@ -23,11 +23,12 @@ public class CameraManager : MonoBehaviour
 
     [Header("UI & Control")]
     [Tooltip("현재 선택된 카메라의 설정을 표시할 UI 텍스트")]
-    public Text selectedCameraText;
 
     public CameraVisible cameraVisible;
 
     private int _currentlyControlledIndex = 0;
+
+    public Text SelectCameraText;
 
     Shader GetSupportedShader(Shader shader)
     {
@@ -227,10 +228,11 @@ public class CameraManager : MonoBehaviour
 
     void UpdateSelectionText()
     {
-        if (selectedCameraText != null && cameraInstances.Count > 0)
+        if (cameraInstances[_currentlyControlledIndex] != null && cameraInstances.Count > 0)
         {
-            string camName = cameraInstances[_currentlyControlledIndex] != null ? cameraInstances[_currentlyControlledIndex].name : "null";
-            selectedCameraText.text = $"Selected: {camName}";
+            FadeManager.Instance.SetAlphaOne(SelectCameraText);
+            SelectCameraText.text = $"Selected: {cameraInstances[_currentlyControlledIndex].name}";
+
         }
     }
 

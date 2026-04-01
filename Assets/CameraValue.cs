@@ -8,11 +8,20 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
     [Header("Webcam Settings")]
     public int cameraIndex = 0;
     public string deviceName = "";
+    [Header("Device Filters")]
+    [Tooltip("If non-empty and the selected device's name contains this substring, this CameraValue will skip starting the webcam.")]
+    public string ignoreDeviceNameContains = "";
     public int requestedWidth = 1280;
     public int requestedHeight = 720;
     public int requestedFPS = 30;
     public bool mirrorHorizontal = true;
     public bool mirrorVertical = false;
+
+    public Text CameraSetUpText;
+
+    [Header("Debug")]
+    [Tooltip("Enable verbose debug logs for CameraValue operations.")]
+    public bool verboseDebug = false;
 
     [Header("Color Key Settings")]
     public Color keyColor = Color.green;
@@ -64,46 +73,70 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
         if (_targetRawImage == null) return;
         StopWebcam();
 
-        int deviceIndex = -1;
-        // 1. 정확히 일치하는 이름 검색
-        if (!string.IsNullOrEmpty(deviceName))
+        // Build a filtered list of devices excluding any that match the ignore substring
+        List<WebCamDevice> filtered = new List<WebCamDevice>();
+        for (int i = 0; i < devices.Length; i++)
         {
-            for (int i = 0; i < devices.Length; i++)
+            var d = devices[i];
+            if (!string.IsNullOrEmpty(ignoreDeviceNameContains) && d.name != null && d.name.Contains(ignoreDeviceNameContains))
             {
-                if (devices[i].name == deviceName)
-                {
-                    deviceIndex = i;
-                    break;
-                }
+                if (verboseDebug) Debug.Log($"[CameraValue] Ignoring device '{d.name}' because it contains '{ignoreDeviceNameContains}'");
+                continue;
             }
+            filtered.Add(d);
         }
 
-        // 2. 포함하는 이름 검색
-        if (deviceIndex == -1 && !string.IsNullOrEmpty(deviceName))
+        if (filtered.Count == 0)
         {
-            for (int i = 0; i < devices.Length; i++)
-            {
-                if (devices[i].name.Contains(deviceName))
-                {
-                    deviceIndex = i;
-                    break;
-                }
-            }
-        }
-
-        // 3. 인덱스 검색
-        if (deviceIndex == -1)
-        {
-            deviceIndex = cameraIndex;
-        }
-
-        if (deviceIndex < 0 || deviceIndex >= devices.Length)
-        {
-            Debug.LogWarning($"[CameraValue] Could not find camera for '{gameObject.name}' (Index: {cameraIndex}, Name: {deviceName})");
+            Debug.LogWarning($"[CameraValue] No available cameras for '{gameObject.name}' after applying ignore filter '{ignoreDeviceNameContains}'.");
             return;
         }
 
-        var device = devices[deviceIndex];
+        WebCamDevice device = default(WebCamDevice);
+        bool found = false;
+
+        // 1) Try exact name match within filtered devices
+        if (!string.IsNullOrEmpty(deviceName))
+        {
+            for (int i = 0; i < filtered.Count; i++)
+            {
+                if (filtered[i].name == deviceName)
+                {
+                    device = filtered[i];
+                    found = true;
+                    break;
+                }
+            }
+        }
+
+        // 2) Try contains name match
+        if (!found && !string.IsNullOrEmpty(deviceName))
+        {
+            for (int i = 0; i < filtered.Count; i++)
+            {
+                if (filtered[i].name.Contains(deviceName))
+                {
+                    device = filtered[i];
+                    found = true;
+                    break;
+                }
+            }
+        }
+
+        // 3) Use cameraIndex within filtered list
+        if (!found)
+        {
+            int idx = Mathf.Clamp(cameraIndex, 0, filtered.Count - 1);
+            device = filtered[idx];
+            found = true;
+        }
+
+        if (!found)
+        {
+            Debug.LogWarning($"[CameraValue] Could not select a camera for '{gameObject.name}'.");
+            return;
+        }
+
         webcamTexture = new WebCamTexture(device.name, requestedWidth, requestedHeight, requestedFPS);
         webcamTexture.Play();
 
@@ -124,6 +157,17 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
             Destroy(webcamTexture);
             webcamTexture = null;
         }
+    }
+
+    public void SetWarningText(string message)
+    {
+        CameraSetUpText.text = message;
+        FadeManager.Instance.SetAlphaOne(CameraSetUpText);
+    }
+
+    public void OffWarningText()
+    {
+        FadeManager.Instance.SetAlphaZero(CameraSetUpText);
     }
 
     public void ApplyMaterialProperties()
@@ -228,6 +272,7 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
 
     IEnumerator StopAutoKeyAfterDelay(float delay)
     {
+        SetWarningText("Auto picking key color...");
         yield return new WaitForSeconds(delay);
         if (_autoKeyRoutine != null)
         {
@@ -235,6 +280,7 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
             _autoKeyRoutine = null;
         }
         _autoKeyTimeoutRoutine = null;
+        OffWarningText();
         Debug.Log($"[CameraValue] Auto key color stopped for '{gameObject.name}'.");
     }
 
