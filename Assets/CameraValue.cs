@@ -28,6 +28,9 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
 
     [Header("Left Clipping")]
     public int leftClipPixels = 0;
+    public int rightClipPixels = 0;
+    public int topClipPixels = 0;
+    public int bottomClipPixels = 0;
 
     // 런타임 데이터 (인스펙터에 표시 안 됨)
     [System.NonSerialized] public WebCamTexture webcamTexture;
@@ -151,6 +154,51 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
             clipAmount = (float)leftClipPixels / webcamTexture.width;
         }
         material.SetFloat("_LeftClip", Mathf.Clamp01(clipAmount));
+
+        float rightClipAmount = 0f;
+        if (webcamTexture != null && webcamTexture.width > 0)
+        {
+            rightClipAmount = (float)rightClipPixels / webcamTexture.width;
+        }
+        material.SetFloat("_RightClip", Mathf.Clamp01(rightClipAmount));
+
+        float topClipAmount = 0f;
+        if (webcamTexture != null && webcamTexture.height > 0)
+        {
+            topClipAmount = (float)topClipPixels / webcamTexture.height;
+        }
+        material.SetFloat("_TopClip", Mathf.Clamp01(topClipAmount));
+
+        float bottomClipAmount = 0f;
+        if (webcamTexture != null && webcamTexture.height > 0)
+        {
+            bottomClipAmount = (float)bottomClipPixels / webcamTexture.height;
+        }
+        material.SetFloat("_BottomClip", Mathf.Clamp01(bottomClipAmount));
+    }
+
+    public void SetClipPixels(int left, int right, int top, int bottom)
+    {
+        leftClipPixels = Mathf.Max(0, left);
+        rightClipPixels = Mathf.Max(0, right);
+        topClipPixels = Mathf.Max(0, top);
+        bottomClipPixels = Mathf.Max(0, bottom);
+    }
+
+    public void AddClipPixels(int leftDelta, int rightDelta, int topDelta, int bottomDelta)
+    {
+        leftClipPixels = Mathf.Max(0, leftClipPixels + leftDelta);
+        rightClipPixels = Mathf.Max(0, rightClipPixels + rightDelta);
+        topClipPixels = Mathf.Max(0, topClipPixels + topDelta);
+        bottomClipPixels = Mathf.Max(0, bottomClipPixels + bottomDelta);
+    }
+
+    void OnValidate()
+    {
+        leftClipPixels = Mathf.Max(0, leftClipPixels);
+        rightClipPixels = Mathf.Max(0, rightClipPixels);
+        topClipPixels = Mathf.Max(0, topClipPixels);
+        bottomClipPixels = Mathf.Max(0, bottomClipPixels);
     }
 
     void OnDestroy()
@@ -252,6 +300,13 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
         data.floatParams.TryGetValue("smoothness", out smoothness);
         if (data.floatParams.TryGetValue("alphaCutoff", out float loadedAlphaCutoff)) alphaCutoff = loadedAlphaCutoff;
         if (data.floatParams.TryGetValue("midValueFilter", out float loadedMidValueFilter)) midValueFilter = loadedMidValueFilter;
+        if (data.intParams != null)
+        {
+            if (data.intParams.TryGetValue("leftClipPixels", out int loadedLeftClip)) leftClipPixels = Mathf.Max(0, loadedLeftClip);
+            if (data.intParams.TryGetValue("rightClipPixels", out int loadedRightClip)) rightClipPixels = Mathf.Max(0, loadedRightClip);
+            if (data.intParams.TryGetValue("topClipPixels", out int loadedTopClip)) topClipPixels = Mathf.Max(0, loadedTopClip);
+            if (data.intParams.TryGetValue("bottomClipPixels", out int loadedBottomClip)) bottomClipPixels = Mathf.Max(0, loadedBottomClip);
+        }
     }
 
     public JsonGenericUpData Data()
@@ -264,6 +319,10 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
         _genericData.floatParams["smoothness"] = smoothness;
         _genericData.floatParams["alphaCutoff"] = alphaCutoff;
         _genericData.floatParams["midValueFilter"] = midValueFilter;
+        _genericData.intParams["leftClipPixels"] = Mathf.Max(0, leftClipPixels);
+        _genericData.intParams["rightClipPixels"] = Mathf.Max(0, rightClipPixels);
+        _genericData.intParams["topClipPixels"] = Mathf.Max(0, topClipPixels);
+        _genericData.intParams["bottomClipPixels"] = Mathf.Max(0, bottomClipPixels);
         return _genericData;
     }
 }

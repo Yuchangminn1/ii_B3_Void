@@ -144,7 +144,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\Resources\WebcamChromaKey.shader" />
-    <None Include="Assets\WebcamChromaKey.shader" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="UnityEngine">

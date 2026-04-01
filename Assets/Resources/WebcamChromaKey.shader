@@ -14,6 +14,10 @@ Shader "Custom/WebcamChromaKey"
         _NoiseFilter ("Noise Filter", Range(0,1)) = 1
         _AlphaCutoff ("Alpha Cutoff", Range(0,1)) = 0.5
         _MidValueFilter ("Mid Value Filter", Range(0,0.49)) = 0.15
+        _LeftClip ("Left Clip", Range(0,1)) = 0
+        _RightClip ("Right Clip", Range(0,1)) = 0
+        _TopClip ("Top Clip", Range(0,1)) = 0
+        _BottomClip ("Bottom Clip", Range(0,1)) = 0
     }
 
     SubShader
@@ -47,6 +51,10 @@ Shader "Custom/WebcamChromaKey"
             float _NoiseFilter;
             float _AlphaCutoff;
             float _MidValueFilter;
+            float _LeftClip;
+            float _RightClip;
+            float _TopClip;
+            float _BottomClip;
 
             struct appdata
             {
@@ -100,6 +108,10 @@ Shader "Custom/WebcamChromaKey"
                 float isMid = step(midMin, alpha) * step(alpha, midMax);
                 alpha = lerp(alpha, 0.0, isMid);
                 alpha = step(_AlphaCutoff, alpha);
+                alpha *= step(_LeftClip, uv.x);
+                alpha *= step(uv.x, 1.0 - _RightClip);
+                alpha *= step(_BottomClip, uv.y);
+                alpha *= step(uv.y, 1.0 - _TopClip);
 
                 float3 c = tex2D(_MainTex, uv).rgb;
                 float3 rgb = (_OpaqueToBlack > 0.5) ? float3(0.0, 0.0, 0.0) : c;

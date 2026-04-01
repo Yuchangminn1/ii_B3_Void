@@ -157,37 +157,14 @@ public class CameraManager : MonoBehaviour
             Debug.Log($"[{current.name}] OpaqueToBlack: {current.opaqueToBlack}");
         }
 
-        if (Input.GetKeyDown(KeyCode.Y))
-        {
-            current.edgeContrast = Mathf.Clamp(current.edgeContrast + 0.1f, 1f, 10f);
-            Debug.Log($"[{current.name}] EdgeContrast: {current.edgeContrast:F1}");
-        }
-        if (Input.GetKeyDown(KeyCode.U))
-        {
-            current.edgeContrast = Mathf.Clamp(current.edgeContrast - 0.1f, 1f, 10f);
-            Debug.Log($"[{current.name}] EdgeContrast: {current.edgeContrast:F1}");
-        }
-
-        if (Input.GetKeyDown(KeyCode.I))
-        {
-            current.noiseFilter = Mathf.Clamp01(current.noiseFilter + 0.1f);
-            Debug.Log($"[{current.name}] NoiseFilter: {current.noiseFilter:F1}");
-        }
-        if (Input.GetKeyDown(KeyCode.K))
-        {
-            current.noiseFilter = Mathf.Clamp01(current.noiseFilter - 0.1f);
-            Debug.Log($"[{current.name}] NoiseFilter: {current.noiseFilter:F1}");
-        }
-
-        // Left Clip Control (O: Increase/Cut More, P: Decrease/Cut Less)
         if (Input.GetKeyDown(KeyCode.O))
         {
-            current.leftClipPixels += 10;
+            AdjustSelectedClipPixels(0, 10, 0, 0);
             Debug.Log($"[{current.name}] Left Clip Pixels: {current.leftClipPixels}");
         }
         if (Input.GetKeyDown(KeyCode.P))
         {
-            current.leftClipPixels = Mathf.Max(0, current.leftClipPixels - 10);
+            AdjustSelectedClipPixels(0, -10, 0, 0);
             Debug.Log($"[{current.name}] Left Clip Pixels: {current.leftClipPixels}");
         }
 
@@ -196,6 +173,26 @@ public class CameraManager : MonoBehaviour
             current.StartAutoKeyForSeconds(5f);
             Debug.Log($"[{current.name}] Auto Key Started for 10 seconds");
         }
+    }
+
+    public CameraValue GetSelectedCameraValue()
+    {
+        if (_currentlyControlledIndex < 0 || _currentlyControlledIndex >= cameraInstances.Count) return null;
+        return cameraInstances[_currentlyControlledIndex];
+    }
+
+    public void SetSelectedClipPixels(int left, int right, int top, int bottom)
+    {
+        var current = GetSelectedCameraValue();
+        if (current == null) return;
+        current.SetClipPixels(left, right, top, bottom);
+    }
+
+    public void AdjustSelectedClipPixels(int leftDelta, int rightDelta, int topDelta, int bottomDelta)
+    {
+        var current = GetSelectedCameraValue();
+        if (current == null) return;
+        current.AddClipPixels(leftDelta, rightDelta, topDelta, bottomDelta);
     }
 
     public IEnumerator StartFocusCheckCoroutine()
