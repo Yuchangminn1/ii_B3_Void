@@ -314,7 +314,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cameraIndex: 1
   deviceName: 
-  ignoreDeviceNameContains: Mac
+  ignoreDeviceNameContains:
+  - Mac
+  - "\uCC3D\uBBFC"
   requestedWidth: 1280
   requestedHeight: 720
   requestedFPS: 30
@@ -3116,8 +3118,8 @@ MonoBehaviour:
   targetRawImage: {fileID: 198529139}
   overlayRawImage: {fileID: 524027188}
   CurrentDirection: 0
-  baseMinAlpha: 0.01
-  overlayMinAlpha: 0.01
+  baseMinAlpha: 0.03
+  overlayMinAlpha: 0.03
   overlayBlackOnly: 1
   blackLumaThreshold: 0.15
   blackRgbThreshold: 70
@@ -3130,6 +3132,7 @@ MonoBehaviour:
   outputFormat: '{0:F1}%'
   _defaultTexture: {fileID: 2800000, guid: 7df1107e58cc1a84a9559b0f4d823842, type: 3}
   _clearTexture: {fileID: 2800000, guid: ecfc0fe60b511444fbd2c38054a067b3, type: 3}
+  minOverlapRatio: 0.4
 --- !u!1 &207944386
 GameObject:
   m_ObjectHideFlags: 0
@@ -3264,8 +3267,8 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 6524977}
-  - {fileID: 534029145}
   - {fileID: 1980161430}
+  - {fileID: 534029145}
   m_Father: {fileID: 887417504}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
@@ -7115,7 +7118,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cameraIndex: 0
   deviceName: 
-  ignoreDeviceNameContains: Mac
+  ignoreDeviceNameContains:
+  - Mac
+  - "\uCC3D\uBBFC"
   requestedWidth: 1280
   requestedHeight: 720
   requestedFPS: 30
@@ -11117,7 +11122,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: -100}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &797113469
@@ -14806,8 +14811,8 @@ MonoBehaviour:
   targetRawImage: {fileID: 1050220423}
   overlayRawImage: {fileID: 6524979}
   CurrentDirection: 1
-  baseMinAlpha: 0.01
-  overlayMinAlpha: 0.01
+  baseMinAlpha: 0.03
+  overlayMinAlpha: 0.03
   overlayBlackOnly: 1
   blackLumaThreshold: 0.15
   blackRgbThreshold: 70
@@ -14820,6 +14825,7 @@ MonoBehaviour:
   outputFormat: '{0:F1}%'
   _defaultTexture: {fileID: 2800000, guid: 7df1107e58cc1a84a9559b0f4d823842, type: 3}
   _clearTexture: {fileID: 2800000, guid: ecfc0fe60b511444fbd2c38054a067b3, type: 3}
+  minOverlapRatio: 0.4
 --- !u!1 &1061580040
 GameObject:
   m_ObjectHideFlags: 0
@@ -17060,7 +17066,7 @@ AudioSource:
   m_Volume: 1
   m_Pitch: 1
   Loop: 1
-  Mute: 0
+  Mute: 1
   Spatialize: 0
   SpatializePostEffects: 0
   Priority: 128
@@ -23303,9 +23309,9 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 524027186}
-  - {fileID: 1071816913}
   - {fileID: 301360796}
   - {fileID: 1600309634}
+  - {fileID: 1071816913}
   m_Father: {fileID: 887417504}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}

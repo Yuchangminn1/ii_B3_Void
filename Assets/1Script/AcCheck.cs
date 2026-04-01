@@ -7,43 +7,54 @@ using UnityEngine.UI;
 public class AcCheck : MonoBehaviour
 {
     [Header("Base")]
-    [Tooltip("기준이 되는 RawImage. 비워두면 같은 오브젝트에서 자동 검색합니다.")]
+    [Header("기준이 되는 RawImage. 비워두면 같은 오브젝트에서 자동 검색합니다.")]
     public RawImage targetRawImage;
 
     [Header("Overlay")]
-    [Tooltip("기준 이미지 안에 들어와야 하는 타겟 RawImage")]
+    [Header("기준 이미지 안에 들어와야 하는 타겟 RawImage")]
     public RawImage overlayRawImage;
 
     public Direction CurrentDirection;
 
     [Header("Threshold")]
-    [Tooltip("기준 텍스처에서 이 값보다 투명하면 무시")]
+    [Header("기준 텍스처에서 이 값보다 투명하면 무시")]
     [SerializeField, Range(0f, 1f)] float baseMinAlpha = 0.01f;
-    [Tooltip("겹쳐진 텍스처에서 이 값보다 투명하면 덮이지 않은 것으로 처리")]
+    [Header("겹쳐진 텍스처에서 이 값보다 투명하면 덮이지 않은 것으로 처리")]
     [SerializeField, Range(0f, 1f)] float overlayMinAlpha = 0.01f;
-    [Tooltip("타겟(overlay)에서 검은 영역만 계산에 사용")]
+    [Header("타겟(overlay)에서 검은 영역만 계산에 사용")]
     [SerializeField] bool overlayBlackOnly = true;
-    [Tooltip("검정 판정 밝기 임계값. 낮을수록 더 어두운 픽셀만 통과")]
+    [Header("검정 판정 밝기 임계값. 낮을수록 더 어두운 픽셀만 통과")]
     [SerializeField, Range(0f, 0.5f)] float blackLumaThreshold = 0.15f;
-    [Tooltip("검정 RGB 임계값. luma 대신 RGB 상한으로도 통과 판정")]
+    [Header("검정 RGB 임계값. luma 대신 RGB 상한으로도 통과 판정")]
     [SerializeField, Range(0, 255)] int blackRgbThreshold = 70;
 
     [Header("Update")]
-    [Tooltip("분석 주기(초)")]
+    [Header("분석 주기(초)")]
     [SerializeField, Range(0.5f, 1f)] float updateInterval = 0.5f;
-    [Tooltip("샘플링 간격. 1이면 더 정확하지만 무거울 수 있습니다.")]
+    [Header("샘플링 간격. 1이면 더 정확하지만 무거울 수 있습니다.")]
     [SerializeField, Range(1, 16)] int sampleStep = 2;
+    [Header("체크 반경 (타겟 텍스처 기준 픽셀)")]
+    [Tooltip("타겟 텍스처의 기준 픽셀 단위 반경. 0이면 단일 픽만 검사. 이 값에 따라 오버레이의 주변 픽을 허용하여 약간의 위치 오차를 보정합니다.")]
+    [SerializeField, Range(0, 64)] int checkRadius = 0;
 
     [Header("Output")]
-    [Tooltip("타겟 텍스처의 유효 알파 영역 중 기준 이미지 안에 들어온 비율(%)")]
+    [Header("타겟 텍스처의 유효 알파 영역 중 기준 이미지 안에 들어온 비율(%)")]
     [SerializeField, Range(0f, 100f)] float detectedPercent;
-    [Tooltip("분모로 계산된 타겟 픽셀 수")]
+    [Header("분모로 계산된 타겟 픽셀 수")]
     [SerializeField] int debugTotalPixels;
-    [Tooltip("기준 이미지 안에 들어온 타겟 픽셀 수")]
+    [Header("기준 이미지 안에 들어온 타겟 픽셀 수")]
     [SerializeField] int debugMatchedPixels;
-    [Tooltip("결과를 표시할 UI Text (선택)")]
+    public enum DetectionMode { MatchedPercent, ProtrusionOverTarget, ProtrusionOverOverlap }
+    [Tooltip("MatchedPercent: 기존 방식(matched/target). ProtrusionOverTarget: 삐져나온 픽 기준(target). ProtrusionOverOverlap: 삐져나온 픽을 겹친 픽 기준으로 계산.")]
+    public DetectionMode detectionMode = DetectionMode.MatchedPercent;
+    [Header("Goal Adjustments")]
+    [Tooltip("Matched percent goal correction in percent. e.g. 5 means require 40 - 5 = 35% to pass.")]
+    public float matchedAdjustPercent = 10f;
+    [Tooltip("Protrusion percent goal correction in percent. e.g. 5 means require 100 - 5 = 95% to pass.")]
+    public float protrusionAdjustPercent = 5f;
+    [Header("결과를 표시할 UI Text (선택)")]
     [SerializeField] Text outputText;
-    [Tooltip("텍스트 포맷 예시: {0:F1}%")]
+    [Header("텍스트 포맷 예시: {0:F1}%")]
     [SerializeField] string outputFormat = "{0:F1}%";
 
 
@@ -112,7 +123,7 @@ public class AcCheck : MonoBehaviour
     public void StopCheck()
     {
         _isCheck = false;
-        FadeManager.Instance.SetAlphaZero(outputText);
+        //FadeManager.Instance.SetAlphaZero(outputText);
         //FadeManager.Instance.SetAlphaZero(targetRawImage);
 
         Debug.Log($"{name}Stop Check");
@@ -206,39 +217,133 @@ public class AcCheck : MonoBehaviour
         int matched = 0;
         int step = Mathf.Max(1, sampleStep);
 
-        // Overlay 텍스처의 각 투명하지 않은 픽셀 순회
-        for (int oy = overlayYMin; oy <= overlayYMax; oy += step)
+        // Helper: bilinear sample from overlay pixels (u,v in 0..1)
+        Color SampleOverlayBilinear(Color32[] pix, int w, int h, float u, float v)
         {
-            int overlayRow = oy * overlayWidth;
+            if (w <= 1 || h <= 1) return Color.clear;
+            float fx = Mathf.Clamp01(u) * (w - 1);
+            float fy = Mathf.Clamp01(v) * (h - 1);
+            int x0 = Mathf.Clamp(Mathf.FloorToInt(fx), 0, w - 1);
+            int x1 = Mathf.Clamp(x0 + 1, 0, w - 1);
+            int y0 = Mathf.Clamp(Mathf.FloorToInt(fy), 0, h - 1);
+            int y1 = Mathf.Clamp(y0 + 1, 0, h - 1);
+            float sx = fx - x0;
+            float sy = fy - y0;
 
-            for (int ox = overlayXMin; ox <= overlayXMax; ox += step)
+            Color c00 = new Color(pix[y0 * w + x0].r / 255f, pix[y0 * w + x0].g / 255f, pix[y0 * w + x0].b / 255f, pix[y0 * w + x0].a / 255f);
+            Color c10 = new Color(pix[y0 * w + x1].r / 255f, pix[y0 * w + x1].g / 255f, pix[y0 * w + x1].b / 255f, pix[y0 * w + x1].a / 255f);
+            Color c01 = new Color(pix[y1 * w + x0].r / 255f, pix[y1 * w + x0].g / 255f, pix[y1 * w + x0].b / 255f, pix[y1 * w + x0].a / 255f);
+            Color c11 = new Color(pix[y1 * w + x1].r / 255f, pix[y1 * w + x1].g / 255f, pix[y1 * w + x1].b / 255f, pix[y1 * w + x1].a / 255f);
+
+            Color cx0 = Color.Lerp(c00, c10, sx);
+            Color cx1 = Color.Lerp(c01, c11, sx);
+            return Color.Lerp(cx0, cx1, sy);
+        }
+
+        // Iterate target (base) pixels - more stable denominator
+        for (int by = baseYMin; by <= baseYMax; by += step)
+        {
+            int baseRow = by * baseWidth;
+            for (int bx = baseXMin; bx <= baseXMax; bx += step)
             {
-                Color32 overlayPixel = overlayPixels[overlayRow + ox];
-                if (!IsOverlayTargetPixel(overlayPixel)) continue;
+                Color32 basePixel = basePixels[baseRow + bx];
+                if (!HasVisibleAlpha(basePixel, baseMinAlpha)) continue;
 
                 total++;
 
-                // Overlay 텍스처 좌표 → Overlay로컬좌표 → 월드좌표
+                // Base 픽 좌표 -> 정규화 UV (0..1)
+                float baseUV_X = (baseWidth > 1) ? (bx / (float)(baseWidth - 1)) : 0f;
+                float baseUV_Y = (baseHeight > 1) ? (by / (float)(baseHeight - 1)) : 0f;
+
+                // Base 로컬 좌표
+                float baseLocalX = Mathf.Lerp(targetRect.xMin, targetRect.xMax, baseUV_X);
+                float baseLocalY = Mathf.Lerp(targetRect.yMin, targetRect.yMax, baseUV_Y);
+                Vector3 worldPoint = targetRectTransform.TransformPoint(new Vector3(baseLocalX, baseLocalY, 0f));
+
+                // 월드 -> Overlay 로컬
+                Vector2 overlayLocalPoint = overlayRectTransform.InverseTransformPoint(worldPoint);
+                if (!overlayRect.Contains(overlayLocalPoint)) continue;
+
+                // Overlay 정규화 좌표
+                float overlayNormalizedX = Mathf.InverseLerp(overlayRect.xMin, overlayRect.xMax, overlayLocalPoint.x);
+                float overlayNormalizedY = Mathf.InverseLerp(overlayRect.yMin, overlayRect.yMax, overlayLocalPoint.y);
+
+                // UV rect mapping
+                float overlayUV_X = Mathf.Lerp(overlayRawImage.uvRect.xMin, overlayRawImage.uvRect.xMax, overlayNormalizedX);
+                float overlayUV_Y = Mathf.Lerp(overlayRawImage.uvRect.yMin, overlayRawImage.uvRect.yMax, overlayNormalizedY);
+
+                // Sample overlay bilinearly
+                Color sampled = SampleOverlayBilinear(overlayPixels, overlayWidth, overlayHeight, overlayUV_X, overlayUV_Y);
+                Color32 sampled32 = new Color32((byte)(Mathf.Clamp01(sampled.r) * 255f), (byte)(Mathf.Clamp01(sampled.g) * 255f), (byte)(Mathf.Clamp01(sampled.b) * 255f), (byte)(Mathf.Clamp01(sampled.a) * 255f));
+
+                bool anyMatch = false;
+                if (checkRadius <= 0)
+                {
+                    // Single bilinear sample
+                    anyMatch = IsOverlayTargetPixel(sampled32);
+                }
+                else
+                {
+                    // Convert checkRadius (target pixels) to overlay pixel radius
+                    int radiusOverlay = Mathf.Clamp(Mathf.RoundToInt(checkRadius * ((float)overlayWidth / (float)baseWidth)), 1, Mathf.Max(1, Mathf.Max(overlayWidth, overlayHeight)));
+                    float fx = Mathf.Clamp01(overlayUV_X) * (overlayWidth - 1);
+                    float fy = Mathf.Clamp01(overlayUV_Y) * (overlayHeight - 1);
+                    int cx = Mathf.RoundToInt(fx);
+                    int cy = Mathf.RoundToInt(fy);
+
+                    int stepR = Mathf.Max(1, sampleStep);
+                    int x0 = Mathf.Clamp(cx - radiusOverlay, 0, overlayWidth - 1);
+                    int x1 = Mathf.Clamp(cx + radiusOverlay, 0, overlayWidth - 1);
+                    int y0 = Mathf.Clamp(cy - radiusOverlay, 0, overlayHeight - 1);
+                    int y1 = Mathf.Clamp(cy + radiusOverlay, 0, overlayHeight - 1);
+
+                    for (int oy2 = y0; oy2 <= y1 && !anyMatch; oy2 += stepR)
+                    {
+                        int rowO2 = oy2 * overlayWidth;
+                        for (int ox2 = x0; ox2 <= x1; ox2 += stepR)
+                        {
+                            Color32 oc = overlayPixels[rowO2 + ox2];
+                            if (IsOverlayTargetPixel(oc))
+                            {
+                                anyMatch = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if (anyMatch)
+                {
+                    matched++;
+                }
+            }
+        }
+
+        // Count protruding: overlay pixels that are visible and map to transparent target pixels
+        int protruding = 0;
+        // iterate overlay pixels (sample step) and map into target
+        int stepO = Mathf.Max(1, sampleStep);
+        for (int oy = overlayYMin; oy <= overlayYMax; oy += stepO)
+        {
+            int rowO = oy * overlayWidth;
+            for (int ox = overlayXMin; ox <= overlayXMax; ox += stepO)
+            {
+                Color32 op = overlayPixels[rowO + ox];
+                if (!IsOverlayTargetPixel(op)) continue;
+
+                // overlay pixel -> local overlay coords
                 float overlayUV_X = ox / (float)(overlayWidth - 1);
                 float overlayUV_Y = oy / (float)(overlayHeight - 1);
-
                 float overlayLocalX = Mathf.Lerp(overlayRect.xMin, overlayRect.xMax, overlayUV_X);
                 float overlayLocalY = Mathf.Lerp(overlayRect.yMin, overlayRect.yMax, overlayUV_Y);
-
                 Vector3 worldPoint = overlayRectTransform.TransformPoint(new Vector3(overlayLocalX, overlayLocalY, 0f));
 
-                // 월드좌표 → Target로컬좌표
                 Vector2 targetLocalPoint = targetRectTransform.InverseTransformPoint(worldPoint);
+                if (!targetRect.Contains(targetLocalPoint)) continue;
 
-                // Target의 RectTransform rect 범위 확인
-                if (!targetRect.Contains(targetLocalPoint))
-                    continue;
-
-                // Target 로컬좌표 → 정규화 좌표
                 float targetNormalizedX = Mathf.InverseLerp(targetRect.xMin, targetRect.xMax, targetLocalPoint.x);
                 float targetNormalizedY = Mathf.InverseLerp(targetRect.yMin, targetRect.yMax, targetLocalPoint.y);
 
-                // 정규화 좌표를 Target 텍스처 좌표로 변환
                 float baseUV_X = Mathf.Lerp(targetRawImage.uvRect.xMin, targetRawImage.uvRect.xMax, targetNormalizedX);
                 float baseUV_Y = Mathf.Lerp(targetRawImage.uvRect.yMin, targetRawImage.uvRect.yMax, targetNormalizedY);
 
@@ -246,25 +351,69 @@ public class AcCheck : MonoBehaviour
                 int baseTexY = Mathf.Clamp(Mathf.RoundToInt(baseUV_Y * (baseHeight - 1)), 0, baseHeight - 1);
 
                 Color32 sampledBasePixel = basePixels[baseTexY * baseWidth + baseTexX];
-                if (!HasVisibleAlpha(sampledBasePixel, baseMinAlpha)) continue;
-
-                matched++;
+                // if base is transparent here -> protruding
+                if (!HasVisibleAlpha(sampledBasePixel, baseMinAlpha)) protruding++;
             }
         }
 
-        detectedPercent = total > 0 ? (matched * 100f / total) + modifier : 0f;
         debugTotalPixels = total;
         debugMatchedPixels = matched;
 
-        if (outputText != null)
+        // Decide detectedPercent based on selected detection mode
+        switch (detectionMode)
         {
-            outputText.text = string.Format(outputFormat, detectedPercent);
+            case DetectionMode.MatchedPercent:
+                detectedPercent = total > 0 ? (matched * 100f / total) + modifier : 0f;
+                break;
+            case DetectionMode.ProtrusionOverTarget:
+                detectedPercent = total > 0 ? (Mathf.Clamp01(1f - ((float)protruding / (float)total)) * 100f) + modifier : 0f;
+                break;
+            case DetectionMode.ProtrusionOverOverlap:
+                if (matched == 0)
+                {
+                    detectedPercent = (protruding > 0) ? 0f : 100f;
+                }
+                else
+                {
+                    detectedPercent = (Mathf.Clamp01(1f - ((float)protruding / (float)matched)) * 100f) + modifier;
+                }
+                break;
+            default:
+                detectedPercent = total > 0 ? (matched * 100f / total) + modifier : 0f;
+                break;
         }
 
-        if (detectedPercent >= 100f)
-        {
-            StopCheck();
+        // Compute combined progress percentage from two adjusted goals and display single percent
+        float matchedPercent = total > 0 ? (matched * 100f / total) : 0f;
+        float protrusionOverTargetPercent = total > 0 ? (Mathf.Clamp01(1f - ((float)protruding / (float)total)) * 100f) : 0f;
 
+        // Effective thresholds include adjustments
+        float effMatchedThreshold = Mathf.Max(0f, 40f - matchedAdjustPercent);
+        float effProtrusionThreshold = Mathf.Clamp(100f - protrusionAdjustPercent, 0f, 100f);
+
+        float matchedRatio = effMatchedThreshold > 0f ? Mathf.Clamp01(matchedPercent / effMatchedThreshold) : 1f;
+        float protrusionRatio = effProtrusionThreshold > 0f ? Mathf.Clamp01(protrusionOverTargetPercent / effProtrusionThreshold) : 1f;
+
+        // Combine ratios (average). You can change weighting if needed.
+        float combinedRatio = (matchedRatio + protrusionRatio) * 0.5f;
+        float combinedPercent = Mathf.Clamp01(combinedRatio) * 100f;
+
+        if (outputText != null)
+        {
+            outputText.text = string.Format("{0:F0}%", combinedPercent);
+        }
+
+        // Trigger only when BOTH adjusted conditions met:
+        // 1) MatchedPercent (matched / target) >= (40 - matchedAdjustPercent)
+        // 2) ProtrusionOverTarget >= (100 - protrusionAdjustPercent)
+        float matchedPercentFinal = total > 0 ? (matched * 100f / total) : 0f;
+        float protrusionOverTargetPercentFinal = total > 0 ? (Mathf.Clamp01(1f - ((float)protruding / (float)total)) * 100f) : 0f;
+        float effMatchedThresholdFinal = Mathf.Max(0f, 40f - matchedAdjustPercent);
+        float effProtrusionThresholdFinal = Mathf.Clamp(100f - protrusionAdjustPercent, 0f, 100f);
+        if (matchedPercent >= effMatchedThresholdFinal && protrusionOverTargetPercentFinal >= effProtrusionThresholdFinal)
+        {
+            Debug.Log($"[AcCheck] Combined trigger met: matched={matchedPercent:F1}% (need {effMatchedThresholdFinal}%), protrusionOverTarget={protrusionOverTargetPercentFinal:F1}% (need {effProtrusionThresholdFinal}%)");
+            StopCheck();
             StartCoroutine(DelayOnClear());
         }
     }
@@ -323,6 +472,50 @@ public class AcCheck : MonoBehaviour
         pixels = null;
         width = 0;
         height = 0;
+
+        if (rawImage == null) return false;
+
+        // If RawImage has a material (shader) we must render the material output into an RT
+        // so that shader effects (alpha cutoffs, discard, color transforms) are included in the readback.
+        if (rawImage.material != null)
+        {
+            Texture src = GetRawImageTexture(rawImage) ?? rawImage.material.mainTexture;
+            if (src == null) return false;
+
+            // Determine target readback size. Prefer source texture size when available, otherwise use rect size.
+            int w = 0, h = 0;
+            if (src is Texture2D t2) { w = t2.width; h = t2.height; }
+            else if (src is WebCamTexture wct) { w = wct.width; h = wct.height; }
+            else if (src is RenderTexture rts) { w = rts.width; h = rts.height; }
+            else { w = Mathf.Max(1, Mathf.RoundToInt(rawImage.rectTransform.rect.width)); h = Mathf.Max(1, Mathf.RoundToInt(rawImage.rectTransform.rect.height)); }
+
+            if (w <= 0 || h <= 0) return false;
+
+            // Ensure readback cache matches needed size
+            if (readbackCache == null || readbackCache.width != w || readbackCache.height != h)
+            {
+                if (readbackCache != null) Destroy(readbackCache);
+                readbackCache = new Texture2D(w, h, TextureFormat.RGBA32, false);
+                readbackCache.wrapMode = TextureWrapMode.Clamp;
+            }
+
+            RenderTexture rt = new RenderTexture(w, h, 0, RenderTextureFormat.ARGB32);
+            rt.Create();
+            // Blit using the RawImage's material so shader output is rendered into RT
+            Graphics.Blit(src, rt, rawImage.material);
+
+            RenderTexture prev = RenderTexture.active;
+            RenderTexture.active = rt;
+            readbackCache.ReadPixels(new Rect(0, 0, w, h), 0, 0);
+            readbackCache.Apply();
+            RenderTexture.active = prev;
+
+            pixels = readbackCache.GetPixels32();
+            width = w; height = h;
+
+            rt.Release(); Destroy(rt);
+            return pixels != null && pixels.Length > 0;
+        }
 
         Texture texture = GetRawImageTexture(rawImage);
         if (texture == null) return false;

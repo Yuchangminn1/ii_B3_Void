@@ -10,7 +10,7 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
     public string deviceName = "";
     [Header("Device Filters")]
     [Tooltip("If non-empty and the selected device's name contains this substring, this CameraValue will skip starting the webcam.")]
-    public string ignoreDeviceNameContains = "";
+    public string[] ignoreDeviceNameContains;
     public int requestedWidth = 1280;
     public int requestedHeight = 720;
     public int requestedFPS = 30;
@@ -78,11 +78,17 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
         for (int i = 0; i < devices.Length; i++)
         {
             var d = devices[i];
-            if (!string.IsNullOrEmpty(ignoreDeviceNameContains) && d.name != null && d.name.Contains(ignoreDeviceNameContains))
+            bool ignore = false;
+            for (int j = 0; j < ignoreDeviceNameContains.Length; j++)
             {
-                if (verboseDebug) Debug.Log($"[CameraValue] Ignoring device '{d.name}' because it contains '{ignoreDeviceNameContains}'");
-                continue;
+                if (!string.IsNullOrEmpty(ignoreDeviceNameContains[j]) && d.name != null && d.name.Contains(ignoreDeviceNameContains[j]))
+                {
+                    if (verboseDebug) Debug.Log($"[CameraValue] Ignoring device '{d.name}' because it contains '{ignoreDeviceNameContains[j]}'.");
+                    ignore = true;
+                    break;
+                }
             }
+            if (ignore) continue;
             filtered.Add(d);
         }
 
