@@ -47,11 +47,8 @@ public class AcCheck : MonoBehaviour
     public enum DetectionMode { MatchedPercent, ProtrusionOverTarget, ProtrusionOverOverlap }
     [Tooltip("MatchedPercent: 기존 방식(matched/target). ProtrusionOverTarget: 삐져나온 픽 기준(target). ProtrusionOverOverlap: 삐져나온 픽을 겹친 픽 기준으로 계산.")]
     public DetectionMode detectionMode = DetectionMode.MatchedPercent;
-    [Header("Goal Adjustments")]
-    [Tooltip("Matched percent goal correction in percent. e.g. 5 means require 40 - 5 = 35% to pass.")]
-    public float matchedAdjustPercent = 10f;
-    [Tooltip("Protrusion percent goal correction in percent. e.g. 5 means require 100 - 5 = 95% to pass.")]
-    public float protrusionAdjustPercent = 5f;
+    float matchedAdjustPercent = 12f;
+    float protrusionAdjustPercent = 3f;
     [Header("결과를 표시할 UI Text (선택)")]
     [SerializeField] Text outputText;
     [Header("텍스트 포맷 예시: {0:F1}%")]
