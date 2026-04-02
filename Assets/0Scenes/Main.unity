@@ -278,7 +278,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 0}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -3125,9 +3125,11 @@ MonoBehaviour:
   blackRgbThreshold: 70
   updateInterval: 0.5
   sampleStep: 2
+  checkRadius: 3
   detectedPercent: 0
   debugTotalPixels: 0
   debugMatchedPixels: 0
+  detectionMode: 0
   outputText: {fileID: 1170980198}
   outputFormat: '{0:F1}%'
   _defaultTexture: {fileID: 2800000, guid: 7df1107e58cc1a84a9559b0f4d823842, type: 3}
@@ -7082,7 +7084,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 0}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -7119,7 +7121,6 @@ MonoBehaviour:
   cameraIndex: 0
   deviceName: 
   ignoreDeviceNameContains:
-  - Mac
   - "\uCC3D\uBBFC"
   requestedWidth: 1280
   requestedHeight: 720
@@ -7361,7 +7362,7 @@ GameObject:
   - component: {fileID: 534029146}
   - component: {fileID: 534029148}
   m_Layer: 5
-  m_Name: RawImage (1)
+  m_Name: R_CameraMaskingImage
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -8624,7 +8625,7 @@ MonoBehaviour:
       m_Calls: []
   isTrigger: 0
   originTrigger: 0
-  nextDelayTime: 2
+  nextDelayTime: 3
   CutGraphics: []
   CutCanvasGroups: []
   FadeInGraphics: []
@@ -11899,9 +11900,11 @@ MonoBehaviour:
   blackRgbThreshold: 70
   updateInterval: 0.1
   sampleStep: 2
+  checkRadius: 0
   detectedPercent: 0
   debugTotalPixels: 0
   debugMatchedPixels: 0
+  detectionMode: 0
   outputText: {fileID: 217047675}
   outputFormat: '{0:F1}%'
 --- !u!1 &876874655
@@ -12153,7 +12156,7 @@ RectTransform:
   m_GameObject: {fileID: 878223593}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 1.2, y: 1.2, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 2123322088}
@@ -12162,8 +12165,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -50, y: -220}
-  m_SizeDelta: {x: 613, y: 613}
+  m_AnchoredPosition: {x: -50, y: -120}
+  m_SizeDelta: {x: 735.6, y: 613}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &878223596
 CanvasRenderer:
@@ -12230,7 +12233,7 @@ MonoBehaviour:
       m_Calls: []
   isTrigger: 1
   originTrigger: 0
-  nextDelayTime: 1
+  nextDelayTime: -1
   CutGraphics: []
   CutCanvasGroups: []
   FadeInGraphics: []
@@ -13149,7 +13152,7 @@ MonoBehaviour:
       m_Calls: []
   isTrigger: 0
   originTrigger: 0
-  nextDelayTime: -1
+  nextDelayTime: 1
   CutGraphics: []
   CutCanvasGroups: []
   FadeInGraphics: []
@@ -14351,9 +14354,11 @@ MonoBehaviour:
   blackRgbThreshold: 70
   updateInterval: 0.5
   sampleStep: 2
+  checkRadius: 0
   detectedPercent: 0
   debugTotalPixels: 0
   debugMatchedPixels: 0
+  detectionMode: 0
   outputText: {fileID: 1329410467}
   outputFormat: '{0:F1}%'
 --- !u!1 &1036255353
@@ -14818,9 +14823,11 @@ MonoBehaviour:
   blackRgbThreshold: 70
   updateInterval: 0.5
   sampleStep: 2
+  checkRadius: 0
   detectedPercent: 0
   debugTotalPixels: 0
   debugMatchedPixels: 0
+  detectionMode: 0
   outputText: {fileID: 360841996}
   outputFormat: '{0:F1}%'
   _defaultTexture: {fileID: 2800000, guid: 7df1107e58cc1a84a9559b0f4d823842, type: 3}
@@ -14982,7 +14989,7 @@ GameObject:
   - component: {fileID: 1071816915}
   - component: {fileID: 1071816914}
   m_Layer: 5
-  m_Name: RawImage
+  m_Name: L_CameraMaskingImage
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -17204,7 +17211,7 @@ MonoBehaviour:
       m_Calls: []
   isTrigger: 1
   originTrigger: 0
-  nextDelayTime: 1
+  nextDelayTime: -1
   CutGraphics: []
   CutCanvasGroups: []
   FadeInGraphics: []
@@ -17517,7 +17524,7 @@ MonoBehaviour:
       m_Calls: []
   isTrigger: 0
   originTrigger: 0
-  nextDelayTime: -1
+  nextDelayTime: 1
   CutGraphics: []
   CutCanvasGroups: []
   FadeInGraphics: []
@@ -17553,7 +17560,7 @@ RectTransform:
   m_GameObject: {fileID: 1220637795}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 1.2, y: 1.2, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 2061827749}
@@ -17562,8 +17569,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -50, y: -220}
-  m_SizeDelta: {x: 613, y: 613}
+  m_AnchoredPosition: {x: -50, y: -120}
+  m_SizeDelta: {x: 735.6, y: 613}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &1220637798
 CanvasRenderer:
@@ -20851,7 +20858,7 @@ MonoBehaviour:
       m_Calls: []
   isTrigger: 0
   originTrigger: 0
-  nextDelayTime: 2
+  nextDelayTime: 3
   CutGraphics: []
   CutCanvasGroups: []
   FadeInGraphics: []
@@ -22897,7 +22904,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 960, y: 0}
+  m_AnchoredPosition: {x: 960.00024, y: 0.00024414062}
   m_SizeDelta: {x: 1920, y: 1200}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1600309635
@@ -23309,8 +23316,8 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 524027186}
-  - {fileID: 301360796}
   - {fileID: 1600309634}
+  - {fileID: 301360796}
   - {fileID: 1071816913}
   m_Father: {fileID: 887417504}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -23331,9 +23338,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 77393e909af51ae4bad7e84601f65cf9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  CanvasGroup:
+  CameraCanvasGroup:
   - {fileID: 1631070436}
   - {fileID: 208028618}
+  Camera_Graphics:
+  - {fileID: 524027188}
+  - {fileID: 6524979}
 --- !u!225 &1631070436
 CanvasGroup:
   m_ObjectHideFlags: 0

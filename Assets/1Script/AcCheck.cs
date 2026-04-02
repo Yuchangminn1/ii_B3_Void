@@ -88,7 +88,6 @@ public class AcCheck : MonoBehaviour
             if (CurrentDirection == Direction.Left)
             {
                 DebugClear();
-                FadeManager.Instance.SetAlphaZero(outputText);
             }
         }
         else if (Input.GetKeyDown(KeyCode.RightArrow))
@@ -96,7 +95,6 @@ public class AcCheck : MonoBehaviour
             if (CurrentDirection == Direction.Right)
             {
                 DebugClear();
-                FadeManager.Instance.SetAlphaZero(outputText);
             }
         }
 
@@ -120,7 +118,7 @@ public class AcCheck : MonoBehaviour
     public void StopCheck()
     {
         _isCheck = false;
-        //FadeManager.Instance.SetAlphaZero(outputText);
+        FadeManager.Instance.SetAlphaZero(outputText);
         //FadeManager.Instance.SetAlphaZero(targetRawImage);
 
         Debug.Log($"{name}Stop Check");
@@ -395,10 +393,10 @@ public class AcCheck : MonoBehaviour
         float combinedRatio = (matchedRatio + protrusionRatio) * 0.5f;
         float combinedPercent = Mathf.Clamp01(combinedRatio) * 100f;
 
-        if (outputText != null)
-        {
-            outputText.text = string.Format("{0:F0}%", combinedPercent);
-        }
+        // if (outputText != null)
+        // {
+        //     outputText.text = string.Format("{0:F0}%", combinedPercent);
+        // }
 
         // Trigger only when BOTH adjusted conditions met:
         // 1) MatchedPercent (matched / target) >= (40 - matchedAdjustPercent)
@@ -407,6 +405,11 @@ public class AcCheck : MonoBehaviour
         float protrusionOverTargetPercentFinal = total > 0 ? (Mathf.Clamp01(1f - ((float)protruding / (float)total)) * 100f) : 0f;
         float effMatchedThresholdFinal = Mathf.Max(0f, 40f - matchedAdjustPercent);
         float effProtrusionThresholdFinal = Mathf.Clamp(100f - protrusionAdjustPercent, 0f, 100f);
+
+        if (outputText != null)
+        {
+            outputText.text = $"{matchedPercentFinal:F1} / {effMatchedThresholdFinal:F1}, {protrusionOverTargetPercentFinal:F1} / {effProtrusionThresholdFinal:F1}";
+        }
         if (matchedPercent >= effMatchedThresholdFinal && protrusionOverTargetPercentFinal >= effProtrusionThresholdFinal)
         {
             Debug.Log($"[AcCheck] Combined trigger met: matched={matchedPercent:F1}% (need {effMatchedThresholdFinal}%), protrusionOverTarget={protrusionOverTargetPercentFinal:F1}% (need {effProtrusionThresholdFinal}%)");
@@ -426,9 +429,12 @@ public class AcCheck : MonoBehaviour
     public void DebugClear()
     {
         StopCheck();
+
         detectedPercent = 100f;
         outputText.text = string.Format(outputFormat, detectedPercent);
-        onClear?.Invoke();
+
+        StartCoroutine(DelayOnClear());
+
     }
 
     void ResetResult()
