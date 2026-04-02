@@ -5,21 +5,14 @@ using UnityEngine;
 public class ScoreStampContainer : ResultStampContainer
 {
     int currentStampIndex = -1;
-    //int score = 0;
-
-    //public Arduino_Touch_Page4[] arduino_Touch_Page4s;
-
-
 
     override protected void Start()
     {
         base.Start();
-        // arduino_Touch_Page4s = FindObjectsOfType<Arduino_Touch_Page4>();
-        // foreach (var arduino in arduino_Touch_Page4s)
-        // {
-        //     arduino.AddOnscoreChange(ScoreStamp);
-        // }
 
+        defaultColor = new Color32(0, 0, 0, 255);
+
+        getStampColor = new Color32(13, 119, 160, 255);
     }
 
     override public void Reset()
@@ -30,14 +23,17 @@ public class ScoreStampContainer : ResultStampContainer
     public void ScoreStamp(int value)
     {
 
-        if (value > 9 && currentStampIndex != (value / 10) - 1)
+        if (value != 0 && value % 2 == 0)
         {
-            currentStampIndex = (value / 10) - 1;
-            UserDataManager.Instance.GetPlayer().AddPiece = (value / 10);
+            currentStampIndex = (value / 2) - 1;
+
+            UserDataManager.Instance.GetPlayer().AddPiece = currentStampIndex + 1;
 
             Debug.Log($"점수: {value}, 현재 스탬프 인덱스: {currentStampIndex}");
-            answerStamps[currentStampIndex].SetCorrectStamp();
-            UserDataManager.Instance.GetPlayer().AddPiece = currentStampIndex + 1;
+
+            answerStamps[currentStampIndex].color = getStampColor;
+
+            // UserDataManager.Instance.GetPlayer().AddPiece = currentStampIndex + 1;
         }
 
 

@@ -5,13 +5,15 @@ using UnityEngine.UI;
 
 public class ResultStampContainer : MonoBehaviour
 {
-    public AnswerStamp[] answerStamps = new AnswerStamp[5];
+    public RawImage[] answerStamps = new RawImage[5];
+
+    protected Color32 defaultColor = new Color32(128, 128, 128, 255);
+
+    protected Color32 getStampColor = new Color32(128, 128, 128, 255);
+
 
 
     public SequenceScript sequenceScript;
-
-    public Texture emptyStampTexture;
-    public Texture correctStampTexture;
 
 
     Coroutine showStampCoroutine = null;
@@ -24,13 +26,7 @@ public class ResultStampContainer : MonoBehaviour
 
     virtual protected void Start()
     {
-        answerStamps = GetComponentsInChildren<AnswerStamp>();
-
-        foreach (var stamp in answerStamps)
-        {
-            //Debug.Log($"{stamp.name}");
-            stamp.SetTextures(emptyStampTexture, correctStampTexture);
-        }
+        answerStamps = GetComponentsInChildren<RawImage>();
     }
     virtual public void Reset()
     {
@@ -54,7 +50,7 @@ public class ResultStampContainer : MonoBehaviour
         Debug.Log($"스탬프 개수: {stampCount}");
         for (int i = 0; i < stampCount; i++)
         {
-            answerStamps[i].SetCorrectStamp();
+            //answerStamps[i].SetCorrectStamp();
             yield return CoroutineReturnManager.GetWaitForSeconds(0.8f);
         }
         while (sequenceScript.TriggerOnBool() == false)
