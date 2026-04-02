@@ -87,15 +87,46 @@ Shader "Custom/WebcamChromaKey"
                 float2 uv = i.uv;
                 float3 key = _KeyColor.rgb;
 
-                float d00 = distance(tex2D(_MainTex, uv + float2(-t.x, -t.y)).rgb, key);
-                float d01 = distance(tex2D(_MainTex, uv + float2( 0.0,  -t.y)).rgb, key);
-                float d02 = distance(tex2D(_MainTex, uv + float2( t.x,  -t.y)).rgb, key);
-                float d10 = distance(tex2D(_MainTex, uv + float2(-t.x,  0.0)).rgb, key);
-                float d11 = distance(tex2D(_MainTex, uv).rgb,                          key);
-                float d12 = distance(tex2D(_MainTex, uv + float2( t.x,  0.0)).rgb, key);
-                float d20 = distance(tex2D(_MainTex, uv + float2(-t.x,  t.y)).rgb, key);
-                float d21 = distance(tex2D(_MainTex, uv + float2( 0.0,   t.y)).rgb, key);
-                float d22 = distance(tex2D(_MainTex, uv + float2( t.x,   t.y)).rgb, key);
+                // compute chroma (ignore luminance). chroma = (R - Y, B - Y)
+                float keyY = dot(key, float3(0.299, 0.587, 0.114));
+                float2 keyCh = float2(key.r - keyY, key.b - keyY);
+
+                float2 s00 = tex2D(_MainTex, uv + float2(-t.x, -t.y)).rgb.xy;
+                float3 c00r = tex2D(_MainTex, uv + float2(-t.x, -t.y)).rgb;
+                float c00y = dot(c00r, float3(0.299, 0.587, 0.114));
+                float d00 = length(float2(c00r.r - c00y, c00r.b - c00y) - keyCh);
+
+                float3 c01r = tex2D(_MainTex, uv + float2( 0.0,  -t.y)).rgb;
+                float c01y = dot(c01r, float3(0.299, 0.587, 0.114));
+                float d01 = length(float2(c01r.r - c01y, c01r.b - c01y) - keyCh);
+
+                float3 c02r = tex2D(_MainTex, uv + float2( t.x,  -t.y)).rgb;
+                float c02y = dot(c02r, float3(0.299, 0.587, 0.114));
+                float d02 = length(float2(c02r.r - c02y, c02r.b - c02y) - keyCh);
+
+                float3 c10r = tex2D(_MainTex, uv + float2(-t.x,  0.0)).rgb;
+                float c10y = dot(c10r, float3(0.299, 0.587, 0.114));
+                float d10 = length(float2(c10r.r - c10y, c10r.b - c10y) - keyCh);
+
+                float3 c11r = tex2D(_MainTex, uv).rgb;
+                float c11y = dot(c11r, float3(0.299, 0.587, 0.114));
+                float d11 = length(float2(c11r.r - c11y, c11r.b - c11y) - keyCh);
+
+                float3 c12r = tex2D(_MainTex, uv + float2( t.x,  0.0)).rgb;
+                float c12y = dot(c12r, float3(0.299, 0.587, 0.114));
+                float d12 = length(float2(c12r.r - c12y, c12r.b - c12y) - keyCh);
+
+                float3 c20r = tex2D(_MainTex, uv + float2(-t.x,  t.y)).rgb;
+                float c20y = dot(c20r, float3(0.299, 0.587, 0.114));
+                float d20 = length(float2(c20r.r - c20y, c20r.b - c20y) - keyCh);
+
+                float3 c21r = tex2D(_MainTex, uv + float2( 0.0,   t.y)).rgb;
+                float c21y = dot(c21r, float3(0.299, 0.587, 0.114));
+                float d21 = length(float2(c21r.r - c21y, c21r.b - c21y) - keyCh);
+
+                float3 c22r = tex2D(_MainTex, uv + float2( t.x,   t.y)).rgb;
+                float c22y = dot(c22r, float3(0.299, 0.587, 0.114));
+                float d22 = length(float2(c22r.r - c22y, c22r.b - c22y) - keyCh);
 
                 float avgDist = (d00 + d01 + d02 + d10 + d11 + d12 + d20 + d21 + d22) / 9.0;
                 float filteredDist = lerp(d11, avgDist, _NoiseFilter);
