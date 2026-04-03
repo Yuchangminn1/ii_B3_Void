@@ -4,7 +4,7 @@ using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class ChangeText : MonoBehaviour
+public class NextGuideText : MonoBehaviour
 {
     public RawImage EndLineImage;
     Text text;

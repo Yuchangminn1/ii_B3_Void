@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.UI;
 
 public class AcCheck : MonoBehaviour
@@ -55,6 +56,8 @@ public class AcCheck : MonoBehaviour
     [SerializeField] string outputFormat = "{0:F1}%";
 
 
+
+
     float modifier = 0f;
 
 
@@ -69,6 +72,8 @@ public class AcCheck : MonoBehaviour
     public int DebugTotalPixels => debugTotalPixels;
     public int DebugMatchedPixels => debugMatchedPixels;
 
+    protected bool _isClear = false;
+
     bool _isCheck = false;
 
     protected Action onClear;
@@ -81,7 +86,7 @@ public class AcCheck : MonoBehaviour
         }
     }
 
-    void Update()
+    protected virtual void Update()
     {
         if (Input.GetKeyDown(KeyCode.LeftArrow))
         {
@@ -109,6 +114,9 @@ public class AcCheck : MonoBehaviour
     public virtual void StartCheck()
     {
         _isCheck = true;
+        _isClear = false;
+
+
         FadeManager.Instance.SetAlphaOne(outputText);
         FadeManager.Instance.SetAlphaOne(targetRawImage);
 
@@ -117,9 +125,15 @@ public class AcCheck : MonoBehaviour
 
     public void StopCheck()
     {
+
         _isCheck = false;
+
+        if (_isClear == false)
+        {
+
+        }
+
         FadeManager.Instance.SetAlphaZero(outputText);
-        //FadeManager.Instance.SetAlphaZero(targetRawImage);
 
         Debug.Log($"{name}Stop Check");
     }
@@ -127,6 +141,7 @@ public class AcCheck : MonoBehaviour
     public void SetTargetRawImage(RawImage rawImage)
     {
         targetRawImage = rawImage;
+        StartCheck();
     }
 
 
@@ -161,6 +176,8 @@ public class AcCheck : MonoBehaviour
         }
         onClear -= listener;
     }
+
+    //public void 
 
     public void UpdateColorPercent()
     {
@@ -421,6 +438,7 @@ public class AcCheck : MonoBehaviour
     protected virtual IEnumerator DelayOnClear()
     {
         yield return CoroutineReturnManager.GetWaitForSeconds(1f);
+        _isClear = true;
         onClear?.Invoke();
     }
 

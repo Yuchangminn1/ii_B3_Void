@@ -43,6 +43,7 @@ public class ShootPieceContainer : MonoBehaviour
     bool _isClearLeft = false;
     bool _isClearRight = false;
 
+    float setTime = 10f;
     const int PieceGroupSize = 5;
 
     TutorialShape[] leftPlayerTutorialShapeIndex = new TutorialShape[] { TutorialShape.Triangle, TutorialShape.Heart, TutorialShape.Moon };
@@ -176,13 +177,13 @@ public class ShootPieceContainer : MonoBehaviour
         // 틀렸을 경우 1개씩 제거하며 타이머 초기화 및 시작 
 
         // 통과시 테두리 맞는걸로 교체 이후 다음 문제로 
-
+        _timer.SetDefaultTime(setTime);
         _timer.ResetTimer();
         _timer.StartTimer();
 
 
 
-        float timerTime = _timer.defaultTime;
+        float timerTime = _timer.DefaultTime;
 
         while (timerTime > 0 && !IsTutorialClear())
         {
@@ -199,10 +200,11 @@ public class ShootPieceContainer : MonoBehaviour
             if (_isClearRight == false)
                 showContainer.ShowSideImages(Direction.Right, rightPlayerTutorialShapeIndex[CurrentIndex / PieceGroupSize - 1], false, count);
 
+            _timer.SetDefaultTime(setTime);
             _timer.ResetTimer();
             _timer.StartTimer();
 
-            timerTime = _timer.defaultTime;
+            timerTime = _timer.DefaultTime;
 
             while (timerTime > 0 && !IsTutorialClear())
             {

@@ -23,6 +23,8 @@ public class WaitCheck : MonoBehaviour
     public Graphic[] Player1_Wait_Graphic;
     public Graphic[] Player2_Wait_Graphic;
 
+    public int WorkPageIndex = 0;
+
     protected bool _isPlayer1On = false;
     public bool IsPlayer1On
     {
@@ -94,6 +96,8 @@ public class WaitCheck : MonoBehaviour
 
     public void Checking(Direction direction)
     {
+        if (WorkPageIndex != PageController.Instance.CurrentPage)
+            return;
         if (direction == Direction.Left)
         {
             if (debugZ == null)
@@ -180,7 +184,7 @@ public class WaitCheck : MonoBehaviour
         bool isNext = false;
 
         Debug.Log("WaitCoroutine Start");
-        while (isAllReady == false)
+        while (isAllReady == false && WorkPageIndex == PageController.Instance.CurrentPage)
         {
 
             if (IsPlayer1On && IsPlayer2On)

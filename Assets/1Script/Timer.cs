@@ -6,7 +6,16 @@ using UnityEngine.UI;
 
 public class Timer : MonoBehaviour
 {
-    public float defaultTime = 1f;
+    float _defaultTime = 1f;
+
+    public float DefaultTime
+    {
+        get
+        {
+            return _defaultTime;
+        }
+
+    }
     Action onTimerEnd;
 
     protected float time = 0f;
@@ -21,6 +30,10 @@ public class Timer : MonoBehaviour
 
 
     public Direction CurrentDirection = Direction.Left;
+
+
+    public UnityEvent OnTimerEndEvent;
+
 
 
 
@@ -82,16 +95,24 @@ public class Timer : MonoBehaviour
 
             IsCounting = false;
             onTimerEnd?.Invoke();
+            OnTimerEndEvent?.Invoke();
 
             onTimerEnd = null;
         }
     }
 
+
+    public void SetDefaultTime(float time)
+    {
+        _defaultTime = time;
+    }
+
     virtual public void ResetTimer()
     {
+
         FadeManager.Instance.SetAlphaZero(timerGraphics);
 
-        time = defaultTime;
+        time = _defaultTime;
         _timerText.text = $"{time}";
         IsCounting = false;
         FadeManager.Instance.SetAlphaZero(_timerText);
@@ -100,7 +121,7 @@ public class Timer : MonoBehaviour
     {
         FadeManager.Instance.SetAlphaZero(_timerText);
 
-        time = defaultTime;
+        time = _defaultTime;
         _timerText.text = $"{time}";
         IsCounting = false;
     }
@@ -110,14 +131,14 @@ public class Timer : MonoBehaviour
         FadeManager.Instance.SetAlphaOne(timerGraphics);
 
         FadeManager.Instance.SetAlphaOne(_timerText);
-        time = defaultTime;
+        time = _defaultTime;
         if (CurrentDirection == Direction.Left)
         {
-            if (defaultTime > 4.9 && defaultTime < 5.1)
+            if (_defaultTime > 4.9 && _defaultTime < 5.1)
             {
                 SoundManager.Instance.PlayEffectSound(EffectSoundNum.SecondSound5);
             }
-            else if (defaultTime > 2.9 && defaultTime < 3.1)
+            else if (_defaultTime > 2.9 && _defaultTime < 3.1)
             {
                 SoundManager.Instance.PlayEffectSound(EffectSoundNum.SecondSound3);
             }

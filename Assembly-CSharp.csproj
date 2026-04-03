@@ -66,11 +66,10 @@
   <ItemGroup>
     <Compile Include="Assets\1Script\AcCheck.cs" />
     <Compile Include="Assets\1Script\1Json\RawImageLoader.cs" />
-    <Compile Include="Assets\1Script\ChangeText.cs" />
     <Compile Include="Assets\1Script\1Json\JsonManager.cs" />
+    <Compile Include="Assets\1Script\BlinkEyesScript.cs" />
     <Compile Include="Assets\1Script\PopupManager.cs" />
     <Compile Include="Assets\1Script\2PageSequence\SequenceTriggers.cs" />
-    <Compile Include="Assets\1Script\CanvasGC.cs" />
     <Compile Include="Assets\1Script\2PageSequence\SequenceTime.cs" />
     <Compile Include="Assets\1Script\Singleton.cs" />
     <Compile Include="Assets\1Script\2PageSequence\PageBase.cs" />
@@ -82,16 +81,13 @@
     <Compile Include="Assets\1Script\ShowContainer.cs" />
     <Compile Include="Assets\1Script\LinkScript.cs" />
     <Compile Include="Assets\1Script\1Json\TextLoader.cs" />
-    <Compile Include="Assets\1Script\LoopVideo.cs" />
     <Compile Include="Assets\1Script\Buttons\IdleButton.cs" />
-    <Compile Include="Assets\1Script\ButtonScript.cs" />
     <Compile Include="Assets\1Script\Buttons\ExitButton.cs" />
     <Compile Include="Assets\1Script\1Json\GenericLoader.cs" />
     <Compile Include="Assets\Unity-Logs-Viewer\Reporter\MultiKeyDictionary.cs" />
     <Compile Include="Assets\1Script\3Singleton\UserDataManager.cs" />
     <Compile Include="Assets\Unity-Logs-Viewer\Reporter\Test\TestReporter.cs" />
     <Compile Include="Assets\1Script\3Singleton\ServerData.cs" />
-    <Compile Include="Assets\1Script\Slider.cs" />
     <Compile Include="Assets\1Script\ScoreText.cs" />
     <Compile Include="Assets\1Script\2PageSequence\SequenceFade.cs" />
     <Compile Include="Assets\1Script\ColorBallImage.cs" />
@@ -111,6 +107,7 @@
     <Compile Include="Assets\1Script\1Json\JsonLoaderBase.cs" />
     <Compile Include="Assets\1Script\WaitCheck.cs" />
     <Compile Include="Assets\1Script\QuestionShadow.cs" />
+    <Compile Include="Assets\1Script\MainGameScript.cs" />
     <Compile Include="Assets\1Script\NameText.cs" />
     <Compile Include="Assets\1Script\QuestionScript.cs" />
     <Compile Include="Assets\1Script\AnswerStamp.cs" />
@@ -124,8 +121,10 @@
     <Compile Include="Assets\1Script\RawImageFaderGroup.cs" />
     <Compile Include="Assets\Scritps\Log\InstallTimeStampLogger.cs" />
     <Compile Include="Assets\1Script\WaitCheckManager.cs" />
+    <Compile Include="Assets\1Script\ShowShadowScript.cs" />
     <Compile Include="Assets\1Script\ResultStampContainer.cs" />
     <Compile Include="Assets\1Script\EnterCheck.cs" />
+    <Compile Include="Assets\1Script\NextGuideText.cs" />
     <Compile Include="Assets\1Script\Arduino\Arduino.cs" />
     <Compile Include="Assets\1Script\DailyTodo.cs" />
     <Compile Include="Assets\1Script\ScoreStampContainer.cs" />
@@ -134,6 +133,7 @@
     <Compile Include="Assets\1Script\3Singleton\FadeManager.cs" />
     <Compile Include="Assets\1Script\TriggerContainer.cs" />
     <Compile Include="Assets\1Script\2PageSequence\MainPage.cs" />
+    <Compile Include="Assets\1Script\AcCheckStep.cs" />
     <Compile Include="Assets\1Script\TutorialAcCheck.cs" />
     <Compile Include="Assets\1Script\ShootPiece.cs" />
     <Compile Include="Assets\1Script\3Singleton\SoundManager.cs" />
