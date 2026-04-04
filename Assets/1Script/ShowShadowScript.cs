@@ -13,6 +13,11 @@ public class ShowShadowScript : MonoBehaviour
 
     public AcCheck CurrentAcCheck;
 
+    RawImage CurrentTargetRawImage
+    {
+        get { return CurrentAcCheck.targetRawImage; }
+    }
+
 
     public int GetShowImageLength() { return ShadowImages.Length; }
 
@@ -28,10 +33,16 @@ public class ShowShadowScript : MonoBehaviour
         Reset();
     }
 
+    void Start()
+    {
+        PageController.Instance.OnReset += Reset;
+    }
+
     public void ShowSuccess()
     {
-        successImage.gameObject.SetActive(true);
+        Debug.Log($"{name} ShowSuccess");
         failImage.gameObject.SetActive(false);
+        successImage.gameObject.SetActive(true);
 
         CurrentAcCheck = null;
     }
@@ -54,6 +65,11 @@ public class ShowShadowScript : MonoBehaviour
         CurrentAcCheck = null;
     }
 
+    public void ClearShadow()
+    {
+        CurrentTargetRawImage.gameObject.SetActive(false);
+    }
+
     public void Reset()
     {
         successImage.gameObject.SetActive(false);
@@ -71,12 +87,6 @@ public class ShowShadowScript : MonoBehaviour
             ShadowImages[i].gameObject.SetActive(i == index);
         }
         CurrentAcCheck.SetTargetRawImage(ShadowImages[index]);
-
-        CurrentAcCheck.StartCheck();
-
     }
-
-
-
 
 }

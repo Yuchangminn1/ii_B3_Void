@@ -51,7 +51,7 @@ public class AcCheck : MonoBehaviour
     float matchedAdjustPercent = 20f;
     float protrusionAdjustPercent = 3f;
     [Header("결과를 표시할 UI Text (선택)")]
-    [SerializeField] Text outputText;
+    [SerializeField] protected Text outputText;
     [Header("텍스트 포맷 예시: {0:F1}%")]
     [SerializeField] string outputFormat = "{0:F1}%";
 
@@ -84,6 +84,27 @@ public class AcCheck : MonoBehaviour
         {
             targetRawImage = GetComponent<RawImage>();
         }
+    }
+
+    void Start()
+    {
+        PageController.Instance.OnReset += Reset;
+
+    }
+
+    public void Reset()
+    {
+        _isCheck = false;
+        _isClear = false;
+
+
+        if (outputText != null)
+        {
+            outputText.text = string.Format(outputFormat, detectedPercent);
+        }
+
+        FadeManager.Instance.SetAlphaZero(outputText);
+        FadeManager.Instance.SetAlphaZero(targetRawImage);
     }
 
     protected virtual void Update()
@@ -120,7 +141,6 @@ public class AcCheck : MonoBehaviour
         FadeManager.Instance.SetAlphaOne(outputText);
         FadeManager.Instance.SetAlphaOne(targetRawImage);
 
-        Debug.Log($"{name}Start Check");
     }
 
     public void StopCheck()
@@ -135,7 +155,6 @@ public class AcCheck : MonoBehaviour
 
         FadeManager.Instance.SetAlphaZero(outputText);
 
-        Debug.Log($"{name}Stop Check");
     }
 
     public void SetTargetRawImage(RawImage rawImage)
@@ -437,8 +456,9 @@ public class AcCheck : MonoBehaviour
 
     protected virtual IEnumerator DelayOnClear()
     {
-        yield return CoroutineReturnManager.GetWaitForSeconds(1f);
         _isClear = true;
+
+        yield return CoroutineReturnManager.GetWaitForSeconds(1f);
         onClear?.Invoke();
     }
 
@@ -521,21 +541,38 @@ public class AcCheck : MonoBehaviour
             }
 
             RenderTexture rt = new RenderTexture(w, h, 0, RenderTextureFormat.ARGB32);
-            rt.Create();
-            // Blit using the RawImage's material so shader output is rendered into RT
-            Graphics.Blit(src, rt, rawImage.material);
-
             RenderTexture prev = RenderTexture.active;
-            RenderTexture.active = rt;
-            readbackCache.ReadPixels(new Rect(0, 0, w, h), 0, 0);
-            readbackCache.Apply();
-            RenderTexture.active = prev;
+            try
+            {
+                rt.Create();
+                // Blit using the RawImage's material so shader output is rendered into RT
+                Graphics.Blit(src, rt, rawImage.material);
 
-            pixels = readbackCache.GetPixels32();
-            width = w; height = h;
+                RenderTexture.active = rt;
+                readbackCache.ReadPixels(new Rect(0, 0, w, h), 0, 0);
+                readbackCache.Apply();
 
-            rt.Release(); Destroy(rt);
-            return pixels != null && pixels.Length > 0;
+                pixels = readbackCache.GetPixels32();
+                width = w;
+                height = h;
+                return pixels != null && pixels.Length > 0;
+            }
+            finally
+            {
+                RenderTexture.active = prev;
+
+                // Safety guard: never release an RT while it is still active.
+                if (RenderTexture.active == rt)
+                {
+                    RenderTexture.active = null;
+                }
+
+                if (rt != null)
+                {
+                    rt.Release();
+                    Destroy(rt);
+                }
+            }
         }
 
         Texture texture = GetRawImageTexture(rawImage);

@@ -61,6 +61,9 @@ public class ShootPieceContainer : MonoBehaviour
 
     public Texture2D[] OutlineHeartTexture;
 
+
+    Coroutine _returnShootCoroutine = null;
+
     int count = 0;
 
 
@@ -82,7 +85,22 @@ public class ShootPieceContainer : MonoBehaviour
             Right_ShootPieces[i].Reset();
         }
         CurrentIndex = 0;
+
+        if (_returnShootCoroutine != null)
+        {
+            StopCoroutine(_returnShootCoroutine);
+            _returnShootCoroutine = null;
+
+        }
+
     }
+
+    void Start()
+    {
+        PageController.Instance.OnReset += Reset;
+    }
+
+
 
 
     public bool IsTutorialClear()
@@ -141,8 +159,17 @@ public class ShootPieceContainer : MonoBehaviour
         }
     }
 
+    public void ReturnShoot(System.Action onComplete = null)
+    {
+        if (_returnShootCoroutine != null)
+        {
+            StopCoroutine(_returnShootCoroutine);
+        }
+        _returnShootCoroutine = StartCoroutine(ReturnShootCoroutine(onComplete));
+    }
 
-    public IEnumerator ReturnShootCoroutine()
+
+    public IEnumerator ReturnShootCoroutine(System.Action onComplete = null)
     {
 
         _isClearLeft = false;
@@ -225,10 +252,15 @@ public class ShootPieceContainer : MonoBehaviour
 
 
 
+
+
+
+        if (onComplete != null)
+        {
+            onComplete.Invoke();
+        }
         _isClearLeft = true;
         _isClearRight = true;
-
-
     }
 
 }

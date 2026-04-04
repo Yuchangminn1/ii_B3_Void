@@ -48,16 +48,24 @@ public class ResultStampContainer : MonoBehaviour
         UserDataManager.Instance.UserPieceUpdate();
 
         Debug.Log($"스탬프 개수: {stampCount}");
-        for (int i = 0; i < stampCount; i++)
+        if (stampCount == 0)
         {
-            //answerStamps[i].SetCorrectStamp();
-            yield return CoroutineReturnManager.GetWaitForSeconds(0.8f);
+            Debug.Log("스탬프가 없습니다.");
         }
+        else
+        {
+            for (int i = 0; i < stampCount; i++)
+            {
+                //answerStamps[i].SetCorrectStamp();
+                yield return CoroutineReturnManager.GetWaitForSeconds(0.8f);
+            }
+        }
+
         while (sequenceScript.TriggerOnBool() == false)
         {
             yield return CoroutineReturnManager.GetWaitForSeconds(0.1f);
         }
-
+        sequenceScript.TriggerOn();
         showStampCoroutine = null;
     }
 }

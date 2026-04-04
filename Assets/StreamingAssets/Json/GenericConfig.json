@@ -33,7 +33,7 @@
   "L_CameraTex": {
     "intParams": {},
     "floatParams": {
-      "threshold": 0.05,
+      "threshold": 0.28,
       "smoothness": 0.08
     },
     "boolParams": {},
@@ -42,7 +42,7 @@
   "R_CameraTex": {
     "intParams": {},
     "floatParams": {
-      "threshold": 0.02,
+      "threshold": 0.25,
       "smoothness": 0.08
     },
     "boolParams": {},

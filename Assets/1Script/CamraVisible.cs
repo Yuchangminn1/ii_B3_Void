@@ -12,7 +12,7 @@ public class CameraVisible : MonoBehaviour
     Coroutine _cameraDelayOpenCoroutine = null;
 
 
-    float _cameraOpenDelay = 1f;
+    float _cameraOpenDelay = 1.5f;
 
 
     void Update()

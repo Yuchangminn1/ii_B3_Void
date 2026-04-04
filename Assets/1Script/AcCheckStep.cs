@@ -23,6 +23,8 @@ public class AcCheckStep : AcCheck
     {
         base.StartCheck();
 
+        FadeManager.Instance.SetAlphaZero(outputText);
+
         if (timer != null)
         {
             if (CurrentDirection == Direction.Left)
@@ -31,6 +33,7 @@ public class AcCheckStep : AcCheck
                 timer.ResetTimer();
                 timer.StartTimer();
             }
+            Debug.Log($"{name}StartCheck Timer");
             timer.AddOnEndListener(CheckAnswer);
         }
     }
@@ -51,7 +54,7 @@ public class AcCheckStep : AcCheck
         {
             IsFailed();
         }
-        StopCheck();
+        //StopCheck();
 
     }
 

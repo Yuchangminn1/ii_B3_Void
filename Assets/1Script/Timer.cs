@@ -49,10 +49,13 @@ public class Timer : MonoBehaviour
 
 
 
+
+
     void Awake()
     {
         _timerText = GetComponentInChildren<Text>();
     }
+
 
     virtual protected void OnEnable()
     {
@@ -60,8 +63,20 @@ public class Timer : MonoBehaviour
             ResetTimer();
     }
 
+    public void Reset()
+    {
+        time = _defaultTime;
+        _timerText.text = $"{time}";
+        IsCounting = false;
+        FadeManager.Instance.SetAlphaZero(timerGraphics);
+        FadeManager.Instance.SetAlphaZero(_timerText);
+        onTimerEnd = null;
+    }
+
     virtual protected void Start()
     {
+        PageController.Instance.OnReset += Reset;
+
         timerGraphics = GetComponentsInChildren<Graphic>();
         FadeManager.Instance.SetAlphaZero(timerGraphics);
     }

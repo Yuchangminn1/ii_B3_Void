@@ -322,6 +322,15 @@ public class Arduino_SelectButton : Arduino
                 continue;
             }
 
+            // ACK 응답 대기/타임아웃 재시도 로직 비활성화:
+            // 전송이 예외 없이 완료되면 성공으로 간주하고 종료한다.
+            isWaitingCommandAck = false;
+            isCommandAckReceived = false;
+            currentAckMessages = null;
+            currentCommandName = string.Empty;
+            yield break;
+
+            /*
             float endAt = Time.realtimeSinceStartup + Mathf.Max(0.1f, commandAckTimeoutSeconds);
 
             while (_isRunning && Time.realtimeSinceStartup < endAt)
@@ -370,6 +379,7 @@ public class Arduino_SelectButton : Arduino
                 yield break;
 
             yield return CoroutineReturnManager.GetWaitForSeconds(0.05f);
+            */
         }
     }
     public void LEDAllOff()

@@ -7,8 +7,8 @@ public class MainGameScript : MonoBehaviour
     int _currentIndex = 1;
 
 
-    public ShowShadowScript[] ShowShadowScripts;
-    public AcCheckStep[] AcChecks;
+    public ShowShadowScript CShowShadowScript;
+    public AcCheckStep AcCheck;
 
     public Timer timer;
 
@@ -16,9 +16,18 @@ public class MainGameScript : MonoBehaviour
 
     Coroutine _gameCoroutine = null;
 
+    Coroutine _nextCoroutine = null;
+
+
     public CameraVisible cameraVisible;
 
     public SequenceScript sequenceScript;
+
+
+    void Start()
+    {
+        PageController.Instance.OnReset += Reset;
+    }
 
 
 
@@ -39,59 +48,84 @@ public class MainGameScript : MonoBehaviour
 
     }
 
+    public void Reset()
+    {
+        if (_gameCoroutine != null)
+        {
+            StopCoroutine(_gameCoroutine);
+            _gameCoroutine = null;
+
+        }
+
+        if (_nextCoroutine != null)
+        {
+            StopCoroutine(_nextCoroutine);
+            _nextCoroutine = null;
+
+        }
+
+    }
+
 
     public IEnumerator StartGameCoroutine()
     {
         _currentIndex = 1; //0은 이미 튜토리얼로 했음
 
         yield return null;
+        if (_gameCoroutine == null)
+            yield break;
 
-        for (int i = 0; i < ShowShadowScripts.Length; i++)
-        {
-            ShowShadowScripts[i].SetACcheck(AcChecks[i]);
-
-        }
+        CShowShadowScript.SetACcheck(AcCheck);
 
         cameraVisible.CameraOn();
 
-        foreach (var ShowShadowScript in ShowShadowScripts)
-        {
-            ShowShadowScript.ShowShadow(_currentIndex);
-        }
+        CShowShadowScript.ShowShadow(_currentIndex);
 
-        timer.AddOnEndListener(() => StartCoroutine(NextStep()));
+        timer.AddOnEndListener(NextStep);
         _gameCoroutine = null;
 
     }
 
-    public IEnumerator NextStep()
+    public void NextStep()
+    {
+        if (_nextCoroutine != null)
+        {
+            StopCoroutine(_nextCoroutine);
+        }
+
+        _nextCoroutine = StartCoroutine(NextStepCoroutine());
+    }
+
+    public IEnumerator NextStepCoroutine()
     {
         yield return CoroutineReturnManager.GetWaitForSeconds(2f);
+        if (_nextCoroutine == null)
+            yield break;
 
         _currentIndex++;
 
-        if (_currentIndex >= ShowShadowScripts[0].GetShowImageLength())
+        if (_currentIndex >= CShowShadowScript.GetShowImageLength())
         {
             Debug.Log("게임 클리어");
             sequenceScript?.TriggerOn();
+            _nextCoroutine = null;
             yield break;
         }
-        for (int i = 0; i < ShowShadowScripts.Length; i++)
-        {
-            ShowShadowScripts[i].ResultImageClear();
-            ShowShadowScripts[i].SetACcheck(AcChecks[i]);
 
-        }
+        CShowShadowScript.ResultImageClear();
 
+        CShowShadowScript.SetACcheck(AcCheck);
 
-        foreach (var ShowShadowScript in ShowShadowScripts)
-        {
-            ShowShadowScript.ShowShadow(_currentIndex);
-        }
+        CShowShadowScript.ShowShadow(_currentIndex);
+
 
         yield return CoroutineReturnManager.GetWaitForSeconds(1f);
+        if (_nextCoroutine == null)
+            yield break;
 
-        timer.AddOnEndListener(() => StartCoroutine(NextStep()));
+        timer.AddOnEndListener(NextStep);
+
+        _nextCoroutine = null;
 
     }
 }

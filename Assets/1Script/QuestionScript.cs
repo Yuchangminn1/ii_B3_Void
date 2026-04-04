@@ -32,6 +32,14 @@ public class QuestionScript : MonoBehaviour
 
     int[] cameraIndex = new int[] { 5, 10, 15 };
 
+    bool _isReturnPiece = false;
+
+    public bool IsReturnPiece
+    {
+        get { return _isReturnPiece; }
+        set { _isReturnPiece = value; }
+    }
+
 
 
 
@@ -94,6 +102,11 @@ public class QuestionScript : MonoBehaviour
         _shadowCheck = true;
     }
 
+    public void EndReturnPiece()
+    {
+        _isReturnPiece = true;
+    }
+
     public IEnumerator NextQuestionCoroutine()
     {
 
@@ -106,7 +119,16 @@ public class QuestionScript : MonoBehaviour
         {
             _shadowCheck = false;
 
-            yield return StartCoroutine(shootPieceContainer?.ReturnShootCoroutine());
+            _isReturnPiece = false;
+
+            shootPieceContainer.ReturnShoot(EndReturnPiece);
+
+            while (_isReturnPiece == false)
+            {
+                yield return CoroutineReturnManager.GetWaitForSeconds(0.25f);
+
+            }
+
 
 
             while (shootPieceContainer.IsTutorialClear() == false)
