@@ -48,15 +48,20 @@ public class AcCheck : MonoBehaviour
     public enum DetectionMode { MatchedPercent, ProtrusionOverTarget, ProtrusionOverOverlap }
     [Tooltip("MatchedPercent: 기존 방식(matched/target). ProtrusionOverTarget: 삐져나온 픽 기준(target). ProtrusionOverOverlap: 삐져나온 픽을 겹친 픽 기준으로 계산.")]
     public DetectionMode detectionMode = DetectionMode.MatchedPercent;
-    float matchedAdjustPercent = 20f;
-    float protrusionAdjustPercent = 3f;
+
     [Header("결과를 표시할 UI Text (선택)")]
     [SerializeField] protected Text outputText;
     [Header("텍스트 포맷 예시: {0:F1}%")]
     [SerializeField] string outputFormat = "{0:F1}%";
 
 
+    const int MatchedPercentThreshold = 20;
 
+    const int ProtrusionOverTargetThreshold = 93;
+
+
+    protected float matchedAdjustPercent = 0f;
+    protected float protrusionAdjustPercent = 0f;
 
     float modifier = 0f;
 
@@ -86,7 +91,7 @@ public class AcCheck : MonoBehaviour
         }
     }
 
-    void Start()
+    protected virtual void Start()
     {
         PageController.Instance.OnReset += Reset;
 
@@ -419,8 +424,8 @@ public class AcCheck : MonoBehaviour
         float protrusionOverTargetPercent = total > 0 ? (Mathf.Clamp01(1f - ((float)protruding / (float)total)) * 100f) : 0f;
 
         // Effective thresholds include adjustments
-        float effMatchedThreshold = Mathf.Max(0f, 40f - matchedAdjustPercent);
-        float effProtrusionThreshold = Mathf.Clamp(100f - protrusionAdjustPercent, 0f, 100f);
+        float effMatchedThreshold = Mathf.Max(0f, MatchedPercentThreshold - matchedAdjustPercent);
+        float effProtrusionThreshold = Mathf.Clamp(ProtrusionOverTargetThreshold - protrusionAdjustPercent, 0f, 100f);
 
         float matchedRatio = effMatchedThreshold > 0f ? Mathf.Clamp01(matchedPercent / effMatchedThreshold) : 1f;
         float protrusionRatio = effProtrusionThreshold > 0f ? Mathf.Clamp01(protrusionOverTargetPercent / effProtrusionThreshold) : 1f;
@@ -439,8 +444,8 @@ public class AcCheck : MonoBehaviour
         // 2) ProtrusionOverTarget >= (100 - protrusionAdjustPercent)
         float matchedPercentFinal = total > 0 ? (matched * 100f / total) : 0f;
         float protrusionOverTargetPercentFinal = total > 0 ? (Mathf.Clamp01(1f - ((float)protruding / (float)total)) * 100f) : 0f;
-        float effMatchedThresholdFinal = Mathf.Max(0f, 40f - matchedAdjustPercent);
-        float effProtrusionThresholdFinal = Mathf.Clamp(100f - protrusionAdjustPercent, 0f, 100f);
+        float effMatchedThresholdFinal = Mathf.Max(0f, MatchedPercentThreshold - matchedAdjustPercent);
+        float effProtrusionThresholdFinal = Mathf.Clamp(ProtrusionOverTargetThreshold - protrusionAdjustPercent, 0f, 100f);
 
         if (outputText != null)
         {

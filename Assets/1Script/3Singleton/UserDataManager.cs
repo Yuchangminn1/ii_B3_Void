@@ -777,14 +777,8 @@ public class UserDataManager : MonoBehaviour
     }
     public Player GetPlayer()
     {
-        if (CurrentDirection == Direction.Left)
-        {
-            return players[0];
-        }
-        else
-        {
-            return players[1];
-        }
+        return players[0];
+
     }
 
     public int GetCurrentPlayersNum()

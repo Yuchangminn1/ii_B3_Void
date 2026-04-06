@@ -12,11 +12,34 @@ public class AcCheckStep : AcCheck
 
     public Timer timer;
 
+    const int GetScorePage = 5;
+
+    int _currentIndex = 0;
+
+    public int CurrentIndex
+    {
+        get { return _currentIndex; }
+        set
+        {
+            if (_currentIndex != value)
+            {
+                _currentIndex = value;
+            }
+        }
+    }
+
 
     protected override IEnumerator DelayOnClear()
     {
         yield return StartCoroutine(base.DelayOnClear());
+        Debug.Log("DelayOnClear");
+        if (PageController.Instance.CurrentPage == GetScorePage)
+        {
+            StepDataManager.Instance.SetSuccess(CurrentDirection, CurrentIndex);
+        }
         onSuccess.Invoke();
+        CurrentIndex++;
+
     }
 
     public override void StartCheck()
@@ -37,9 +60,22 @@ public class AcCheckStep : AcCheck
             timer.AddOnEndListener(CheckAnswer);
         }
     }
+
+
+    protected override void Start()
+    {
+        base.Start();
+
+        protrusionAdjustPercent += 8f;
+
+
+    }
     public void IsFailed()
     {
+        FadeManager.Instance.SetAlphaOne(outputText);
         onFailure.Invoke();
+        CurrentIndex++;
+
     }
     protected override void Update()
     {
@@ -49,13 +85,20 @@ public class AcCheckStep : AcCheck
     public void CheckAnswer()
     {
         UpdateColorPercent();
+        StartCoroutine(DebugTextShow());
 
         if (_isClear == false)
         {
             IsFailed();
         }
-        //StopCheck();
 
     }
 
+    IEnumerator DebugTextShow()
+    {
+        yield return new WaitForSeconds(1f);
+        FadeManager.Instance.SetAlphaZero(outputText);
+
+
+    }
 }

@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -62,12 +63,28 @@ public class ShowShadowScript : MonoBehaviour
 
 
 
-        CurrentAcCheck = null;
+        StartCoroutine(ShowFailDelay());
+    }
+
+    IEnumerator ShowFailDelay()
+    {
+        yield return new WaitForSeconds(1f);
+        ClearShadow();
+
     }
 
     public void ClearShadow()
     {
-        CurrentTargetRawImage.gameObject.SetActive(false);
+        if (CurrentAcCheck != null && CurrentAcCheck.targetRawImage != null)
+        {
+            CurrentTargetRawImage.gameObject.SetActive(false);
+
+            CurrentAcCheck = null;
+        }
+        for (int i = 0; i < ShadowImages.Length; i++)
+        {
+            ShadowImages[i].gameObject.SetActive(false);
+        }
     }
 
     public void Reset()

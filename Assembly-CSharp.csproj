@@ -66,6 +66,7 @@
   <ItemGroup>
     <Compile Include="Assets\1Script\AcCheck.cs" />
     <Compile Include="Assets\1Script\1Json\RawImageLoader.cs" />
+    <Compile Include="Assets\1Script\ChangeText.cs" />
     <Compile Include="Assets\1Script\1Json\JsonManager.cs" />
     <Compile Include="Assets\1Script\BlinkEyesScript.cs" />
     <Compile Include="Assets\1Script\PopupManager.cs" />
@@ -103,6 +104,7 @@
     <Compile Include="Assets\Unity-Logs-Viewer\Reporter\ReporterMessageReceiver.cs" />
     <Compile Include="Assets\1Script\2PageSequence\PlayerPageController.cs" />
     <Compile Include="Assets\CameraManager.cs" />
+    <Compile Include="Assets\1Script\StepDataManager.cs" />
     <Compile Include="Assets\1Script\2PageSequence\SequenceVideoPlayer.cs" />
     <Compile Include="Assets\1Script\1Json\JsonLoaderBase.cs" />
     <Compile Include="Assets\1Script\WaitCheck.cs" />
@@ -131,6 +133,7 @@
     <Compile Include="Assets\1Script\CameraMaskMove.cs" />
     <Compile Include="Assets\1Script\1Json\AudioLoader.cs" />
     <Compile Include="Assets\1Script\3Singleton\FadeManager.cs" />
+    <Compile Include="Assets\1Script\MaskingObject.cs" />
     <Compile Include="Assets\1Script\TriggerContainer.cs" />
     <Compile Include="Assets\1Script\2PageSequence\MainPage.cs" />
     <Compile Include="Assets\1Script\AcCheckStep.cs" />

@@ -16,13 +16,15 @@ public class Timer : MonoBehaviour
         }
 
     }
+
+
     Action onTimerEnd;
 
     protected float time = 0f;
 
     // public float Time2 => time;
 
-    protected Text _timerText;
+    public Text _timerText;
 
     public bool IsCounting = false;
 
@@ -35,9 +37,13 @@ public class Timer : MonoBehaviour
     public UnityEvent OnTimerEndEvent;
 
 
+    public RawImage PairTimerImage;
+
+    public Text PairTimerText;
 
 
-    Graphic[] timerGraphics;
+
+    public Graphic[] timerGraphics;
 
 
     public void AddOnEndListener(Action action)
@@ -53,7 +59,8 @@ public class Timer : MonoBehaviour
 
     void Awake()
     {
-        _timerText = GetComponentInChildren<Text>();
+        if (_timerText == null)
+            _timerText = GetComponentInChildren<Text>();
     }
 
 
@@ -66,19 +73,31 @@ public class Timer : MonoBehaviour
     public void Reset()
     {
         time = _defaultTime;
-        _timerText.text = $"{time}";
+        SetTimerText(time);
         IsCounting = false;
         FadeManager.Instance.SetAlphaZero(timerGraphics);
-        FadeManager.Instance.SetAlphaZero(_timerText);
+        FadeManager.Instance.SetAlphaZero(PairTimerImage);
+        FadeManager.Instance.SetAlphaZero(PairTimerText);
         onTimerEnd = null;
+    }
+
+    public void SetTimerText(float newTime)
+    {
+        _timerText.text = $"{newTime}";
+        PairTimerText.text = $"{newTime}";
     }
 
     virtual protected void Start()
     {
         PageController.Instance.OnReset += Reset;
-
-        timerGraphics = GetComponentsInChildren<Graphic>();
+        if (timerGraphics == null || timerGraphics.Length == 0)
+        {
+            timerGraphics = GetComponentsInChildren<Graphic>();
+        }
         FadeManager.Instance.SetAlphaZero(timerGraphics);
+        FadeManager.Instance.SetAlphaZero(PairTimerImage);
+        FadeManager.Instance.SetAlphaZero(PairTimerText);
+
     }
 
     public void SetTextVisible()
@@ -86,6 +105,8 @@ public class Timer : MonoBehaviour
         if (_timerText.color.a < 0.1)
         {
             FadeManager.Instance.SetAlphaOne(_timerText);
+            FadeManager.Instance.SetAlphaOne(PairTimerText);
+
         }
 
     }
@@ -94,6 +115,7 @@ public class Timer : MonoBehaviour
         if (_timerText.color.a > 0.1)
         {
             FadeManager.Instance.SetAlphaZero(_timerText);
+            FadeManager.Instance.SetAlphaZero(PairTimerText);
         }
 
     }
@@ -102,12 +124,14 @@ public class Timer : MonoBehaviour
         if (IsCounting && time > 0)
         {
             time -= Time.fixedDeltaTime;
-            _timerText.text = $"{Mathf.CeilToInt(time)}";
+            SetTimerText(Mathf.CeilToInt(time));
+
         }
         else if (IsCounting && time <= 0)
         {
             FadeManager.Instance.SetAlphaZero(timerGraphics);
-
+            FadeManager.Instance.SetAlphaZero(PairTimerImage);
+            FadeManager.Instance.SetAlphaZero(PairTimerText);
             IsCounting = false;
             onTimerEnd?.Invoke();
             OnTimerEndEvent?.Invoke();
@@ -126,18 +150,24 @@ public class Timer : MonoBehaviour
     {
 
         FadeManager.Instance.SetAlphaZero(timerGraphics);
+        FadeManager.Instance.SetAlphaZero(PairTimerImage);
+
 
         time = _defaultTime;
-        _timerText.text = $"{time}";
+        SetTimerText(time);
         IsCounting = false;
         FadeManager.Instance.SetAlphaZero(_timerText);
+        FadeManager.Instance.SetAlphaZero(PairTimerText);
+
     }
     public void OffTimer()
     {
         FadeManager.Instance.SetAlphaZero(_timerText);
+        FadeManager.Instance.SetAlphaZero(PairTimerText);
+
 
         time = _defaultTime;
-        _timerText.text = $"{time}";
+        SetTimerText(time);
         IsCounting = false;
     }
     public void StartTimer()
@@ -146,6 +176,9 @@ public class Timer : MonoBehaviour
         FadeManager.Instance.SetAlphaOne(timerGraphics);
 
         FadeManager.Instance.SetAlphaOne(_timerText);
+        FadeManager.Instance.SetAlphaOne(PairTimerImage);
+        FadeManager.Instance.SetAlphaOne(PairTimerText);
+
         time = _defaultTime;
         if (CurrentDirection == Direction.Left)
         {
@@ -159,7 +192,7 @@ public class Timer : MonoBehaviour
             }
         }
 
-        _timerText.text = $"{time}";
+        SetTimerText(time);
         IsCounting = true;
     }
 

@@ -9,6 +9,10 @@ public class CameraVisible : MonoBehaviour
 
     public Graphic[] Camera_Graphics;
 
+    public CameraValue[] CameraValues;
+
+
+
     Coroutine _cameraDelayOpenCoroutine = null;
 
 
@@ -29,21 +33,28 @@ public class CameraVisible : MonoBehaviour
         if (_cameraDelayOpenCoroutine == null)
         {
             FadeManager.Instance.SetAlphaZero(Camera_Graphics);
-            for (int i = 0; i < CameraCanvasGroup.Length; i++)
+
+            if (CameraCanvasGroup[0].alpha == 1)
             {
-                if (CameraCanvasGroup[i].alpha == 1)
+                for (int i = 0; i < CameraCanvasGroup.Length; i++)
                 {
                     CameraCanvasGroup[i].alpha = 0;
                     CameraCanvasGroup[i].blocksRaycasts = false;
+                    CameraValues[i].IsRendered = false;
+
                 }
-                else
+            }
+            else
+            {
+                for (int i = 0; i < CameraCanvasGroup.Length; i++)
                 {
                     CameraCanvasGroup[i].alpha = 1;
                     CameraCanvasGroup[i].blocksRaycasts = true;
+                    CameraValues[i].IsRendered = true;
 
-                    _cameraDelayOpenCoroutine = StartCoroutine(CameraDelayOpen());
                 }
             }
+
         }
 
 
@@ -72,6 +83,7 @@ public class CameraVisible : MonoBehaviour
             {
                 CameraCanvasGroup[i].alpha = 1;
                 CameraCanvasGroup[i].blocksRaycasts = true;
+                CameraValues[i].IsRendered = true;
             }
             _cameraDelayOpenCoroutine = StartCoroutine(CameraDelayOpen());
         }
@@ -83,22 +95,29 @@ public class CameraVisible : MonoBehaviour
     {
         CameraCanvasGroup[0].alpha = 1;
         CameraCanvasGroup[0].blocksRaycasts = true;
+        CameraValues[0].IsRendered = true;
+
     }
     public void CameraOnRight()
     {
         CameraCanvasGroup[1].alpha = 1;
         CameraCanvasGroup[1].blocksRaycasts = true;
+        CameraValues[1].IsRendered = true;
+
     }
 
     public void CameraOffLeft()
     {
         CameraCanvasGroup[0].alpha = 0;
         CameraCanvasGroup[0].blocksRaycasts = false;
+        CameraValues[0].IsRendered = false;
+
     }
     public void CameraOffRight()
     {
         CameraCanvasGroup[1].alpha = 0;
         CameraCanvasGroup[1].blocksRaycasts = false;
+        CameraValues[1].IsRendered = false;
     }
 
 
@@ -112,6 +131,7 @@ public class CameraVisible : MonoBehaviour
         {
             CameraCanvasGroup[i].alpha = 0;
             CameraCanvasGroup[i].blocksRaycasts = false;
+            CameraValues[i].IsRendered = false;
         }
     }
 

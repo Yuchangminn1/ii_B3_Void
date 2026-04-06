@@ -27,6 +27,15 @@ public class ShowContainer : MonoBehaviour
     RawImage currentLeftImage;
     RawImage currentRightImage;
 
+    System.Action _leftClearListener;
+    System.Action _rightClearListener;
+
+    void Awake()
+    {
+        _leftClearListener = HandleLeftClear;
+        _rightClearListener = HandleRightClear;
+    }
+
     void Start()
     {
         Reset();
@@ -38,6 +47,19 @@ public class ShowContainer : MonoBehaviour
     {
         HideSideImages(LeftShapeData);
         HideSideImages(RightShapeData);
+
+        if (questionAChecks != null)
+        {
+            if (questionAChecks.Length > 0 && questionAChecks[0] != null)
+            {
+                questionAChecks[0].RemoveOnClearListener(_leftClearListener);
+            }
+
+            if (questionAChecks.Length > 1 && questionAChecks[1] != null)
+            {
+                questionAChecks[1].RemoveOnClearListener(_rightClearListener);
+            }
+        }
     }
 
     void HideSideImages(ShapeData[] sideData)
@@ -111,10 +133,6 @@ public class ShowContainer : MonoBehaviour
 
     public void ShowSideImages(Direction direction, TutorialShape shape, bool isOutline, int index)
     {
-        Debug.Log("ShowSideImages called. direction: " + direction + ", shape: " + shape + ", isOutline: " + isOutline + ", index: " + index);
-
-
-
         ShapeData[] sideData = null;
         if (direction == Direction.Left)
         {
@@ -170,21 +188,28 @@ public class ShowContainer : MonoBehaviour
             currentLeftImage = targetImage;
             questionAChecks[0].SetTargetRawImage(currentLeftImage);
 
-            questionAChecks[0].AddOnClearListener(() =>
-            {
-                shootPieceContainer.Clear(Direction.Left);
-            });
+            questionAChecks[0].RemoveOnClearListener(_leftClearListener);
+            questionAChecks[0].AddOnClearListener(_leftClearListener);
         }
         else if (direction == Direction.Right)
         {
             currentRightImage = targetImage;
             questionAChecks[1].SetTargetRawImage(currentRightImage);
-            questionAChecks[1].AddOnClearListener(() =>
-           {
-               shootPieceContainer.Clear(Direction.Right);
-           });
+
+            questionAChecks[1].RemoveOnClearListener(_rightClearListener);
+            questionAChecks[1].AddOnClearListener(_rightClearListener);
         }
 
+    }
+
+    void HandleLeftClear()
+    {
+        shootPieceContainer.Clear(Direction.Left);
+    }
+
+    void HandleRightClear()
+    {
+        shootPieceContainer.Clear(Direction.Right);
     }
 
 }

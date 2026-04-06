@@ -52,6 +52,15 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
     JsonGenericUpData _genericData = new JsonGenericUpData();
 
 
+    bool _isRendering = false;
+
+    public bool IsRendered
+    {
+        get { return _isRendering; }
+        set { _isRendering = value; }
+    }
+
+
     public void Initialize(Shader shader)
     {
         _targetRawImage = GetComponent<RawImage>();
@@ -178,6 +187,9 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
 
     public void ApplyMaterialProperties()
     {
+        if (_isRendering == false)
+            return;
+
         if (material == null) return;
 
         material.SetColor("_KeyColor", keyColor);

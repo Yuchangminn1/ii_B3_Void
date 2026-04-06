@@ -1,41 +1,58 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Data;
 using UnityEngine;
 
 public class ScoreStampContainer : ResultStampContainer
 {
     int currentStampIndex = -1;
 
-    override protected void Start()
+    const int PieceStampCount = 2;
+
+    CanvasGroup canvasGroup;
+
+
+
+
+
+    protected override void Start()
     {
         base.Start();
+
+        canvasGroup = GetComponent<CanvasGroup>();
 
         defaultColor = new Color32(0, 0, 0, 255);
 
         getStampColor = new Color32(13, 119, 160, 255);
+        if (StepDataManager.Instance != null)
+        {
+            StepDataManager.Instance.OnStampDataChanged += ScoreStamp;
+        }
     }
 
-    override public void Reset()
+    public override void Reset()
     {
         base.Reset();
         currentStampIndex = -1;
     }
     public void ScoreStamp(int value)
     {
-
-        if (value != 0 && value % 2 == 0)
+        currentStampIndex = value;
+        if (currentStampIndex > 0 && currentStampIndex <= answerStamps.Length)
         {
-            currentStampIndex = (value / 2) - 1;
+            canvasGroup.alpha = 1f;
 
-            UserDataManager.Instance.GetPlayer().AddPiece = currentStampIndex + 1;
+            answerStamps[currentStampIndex - 1].color = getStampColor;
 
-            Debug.Log($"점수: {value}, 현재 스탬프 인덱스: {currentStampIndex}");
+            SoundManager.Instance.PlayEffectSound(EffectSoundNum.SoulPieceSound);
+            StartCoroutine(DelayToHide());
 
-            answerStamps[currentStampIndex].color = getStampColor;
-
-            // UserDataManager.Instance.GetPlayer().AddPiece = currentStampIndex + 1;
         }
+    }
 
-
+    IEnumerator DelayToHide()
+    {
+        yield return new WaitForSeconds(1.5f);
+        canvasGroup.alpha = 0f;
     }
 }

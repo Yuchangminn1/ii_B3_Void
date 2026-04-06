@@ -4,11 +4,13 @@ using UnityEngine;
 
 public class MainGameScript : MonoBehaviour
 {
+
+
     int _currentIndex = 1;
 
 
     public ShowShadowScript CShowShadowScript;
-    public AcCheckStep AcCheck;
+    public AcCheckStep CAcCheck;
 
     public Timer timer;
 
@@ -71,11 +73,13 @@ public class MainGameScript : MonoBehaviour
     {
         _currentIndex = 1; //0은 이미 튜토리얼로 했음
 
+        CAcCheck.CurrentIndex = _currentIndex - 1;
+
         yield return null;
         if (_gameCoroutine == null)
             yield break;
 
-        CShowShadowScript.SetACcheck(AcCheck);
+        CShowShadowScript.SetACcheck(CAcCheck);
 
         cameraVisible.CameraOn();
 
@@ -114,7 +118,7 @@ public class MainGameScript : MonoBehaviour
 
         CShowShadowScript.ResultImageClear();
 
-        CShowShadowScript.SetACcheck(AcCheck);
+        CShowShadowScript.SetACcheck(CAcCheck);
 
         CShowShadowScript.ShowShadow(_currentIndex);
 
