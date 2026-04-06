@@ -25,6 +25,8 @@ public class Arduino_SelectButton : Arduino
         "1Off"
     };
 
+    readonly bool[] _buttonPressedStates = new bool[5];
+
 
 
 
@@ -98,23 +100,29 @@ public class Arduino_SelectButton : Arduino
         }
 
         int tmp = 0;
+        bool isOnMessage = false;
+        bool isOffMessage = false;
 
         for (int i = 0; i < _onMessage.Length; i++)
         {
             if (received.Contains(_onMessage[i]))
             {
                 tmp = i + 1;
+                isOnMessage = true;
                 break;
             }
         }
 
-
-        for (int i = 0; i < _offMessage.Length; i++)
+        if (!isOnMessage)
         {
-            if (received.Contains(_offMessage[i]))
+            for (int i = 0; i < _offMessage.Length; i++)
             {
-                tmp = i + 1;
-                break;
+                if (received.Contains(_offMessage[i]))
+                {
+                    tmp = i + 1;
+                    isOffMessage = true;
+                    break;
+                }
             }
         }
 
@@ -124,6 +132,32 @@ public class Arduino_SelectButton : Arduino
                 Debug.Log($"[SelectButton:{ButtonDirection}] 매칭 실패 메시지: {received}");
             return;
         }
+
+        int buttonIndex = tmp - 1;
+
+        if (isOffMessage)
+        {
+            if (buttonIndex >= 0 && buttonIndex < _buttonPressedStates.Length)
+            {
+                _buttonPressedStates[buttonIndex] = false;
+            }
+
+            if (enableButtonDebugLog)
+                Debug.Log($"[SelectButton:{ButtonDirection}] OFF 수신: value={tmp}");
+            return;
+        }
+
+        if (buttonIndex < 0 || buttonIndex >= _buttonPressedStates.Length)
+            return;
+
+        if (_buttonPressedStates[buttonIndex])
+        {
+            if (enableButtonDebugLog)
+                Debug.Log($"[SelectButton:{ButtonDirection}] 중복 ON 무시: value={tmp}");
+            return;
+        }
+
+        _buttonPressedStates[buttonIndex] = true;
 
         if (tmp != 0)
         {

@@ -63,6 +63,8 @@ public class AcCheck : MonoBehaviour
     protected float matchedAdjustPercent = 0f;
     protected float protrusionAdjustPercent = 0f;
 
+    public const float CheckDelay = 1f;
+
     float modifier = 0f;
 
 
@@ -463,7 +465,7 @@ public class AcCheck : MonoBehaviour
     {
         _isClear = true;
 
-        yield return CoroutineReturnManager.GetWaitForSeconds(1f);
+        yield return CoroutineReturnManager.GetWaitForSeconds(CheckDelay);
         onClear?.Invoke();
     }
 

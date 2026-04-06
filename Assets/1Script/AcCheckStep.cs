@@ -72,10 +72,16 @@ public class AcCheckStep : AcCheck
     }
     public void IsFailed()
     {
+        StartCoroutine(DelayOnFailed());
+
+    }
+
+    IEnumerator DelayOnFailed()
+    {
+        yield return CoroutineReturnManager.GetWaitForSeconds(CheckDelay);
         FadeManager.Instance.SetAlphaOne(outputText);
         onFailure.Invoke();
         CurrentIndex++;
-
     }
     protected override void Update()
     {

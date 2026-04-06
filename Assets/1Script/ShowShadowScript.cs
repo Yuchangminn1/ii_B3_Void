@@ -63,7 +63,7 @@ public class ShowShadowScript : MonoBehaviour
 
 
 
-        StartCoroutine(ShowFailDelay());
+        // StartCoroutine(ShowFailDelay());
     }
 
     IEnumerator ShowFailDelay()
@@ -75,6 +75,8 @@ public class ShowShadowScript : MonoBehaviour
 
     public void ClearShadow()
     {
+        Debug.Log($"{name}ClearShadow");
+
         if (CurrentAcCheck != null && CurrentAcCheck.targetRawImage != null)
         {
             CurrentTargetRawImage.gameObject.SetActive(false);
@@ -89,6 +91,8 @@ public class ShowShadowScript : MonoBehaviour
 
     public void Reset()
     {
+        Debug.Log($"{name}Reset");
+
         successImage.gameObject.SetActive(false);
         failImage.gameObject.SetActive(false);
         for (int i = 0; i < ShadowImages.Length; i++)
@@ -103,6 +107,7 @@ public class ShowShadowScript : MonoBehaviour
         {
             ShadowImages[i].gameObject.SetActive(i == index);
         }
+        Debug.Log($"{name} ShowShadow index: {index}");
         CurrentAcCheck.SetTargetRawImage(ShadowImages[index]);
     }
 

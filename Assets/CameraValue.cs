@@ -57,7 +57,38 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
     public bool IsRendered
     {
         get { return _isRendering; }
-        set { _isRendering = value; }
+        set
+        {
+            if (_isRendering == value) return;
+            _isRendering = value;
+            UpdateRenderBindings();
+        }
+    }
+
+    void UpdateRenderBindings()
+    {
+        if (_targetRawImage == null) return;
+
+        if (_isRendering == false)
+        {
+            if (webcamTexture != null && webcamTexture.isPlaying)
+            {
+                webcamTexture.Stop();
+            }
+            _targetRawImage.texture = null;
+            if (material != null) material.mainTexture = null;
+            return;
+        }
+
+        if (webcamTexture != null)
+        {
+            if (!webcamTexture.isPlaying)
+            {
+                webcamTexture.Play();
+            }
+            _targetRawImage.texture = webcamTexture;
+            if (material != null) material.mainTexture = webcamTexture;
+        }
     }
 
 
@@ -75,6 +106,8 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
             material = new Material(shader);
             _targetRawImage.material = material;
         }
+
+        UpdateRenderBindings();
     }
 
     public void StartWebcam(WebCamDevice[] devices)
@@ -88,6 +121,8 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
         {
             var d = devices[i];
             bool ignore = false;
+
+            Debug.Log($"{d.name}");
             for (int j = 0; j < ignoreDeviceNameContains.Length; j++)
             {
                 if (!string.IsNullOrEmpty(ignoreDeviceNameContains[j]) && d.name != null && d.name.Contains(ignoreDeviceNameContains[j]))
@@ -153,13 +188,13 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
         }
 
         webcamTexture = new WebCamTexture(device.name, requestedWidth, requestedHeight, requestedFPS);
-        webcamTexture.Play();
 
-        _targetRawImage.texture = webcamTexture;
-        if (material != null)
+        if (_isRendering)
         {
-            material.mainTexture = webcamTexture;
+            webcamTexture.Play();
         }
+
+        UpdateRenderBindings();
         Debug.Log($"[CameraValue] Started '{gameObject.name}' with device '{device.name}'");
     }
 
@@ -169,6 +204,7 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
         {
             if (webcamTexture.isPlaying) webcamTexture.Stop();
             if (_targetRawImage != null) _targetRawImage.texture = null;
+            if (material != null) material.mainTexture = null;
             Destroy(webcamTexture);
             webcamTexture = null;
         }

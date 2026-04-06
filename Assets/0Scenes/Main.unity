@@ -9772,6 +9772,7 @@ MonoBehaviour:
   deviceName: 
   ignoreDeviceNameContains:
   - "\uCC3D\uBBFC"
+  - Mac
   requestedWidth: 1280
   requestedHeight: 720
   requestedFPS: 30
@@ -34074,7 +34075,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 662a39800aa94254a9fc5194d6b746c1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _timerText: {fileID: 317141475}
+  _timerText: {fileID: 1623757664}
   IsCounting: 0
   isDownCount: 0
   CurrentDirection: 0
@@ -34093,11 +34094,10 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
-  PairTimerImage: {fileID: 847179014}
-  PairTimerText: {fileID: 181381254}
+  PairTimerImage: {fileID: 0}
+  PairTimerText: {fileID: 2111094493}
   timerGraphics:
-  - {fileID: 479460345}
-  - {fileID: 317141475}
+  - {fileID: 1623757664}
 --- !u!1 &1624613334
 GameObject:
   m_ObjectHideFlags: 0

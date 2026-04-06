@@ -69,7 +69,7 @@ public class StepDataManager : Singleton<StepDataManager>
         }
         int score = 0;
 
-        for (int i = 0; i < index; i++)
+        for (int i = 0; i <= index; i++)
         {
             if (leftSuccess[i] && rightSuccess[i])
             {
