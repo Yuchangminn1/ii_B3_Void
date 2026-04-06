@@ -12,13 +12,15 @@ public enum EffectSoundNum
     PopupSound,     // 팝업 뜨는 소리
     ActiveSound,     // 활성화음
     StepTextSound,
-    GreenHandSound,
-    WhiteLEDSound,
+    ShowShadowSound,
+    ClearShadowSound,
     SecondSound3,
     SecondSound5,
     QuestionSound,
     StartSound,
-    TimerSound100
+    TimerSound100,
+    AllReadySound,
+    PieceShootSound
 }
 public class SoundManager : MonoBehaviour, IJsonGenericTarget
 {
@@ -48,7 +50,7 @@ public class SoundManager : MonoBehaviour, IJsonGenericTarget
 
     float[] _soundVolume = new float[System.Enum.GetValues(typeof(EffectSoundNum)).Length];
 
-    [Header("사운드 매니저\nBGM = 0\nSaveSound = 1\nSoulPieceSound = 2\nConfirmSound = 3\nPopupSound = 4\nActiveSound = 5\nStepTextSound = 6\nGreenHandSound = 7\nWhiteLEDSound = 8\nSecondSound3 = 9\nSecondSound5 = 10\nQuestionSound = 11\nStartSound = 12\nTimerSound100 = 13")]
+    [Header("사운드 매니저\nBGM = 0\nSaveSound = 1\nSoulPieceSound = 2\nConfirmSound = 3\nPopupSound = 4\nActiveSound = 5\nStepTextSound = 6\nShowShadowSound = 7\nClearShadowSound = 8\nSecondSound3 = 9\nSecondSound5 = 10\nQuestionSound = 11\nStartSound = 12\nTimerSound100 = 13\nAllReadySound = 14\nPieceShootSound = 15")]
     [SerializeField] float _baseVolume = 1f;
 
 
@@ -155,13 +157,15 @@ public class SoundManager : MonoBehaviour, IJsonGenericTarget
         data.floatParams.TryGetValue("PopupSoundVolume", out _soundVolume[(int)EffectSoundNum.PopupSound]);
         data.floatParams.TryGetValue("ActiveSoundVolume", out _soundVolume[(int)EffectSoundNum.ActiveSound]);
         data.floatParams.TryGetValue("StepTextSoundVolume", out _soundVolume[(int)EffectSoundNum.StepTextSound]);
-        data.floatParams.TryGetValue("GreenHandSoundVolume", out _soundVolume[(int)EffectSoundNum.GreenHandSound]);
-        data.floatParams.TryGetValue("WhiteLEDSoundVolume", out _soundVolume[(int)EffectSoundNum.WhiteLEDSound]);
+        data.floatParams.TryGetValue("ShowShadowSoundVolume", out _soundVolume[(int)EffectSoundNum.ShowShadowSound]);
+        data.floatParams.TryGetValue("ClearShadowSoundVolume", out _soundVolume[(int)EffectSoundNum.ClearShadowSound]);
         data.floatParams.TryGetValue("SecondSound3Volume", out _soundVolume[(int)EffectSoundNum.SecondSound3]);
         data.floatParams.TryGetValue("SecondSound5Volume", out _soundVolume[(int)EffectSoundNum.SecondSound5]);
         data.floatParams.TryGetValue("QuestionSoundVolume", out _soundVolume[(int)EffectSoundNum.QuestionSound]);
         data.floatParams.TryGetValue("StartSoundVolume", out _soundVolume[(int)EffectSoundNum.StartSound]);
         data.floatParams.TryGetValue("TimerSound100Volume", out _soundVolume[(int)EffectSoundNum.TimerSound100]);
+        data.floatParams.TryGetValue("AllReadySoundVolume", out _soundVolume[(int)EffectSoundNum.AllReadySound]);
+        data.floatParams.TryGetValue("PieceShootSoundVolume", out _soundVolume[(int)EffectSoundNum.PieceShootSound]);
         data.floatParams.TryGetValue("BaseVolume", out _baseVolume);
 
 
@@ -184,13 +188,15 @@ public class SoundManager : MonoBehaviour, IJsonGenericTarget
         _genericData.floatParams["PopupSoundVolume"] = _soundVolume[(int)EffectSoundNum.PopupSound];
         _genericData.floatParams["ActiveSoundVolume"] = _soundVolume[(int)EffectSoundNum.ActiveSound];
         _genericData.floatParams["StepTextSoundVolume"] = _soundVolume[(int)EffectSoundNum.StepTextSound];
-        _genericData.floatParams["GreenHandSoundVolume"] = _soundVolume[(int)EffectSoundNum.GreenHandSound];
-        _genericData.floatParams["WhiteLEDSoundVolume"] = _soundVolume[(int)EffectSoundNum.WhiteLEDSound];
+        _genericData.floatParams["ShowShadowSoundVolume"] = _soundVolume[(int)EffectSoundNum.ShowShadowSound];
+        _genericData.floatParams["ClearShadowSoundVolume"] = _soundVolume[(int)EffectSoundNum.ClearShadowSound];
         _genericData.floatParams["SecondSound3Volume"] = _soundVolume[(int)EffectSoundNum.SecondSound3];
         _genericData.floatParams["SecondSound5Volume"] = _soundVolume[(int)EffectSoundNum.SecondSound5];
         _genericData.floatParams["QuestionSoundVolume"] = _soundVolume[(int)EffectSoundNum.QuestionSound];
         _genericData.floatParams["StartSoundVolume"] = _soundVolume[(int)EffectSoundNum.StartSound];
         _genericData.floatParams["TimerSound100Volume"] = _soundVolume[(int)EffectSoundNum.TimerSound100];
+        _genericData.floatParams["AllReadySoundVolume"] = _soundVolume[(int)EffectSoundNum.AllReadySound];
+        _genericData.floatParams["PieceShootSoundVolume"] = _soundVolume[(int)EffectSoundNum.PieceShootSound];
         _genericData.floatParams["BaseVolume"] = _baseVolume;
         return _genericData;
     }

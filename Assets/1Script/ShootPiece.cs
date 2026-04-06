@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -111,7 +112,7 @@ public class ShootPiece : MonoBehaviour
         _rawImage = GetComponent<RawImage>();
     }
 
-    public void PieceShot()
+    public void PieceShot(Action onComplete = null)
     {
         if (targetImage == null)
         {
@@ -154,7 +155,7 @@ public class ShootPiece : MonoBehaviour
         Vector3 start = transform.localPosition;
         Vector3 end = GetTargetLocalPosition();
 
-        moveCoroutine = StartCoroutine(MoveBezier(start, end, selfRect, shouldMatchSize, startSize, endSize));
+        moveCoroutine = StartCoroutine(MoveBezier(start, end, selfRect, shouldMatchSize, startSize, endSize, onComplete));
     }
 
     public void ReturnPieceShot()
@@ -196,7 +197,7 @@ public class ShootPiece : MonoBehaviour
         RectTransform selfRect,
         bool shouldMatchSize,
         Vector2 startSize,
-        Vector2 endSize)
+        Vector2 endSize, Action onComplete = null)
     {
         float duration = Mathf.Max(0.01f, moveDuration);
         float elapsed = 0f;
@@ -232,6 +233,8 @@ public class ShootPiece : MonoBehaviour
         }
 
         moveCoroutine = null;
+
+        onComplete?.Invoke();
     }
 
 }

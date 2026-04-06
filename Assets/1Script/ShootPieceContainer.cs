@@ -140,9 +140,16 @@ public class ShootPieceContainer : MonoBehaviour
     {
         Left_ShootPieces[CurrentIndex].Reset();
         Right_ShootPieces[CurrentIndex].Reset();
-        Left_ShootPieces[CurrentIndex].PieceShot();
+        Left_ShootPieces[CurrentIndex].PieceShot(PlaySoundShotEnd);
         Right_ShootPieces[CurrentIndex].PieceShot();
+        SoundManager.Instance.PlayEffectSound(EffectSoundNum.PieceShootSound);
         CurrentIndex++;
+    }
+
+
+    void PlaySoundShotEnd()
+    {
+        SoundManager.Instance.PlayEffectSound(EffectSoundNum.ShowShadowSound);
     }
 
 
