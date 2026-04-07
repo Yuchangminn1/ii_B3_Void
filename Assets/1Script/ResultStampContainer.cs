@@ -7,7 +7,7 @@ public class ResultStampContainer : MonoBehaviour
 {
     public RawImage[] answerStamps = new RawImage[5];
 
-    protected Color32 defaultColor = new Color32(128, 128, 128, 255);
+    protected Color32 defaultColor = new Color32(128, 128, 128, 50);
 
     protected Color32 getStampColor = new Color32(128, 128, 128, 255);
 
@@ -56,7 +56,7 @@ public class ResultStampContainer : MonoBehaviour
         {
             for (int i = 0; i < stampCount; i++)
             {
-                //answerStamps[i].SetCorrectStamp();
+                answerStamps[i].color = getStampColor;
                 yield return CoroutineReturnManager.GetWaitForSeconds(0.8f);
             }
         }

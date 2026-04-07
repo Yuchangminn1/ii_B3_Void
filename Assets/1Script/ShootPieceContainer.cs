@@ -39,6 +39,8 @@ public class ShootPieceContainer : MonoBehaviour
 
     public CameraVisible cameraVisible;
 
+    public GamePopup gamePopup;
+
 
     bool _isClearLeft = false;
     bool _isClearRight = false;
@@ -105,6 +107,11 @@ public class ShootPieceContainer : MonoBehaviour
 
     public bool IsTutorialClear()
     {
+        if (_isClearLeft && _isClearRight)
+        {
+            gamePopup.Reset();
+            cameraVisible.CameraOff();
+        }
         return _isClearLeft && _isClearRight;
     }
 
@@ -123,16 +130,17 @@ public class ShootPieceContainer : MonoBehaviour
         {
             _isClearLeft = true;
             showContainer.ShowSideImages(Direction.Left, leftPlayerTutorialShapeIndex[CurrentIndex / PieceGroupSize - 1], true, count);
-            cameraVisible.CameraOffLeft();
-
-
-
+            SoundManager.Instance.PlayEffectSound(EffectSoundNum.ClearShadowSound);
+            gamePopup.ShowWaitPopupLeft();
+            // cameraVisible.CameraOffLeft();
         }
         else
         {
             _isClearRight = true;
             showContainer.ShowSideImages(Direction.Right, rightPlayerTutorialShapeIndex[CurrentIndex / PieceGroupSize - 1], true, count);
-            cameraVisible.CameraOffRight();
+            SoundManager.Instance.PlayEffectSound(EffectSoundNum.ClearShadowSound);
+            gamePopup.ShowWaitPopupRight();
+            // cameraVisible.CameraOffRight();
         }
     }
 
@@ -224,6 +232,7 @@ public class ShootPieceContainer : MonoBehaviour
             timerTime -= Time.fixedDeltaTime;
             yield return CoroutineReturnManager.WaitForFixedUpdate;
         }
+        SoundManager.Instance.PlayEffectSound(EffectSoundNum.FailSound);
 
         count++;
 
@@ -248,6 +257,10 @@ public class ShootPieceContainer : MonoBehaviour
 
             count++;
         }
+        if (_isClearLeft == false)
+            gamePopup.ShowFailPopupLeft();
+        if (_isClearRight == false)
+            gamePopup.ShowFailPopupRight();
         _timer.ResetTimer();
 
         yield return CoroutineReturnManager.GetWaitForSeconds(1f);

@@ -45,6 +45,9 @@ public class Timer : MonoBehaviour
 
     public Graphic[] timerGraphics;
 
+    EffectSoundNum _currentEffectSoundNum = EffectSoundNum.BGM;
+
+
 
     public void AddOnEndListener(Action action)
     {
@@ -152,6 +155,11 @@ public class Timer : MonoBehaviour
         FadeManager.Instance.SetAlphaZero(timerGraphics);
         FadeManager.Instance.SetAlphaZero(PairTimerImage);
 
+        if (_currentEffectSoundNum != EffectSoundNum.BGM)
+            SoundManager.Instance.StopEffectSound(_currentEffectSoundNum);
+
+
+
 
         time = _defaultTime;
         SetTimerText(time);
@@ -182,12 +190,25 @@ public class Timer : MonoBehaviour
         time = _defaultTime;
         if (CurrentDirection == Direction.Left)
         {
-            if (_defaultTime > 4.9 && _defaultTime < 5.1)
+            if (_defaultTime > 9.9 && _defaultTime < 10.1)
             {
+                _currentEffectSoundNum = EffectSoundNum.SecondSound10;
+                SoundManager.Instance.PlayEffectSound(EffectSoundNum.SecondSound10);
+            }
+            else if (_defaultTime > 6.9 && _defaultTime < 7.1)
+            {
+                _currentEffectSoundNum = EffectSoundNum.SecondSound7;
+                SoundManager.Instance.PlayEffectSound(EffectSoundNum.SecondSound7);
+            }
+            else if (_defaultTime > 4.9 && _defaultTime < 5.1)
+            {
+                _currentEffectSoundNum = EffectSoundNum.SecondSound5;
+
                 SoundManager.Instance.PlayEffectSound(EffectSoundNum.SecondSound5);
             }
             else if (_defaultTime > 2.9 && _defaultTime < 3.1)
             {
+                _currentEffectSoundNum = EffectSoundNum.SecondSound3;
                 SoundManager.Instance.PlayEffectSound(EffectSoundNum.SecondSound3);
             }
         }

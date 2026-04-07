@@ -13,45 +13,66 @@ public class GamePopup : MonoBehaviour
     public RawImage[] failPopup;
     public Text[] failPopupText;
 
+    bool waitingPopupLeft = false;
+    bool waitingPopupRight = false;
+
 
     public void ShowWaitPopupLeft()
     {
-        FadeManager.Instance.SetAlphaZero(failPopup);
-        FadeManager.Instance.SetAlphaZero(failPopupText);
+        if (waitingPopupRight)
+        {
+            return;
+        }
+        waitingPopupLeft = true;
 
-        FadeManager.Instance.SetAlphaOne(waitPopup);
-        FadeManager.Instance.SetAlphaOne(waitPopupText);
+        FadeManager.Instance.SetAlphaZero(failPopup[0]);
+        FadeManager.Instance.SetAlphaZero(failPopupText[0]);
+
+        FadeManager.Instance.SetAlphaOne(waitPopup[0]);
+        FadeManager.Instance.SetAlphaOne(waitPopupText[0]);
     }
 
     public void ShowFailPopupLeft()
     {
-        FadeManager.Instance.SetAlphaZero(waitPopup);
-        FadeManager.Instance.SetAlphaZero(waitPopupText);
 
-        FadeManager.Instance.SetAlphaOne(failPopup);
-        FadeManager.Instance.SetAlphaOne(failPopupText);
+        FadeManager.Instance.SetAlphaZero(waitPopup[0]);
+        FadeManager.Instance.SetAlphaZero(waitPopupText[0]);
+
+        FadeManager.Instance.SetAlphaOne(failPopup[0]);
+        FadeManager.Instance.SetAlphaOne(failPopupText[0]);
     }
 
     public void ShowWaitPopupRight()
     {
-        FadeManager.Instance.SetAlphaZero(failPopup);
-        FadeManager.Instance.SetAlphaZero(failPopupText);
+        if (waitingPopupLeft)
+        {
+            return;
+        }
 
-        FadeManager.Instance.SetAlphaOne(waitPopup);
-        FadeManager.Instance.SetAlphaOne(waitPopupText);
+        waitingPopupRight = true;
+
+
+        FadeManager.Instance.SetAlphaZero(failPopup[1]);
+        FadeManager.Instance.SetAlphaZero(failPopupText[1]);
+
+        FadeManager.Instance.SetAlphaOne(waitPopup[1]);
+        FadeManager.Instance.SetAlphaOne(waitPopupText[1]);
     }
 
     public void ShowFailPopupRight()
     {
-        FadeManager.Instance.SetAlphaZero(waitPopup);
-        FadeManager.Instance.SetAlphaZero(waitPopupText);
+        FadeManager.Instance.SetAlphaZero(waitPopup[1]);
+        FadeManager.Instance.SetAlphaZero(waitPopupText[1]);
 
-        FadeManager.Instance.SetAlphaOne(failPopup);
-        FadeManager.Instance.SetAlphaOne(failPopupText);
+        FadeManager.Instance.SetAlphaOne(failPopup[1]);
+        FadeManager.Instance.SetAlphaOne(failPopupText[1]);
     }
 
     public void Reset()
     {
+        waitingPopupLeft = false;
+        waitingPopupRight = false;
+
         FadeManager.Instance.SetAlphaZero(waitPopup);
         FadeManager.Instance.SetAlphaZero(waitPopupText);
         FadeManager.Instance.SetAlphaZero(failPopup);

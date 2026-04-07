@@ -10,7 +10,6 @@ public class QuestionShadow : MonoBehaviour
 
     public CameraVisible cameraVisible;
 
-    Timer _timer;
 
     AcCheck acCheck;
 
@@ -26,7 +25,6 @@ public class QuestionShadow : MonoBehaviour
     {
         rawImages = GetComponentsInChildren<RawImage>();
         acCheck = GetComponent<AcCheck>();
-        _timer = FindAnyObjectByType<Timer>();
     }
 
     public void AddOnClearListener(Action action)
@@ -45,7 +43,7 @@ public class QuestionShadow : MonoBehaviour
 
     public void ShowShadow(int index)
     {
-        _timer.AddOnEndListener(HideShadow);
+        //_timer.AddOnEndListener(HideShadow);
         if (cameraVisible != null)
             cameraVisible.CameraOn();
         if (index < rawImages.Length)
@@ -74,9 +72,9 @@ public class QuestionShadow : MonoBehaviour
 
     public void HideShadow()
     {
-        if (cameraVisible != null)
+        // if (cameraVisible != null)
 
-            cameraVisible.CameraOffLeft();
+        //     cameraVisible.CameraOffLeft();
         for (int i = 0; i < rawImages.Length; i++)
         {
             FadeManager.Instance.SetAlphaZero(rawImages[i]);

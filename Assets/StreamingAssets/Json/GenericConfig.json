@@ -33,7 +33,7 @@
   "L_CameraTex": {
     "intParams": {},
     "floatParams": {
-      "threshold": 0.1,
+      "threshold": 0.13,
       "smoothness": 0.08
     },
     "boolParams": {},
@@ -42,7 +42,7 @@
   "R_CameraTex": {
     "intParams": {},
     "floatParams": {
-      "threshold": 0.07,
+      "threshold": 0.18,
       "smoothness": 0.08
     },
     "boolParams": {},
@@ -53,30 +53,35 @@
     "floatParams": {},
     "boolParams": {},
     "stringParams": {
-      "LeftPlayerArduinoButton": "COM3",
-      "RightPlayerArduinoButton": "COM5"
+      "LeftPlayerArduinoButton": "COM4",
+      "RightPlayerArduinoButton": "COM3"
     }
   },
 
   "SoundManager": {
     "intParams": {},
     "floatParams": {
-      "bgmVolume": 0.4,
+      "bgmVolume": 0.8,
 
-      "BaseVolume": 1.2,
+      "BaseVolume": 1.8,
       "SaveSoundVolume": 1.0,
       "SoulPieceSoundVolume": 1.0,
       "ConfirmSoundVolume": 1.0,
       "PopupSoundVolume": 1.0,
       "ActiveSoundVolume": 1.0,
-      "StepTextSoundVolume": 1.0,
-      "GreenHandSoundVolume": 1.0,
-      "WhiteLEDSoundVolume": 1.0,
+      "StepTextSoundVolume": 0.7,
+      "ShowShadowSoundVolume": 1.0,
+      "ClearShadowSoundVolume": 1.0,
       "SecondSound3Volume": 1.0,
       "SecondSound5Volume": 1.0,
-      "QuestionSoundVolume": 1.0,
+      "QuestionSoundVolume": 2.0,
       "StartSoundVolume": 1.0,
-      "TimerSound100Volume": 1.0
+      "SecondSound10Volume": 1.0,
+      "AllReadySoundVolume": 1.0,
+      "PieceShootSoundVolume": 1.0,
+      "FailSoundVolume": 1.0,
+      "SecondSound60Volume": 1.0,
+      "FinaleSoundVolume": 1.0
     },
     "boolParams": {},
     "stringParams": {}

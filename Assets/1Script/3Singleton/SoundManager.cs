@@ -18,9 +18,13 @@ public enum EffectSoundNum
     SecondSound5,
     QuestionSound,
     StartSound,
-    TimerSound100,
+    SecondSound10,
     AllReadySound,
-    PieceShootSound
+    PieceShootSound,
+    FailSound,
+    SecondSound60,
+    FinaleSound,
+    SecondSound7
 }
 public class SoundManager : MonoBehaviour, IJsonGenericTarget
 {
@@ -50,8 +54,12 @@ public class SoundManager : MonoBehaviour, IJsonGenericTarget
 
     float[] _soundVolume = new float[System.Enum.GetValues(typeof(EffectSoundNum)).Length];
 
-    [Header("사운드 매니저\nBGM = 0\nSaveSound = 1\nSoulPieceSound = 2\nConfirmSound = 3\nPopupSound = 4\nActiveSound = 5\nStepTextSound = 6\nShowShadowSound = 7\nClearShadowSound = 8\nSecondSound3 = 9\nSecondSound5 = 10\nQuestionSound = 11\nStartSound = 12\nTimerSound100 = 13\nAllReadySound = 14\nPieceShootSound = 15")]
+    [Header("사운드 매니저\nBGM = 0\nSaveSound = 1\nSoulPieceSound = 2\nConfirmSound = 3\nPopupSound = 4\nActiveSound = 5\nStepTextSound = 6\nShowShadowSound = 7\nClearShadowSound = 8\nSecondSound3 = 9\nSecondSound5 = 10\nQuestionSound = 11\nStartSound = 12\nSecondSound10 = 13\nAllReadySound = 14\nPieceShootSound = 15\nFailSound = 16\nSecondSound60 = 17\nFinaleSound = 18 \nSecondSound7 = 19")]
     [SerializeField] float _baseVolume = 1f;
+
+    Coroutine _finaleCoroutine = null;
+
+
 
 
 
@@ -73,22 +81,65 @@ public class SoundManager : MonoBehaviour, IJsonGenericTarget
 
     }
 
+    public void MuteBGMNPlayFinaleSound()
+    {
+        if (_finaleCoroutine != null)
+        {
+            StopCoroutine(_finaleCoroutine);
+        }
+        _finaleCoroutine = StartCoroutine(MuteBGMNFinaleSoundCoroutine());
+    }
+
+    public IEnumerator MuteBGMNFinaleSoundCoroutine()
+    {
+
+
+        float fadeDuration = 1.5f;
+        float elapsed = 0f;
+        float startVolume = audioSources[(int)EffectSoundNum.BGM].volume;
+        while (elapsed < fadeDuration)
+        {
+            elapsed += Time.fixedDeltaTime;
+            float t = Mathf.Clamp01(elapsed / fadeDuration);
+            audioSources[(int)EffectSoundNum.BGM].volume = Mathf.Lerp(startVolume, 0f, t);
+            yield return CoroutineReturnManager.WaitForFixedUpdate;
+        }
+        audioSources[(int)EffectSoundNum.BGM].volume = 0f;
+        audioSources[(int)EffectSoundNum.FinaleSound].Play();
+
+        while (audioSources[(int)EffectSoundNum.FinaleSound].isPlaying)
+        {
+            yield return CoroutineReturnManager.WaitForFixedUpdate;
+        }
+        while (audioSources[(int)EffectSoundNum.BGM].volume < _soundVolume[(int)EffectSoundNum.BGM])
+        {
+            audioSources[(int)EffectSoundNum.BGM].volume += Time.fixedDeltaTime * _baseVolume;
+            yield return CoroutineReturnManager.WaitForFixedUpdate;
+        }
+        audioSources[(int)(EffectSoundNum.BGM)].volume = _soundVolume[(int)EffectSoundNum.BGM];
+
+        _finaleCoroutine = null;
+    }
+
 
     public void MuteBGM()
     {
-        AudioSource tempAudioSource = audioSources[(int)(EffectSoundNum.BGM)];
-
-        if (tempAudioSource == null) return;
-        tempAudioSource.volume = 0f;
-        tempAudioSource.Stop();
+        if (audioSources[(int)(EffectSoundNum.BGM)] == null) return;
+        audioSources[(int)(EffectSoundNum.BGM)].volume = 0f;
+        audioSources[(int)(EffectSoundNum.BGM)].Stop();
 
     }
     public void PlayBGM()
     {
-        AudioSource tempAudioSource = audioSources[(int)(EffectSoundNum.BGM)];
-        if (tempAudioSource == null) return;
-        tempAudioSource.Play();
-        tempAudioSource.volume = _soundVolume[(int)EffectSoundNum.BGM];
+        if (_finaleCoroutine != null)
+        {
+            StopCoroutine(_finaleCoroutine);
+            _finaleCoroutine = null;
+        }
+
+        if (audioSources[(int)(EffectSoundNum.BGM)] == null) return;
+        audioSources[(int)(EffectSoundNum.BGM)].Play();
+        audioSources[(int)(EffectSoundNum.BGM)].volume = _soundVolume[(int)EffectSoundNum.BGM];
     }
 
 
@@ -100,7 +151,14 @@ public class SoundManager : MonoBehaviour, IJsonGenericTarget
         }
 
 
-        audioSources[(int)effectSoundNum].PlayOneShot(audioSources[(int)effectSoundNum].clip, _baseVolume * _soundVolume[(int)effectSoundNum]);
+        int soundIndex = (int)effectSoundNum;
+        AudioSource effectSource = audioSources[soundIndex];
+        if (effectSource == null)
+        {
+            return;
+        }
+
+        effectSource.PlayOneShot(effectSource.clip, _baseVolume * _soundVolume[soundIndex] * soundVolume);
         //Debug.Log("Played sound: " + effectSoundNum.ToString() + " with volume: " + soundVolume);
     }
 
@@ -163,24 +221,64 @@ public class SoundManager : MonoBehaviour, IJsonGenericTarget
         data.floatParams.TryGetValue("SecondSound5Volume", out _soundVolume[(int)EffectSoundNum.SecondSound5]);
         data.floatParams.TryGetValue("QuestionSoundVolume", out _soundVolume[(int)EffectSoundNum.QuestionSound]);
         data.floatParams.TryGetValue("StartSoundVolume", out _soundVolume[(int)EffectSoundNum.StartSound]);
-        data.floatParams.TryGetValue("TimerSound100Volume", out _soundVolume[(int)EffectSoundNum.TimerSound100]);
+        data.floatParams.TryGetValue("SecondSound10Volume", out _soundVolume[(int)EffectSoundNum.SecondSound10]);
         data.floatParams.TryGetValue("AllReadySoundVolume", out _soundVolume[(int)EffectSoundNum.AllReadySound]);
         data.floatParams.TryGetValue("PieceShootSoundVolume", out _soundVolume[(int)EffectSoundNum.PieceShootSound]);
+        data.floatParams.TryGetValue("FailSoundVolume", out _soundVolume[(int)EffectSoundNum.FailSound]);
+        data.floatParams.TryGetValue("SecondSound60Volume", out _soundVolume[(int)EffectSoundNum.SecondSound60]);
+        data.floatParams.TryGetValue("FinaleSoundVolume", out _soundVolume[(int)EffectSoundNum.FinaleSound]);
+        data.floatParams.TryGetValue("SecondSound7Volume", out _soundVolume[(int)EffectSoundNum.SecondSound7]);
+
         data.floatParams.TryGetValue("BaseVolume", out _baseVolume);
 
 
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         foreach (var soundVolume in _soundVolume)
         {
             Debug.Log("Loaded sound volume: " + soundVolume);
         }
+#endif
 
     }
+
+    // public void StopCountSound()
+    // {
+    //     StopEffectSound(EffectSoundNum.SecondSound3);
+    //     StopEffectSound(EffectSoundNum.SecondSound5);
+    //     StopEffectSound(EffectSoundNum.SecondSound7);
+    //     StopEffectSound(EffectSoundNum.SecondSound10);
+    //     StopEffectSound(EffectSoundNum.SecondSound60);
+    // }
     public JsonGenericUpData Data()
     {
-        _genericData.intParams = new Dictionary<string, int>();
-        _genericData.floatParams = new Dictionary<string, float>();
-        _genericData.boolParams = new Dictionary<string, bool>();
+        if (_genericData.intParams == null)
+        {
+            _genericData.intParams = new Dictionary<string, int>();
+        }
+        else
+        {
+            _genericData.intParams.Clear();
+        }
+
+        if (_genericData.floatParams == null)
+        {
+            _genericData.floatParams = new Dictionary<string, float>(_soundVolume.Length + 1);
+        }
+        else
+        {
+            _genericData.floatParams.Clear();
+        }
+
+        if (_genericData.boolParams == null)
+        {
+            _genericData.boolParams = new Dictionary<string, bool>();
+        }
+        else
+        {
+            _genericData.boolParams.Clear();
+        }
+
         _genericData.floatParams["bgmVolume"] = _soundVolume[(int)EffectSoundNum.BGM];
         _genericData.floatParams["SaveSoundVolume"] = _soundVolume[(int)EffectSoundNum.SaveSound];
         _genericData.floatParams["SoulPieceSoundVolume"] = _soundVolume[(int)EffectSoundNum.SoulPieceSound];
@@ -194,9 +292,14 @@ public class SoundManager : MonoBehaviour, IJsonGenericTarget
         _genericData.floatParams["SecondSound5Volume"] = _soundVolume[(int)EffectSoundNum.SecondSound5];
         _genericData.floatParams["QuestionSoundVolume"] = _soundVolume[(int)EffectSoundNum.QuestionSound];
         _genericData.floatParams["StartSoundVolume"] = _soundVolume[(int)EffectSoundNum.StartSound];
-        _genericData.floatParams["TimerSound100Volume"] = _soundVolume[(int)EffectSoundNum.TimerSound100];
+        _genericData.floatParams["SecondSound10Volume"] = _soundVolume[(int)EffectSoundNum.SecondSound10];
         _genericData.floatParams["AllReadySoundVolume"] = _soundVolume[(int)EffectSoundNum.AllReadySound];
         _genericData.floatParams["PieceShootSoundVolume"] = _soundVolume[(int)EffectSoundNum.PieceShootSound];
+        _genericData.floatParams["FailSoundVolume"] = _soundVolume[(int)EffectSoundNum.FailSound];
+        _genericData.floatParams["SecondSound60Volume"] = _soundVolume[(int)EffectSoundNum.SecondSound60];
+        _genericData.floatParams["FinaleSoundVolume"] = _soundVolume[(int)EffectSoundNum.FinaleSound];
+
+        _genericData.floatParams["SecondSound7Volume"] = _soundVolume[(int)EffectSoundNum.SecondSound7];
         _genericData.floatParams["BaseVolume"] = _baseVolume;
         return _genericData;
     }

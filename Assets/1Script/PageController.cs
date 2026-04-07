@@ -140,6 +140,9 @@ public class PageController : Singleton<PageController>
             playerController.PageSetUp(openingPage);
         }
 
+        OnReset?.Invoke();
+
+
 
     }
 

@@ -17,6 +17,12 @@ public class ScoreText : MonoBehaviour
         originText = _text.text;
 
     }
+    void OnEnable()
+    {
+        if (originText != "")
+            _text.text = originText.Replace("Score", UserDataManager.Instance.GetPlayer().AddPiece.ToString());
+
+    }
 
 
     public void SetScoreText(int score)

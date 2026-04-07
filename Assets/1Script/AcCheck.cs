@@ -63,7 +63,7 @@ public class AcCheck : MonoBehaviour
     protected float matchedAdjustPercent = 0f;
     protected float protrusionAdjustPercent = 0f;
 
-    public const float CheckDelay = 1f;
+    public const float CheckDelay = 0.1f;
 
     float modifier = 0f;
 

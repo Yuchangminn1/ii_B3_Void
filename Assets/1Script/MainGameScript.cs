@@ -14,7 +14,9 @@ public class MainGameScript : MonoBehaviour
 
     public Timer timer;
 
-    float _timerDefaultTime = 7f;
+    public Direction CurrentDirection;
+
+    //float _timerDefaultTime = 7f;
 
     Coroutine _gameCoroutine = null;
 
@@ -65,13 +67,18 @@ public class MainGameScript : MonoBehaviour
             _nextCoroutine = null;
 
         }
-
+        // if (CurrentDirection == Direction.Left)
+        //     SoundManager.Instance.StopEffectSound(EffectSoundNum.SecondSound60);
     }
 
 
     public IEnumerator StartGameCoroutine()
     {
+
+
         _currentIndex = 1; //0은 이미 튜토리얼로 했음
+        // if (CurrentDirection == Direction.Left)
+        //     SoundManager.Instance.PlayEffectSound(EffectSoundNum.SecondSound60);
 
         CAcCheck.CurrentIndex = _currentIndex - 1;
 
@@ -86,6 +93,8 @@ public class MainGameScript : MonoBehaviour
         CShowShadowScript.ShowShadow(_currentIndex);
 
         timer.AddOnEndListener(NextStep);
+        timer.AddOnEndListener(NextStep);
+
         _gameCoroutine = null;
 
     }

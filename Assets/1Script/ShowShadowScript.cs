@@ -5,6 +5,7 @@ using UnityEngine.UI;
 
 public class ShowShadowScript : MonoBehaviour
 {
+    public Direction CurrentDirection;
 
     public RawImage[] ShadowImages;
 
@@ -13,6 +14,10 @@ public class ShowShadowScript : MonoBehaviour
     public RawImage failImage;
 
     public AcCheck CurrentAcCheck;
+
+    public SaveShadowTextureContainer SaveShadowTextureContainer;
+
+    int currentIndex = 0;
 
     RawImage CurrentTargetRawImage
     {
@@ -42,8 +47,15 @@ public class ShowShadowScript : MonoBehaviour
     public void ShowSuccess()
     {
         Debug.Log($"{name} ShowSuccess");
+        SoundManager.Instance.PlayEffectSound(EffectSoundNum.ClearShadowSound);
+        if (currentIndex > 0)
+        {
+            SaveShadowTextureContainer.SetTexture(currentIndex);
+
+        }
         failImage.gameObject.SetActive(false);
         successImage.gameObject.SetActive(true);
+
 
         CurrentAcCheck = null;
     }
@@ -57,7 +69,12 @@ public class ShowShadowScript : MonoBehaviour
     public void ShowFail()
     {
         Debug.Log($"{name} ShowFail");
+        SoundManager.Instance.PlayEffectSound(EffectSoundNum.FailSound);
+        if (currentIndex > 0)
+        {
+            SaveShadowTextureContainer.SetTexture(currentIndex);
 
+        }
         successImage.gameObject.SetActive(false);
         failImage.gameObject.SetActive(true);
 
@@ -103,10 +120,12 @@ public class ShowShadowScript : MonoBehaviour
 
     public void ShowShadow(int index)
     {
+        currentIndex = index;
         for (int i = 0; i < ShadowImages.Length; i++)
         {
             ShadowImages[i].gameObject.SetActive(i == index);
         }
+        SoundManager.Instance.PlayEffectSound(EffectSoundNum.ShowShadowSound);
         Debug.Log($"{name} ShowShadow index: {index}");
         CurrentAcCheck.SetTargetRawImage(ShadowImages[index]);
     }

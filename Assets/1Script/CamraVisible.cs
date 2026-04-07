@@ -36,23 +36,11 @@ public class CameraVisible : MonoBehaviour
 
             if (CameraCanvasGroup[0].alpha == 1)
             {
-                for (int i = 0; i < CameraCanvasGroup.Length; i++)
-                {
-                    CameraCanvasGroup[i].alpha = 0;
-                    CameraCanvasGroup[i].blocksRaycasts = false;
-                    CameraValues[i].IsRendered = false;
-
-                }
+                CameraOff();
             }
             else
             {
-                for (int i = 0; i < CameraCanvasGroup.Length; i++)
-                {
-                    CameraCanvasGroup[i].alpha = 1;
-                    CameraCanvasGroup[i].blocksRaycasts = true;
-                    CameraValues[i].IsRendered = true;
-
-                }
+                CameraOn();
             }
 
         }
