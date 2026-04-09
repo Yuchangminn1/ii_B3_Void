@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
@@ -48,13 +49,24 @@ public class Timer : MonoBehaviour
     EffectSoundNum _currentEffectSoundNum = EffectSoundNum.BGM;
 
 
+    public event Action OnUnder3Seconds;
+
+    Coroutine under3SecondsCoroutine = null;
+
+    float lastTimerTime = 0f;
+
+
+
 
     public void AddOnEndListener(Action action)
     {
         onTimerEnd += action;
     }
 
-
+    public void AddUnder3SecondsListener(Action action)
+    {
+        OnUnder3Seconds += action;
+    }
 
 
 
@@ -81,6 +93,12 @@ public class Timer : MonoBehaviour
         FadeManager.Instance.SetAlphaZero(timerGraphics);
         FadeManager.Instance.SetAlphaZero(PairTimerImage);
         FadeManager.Instance.SetAlphaZero(PairTimerText);
+        if (under3SecondsCoroutine != null)
+        {
+            StopCoroutine(under3SecondsCoroutine);
+            under3SecondsCoroutine = null;
+        }
+        OnUnder3Seconds = null;
         onTimerEnd = null;
     }
 
@@ -126,8 +144,19 @@ public class Timer : MonoBehaviour
     {
         if (IsCounting && time > 0)
         {
+
             time -= Time.fixedDeltaTime;
             SetTimerText(Mathf.CeilToInt(time));
+            if (under3SecondsCoroutine == null && time <= 3f && time > 2.8f)
+            {
+                under3SecondsCoroutine = StartCoroutine(Under3SecondsCoroutine());
+            }
+
+            if (lastTimerTime + 5f < Time.time)
+            {
+                GameManager.Instance.GoToIdleCheck();
+                lastTimerTime = Time.time;
+            }
 
         }
         else if (IsCounting && time <= 0)
@@ -140,7 +169,23 @@ public class Timer : MonoBehaviour
             OnTimerEndEvent?.Invoke();
 
             onTimerEnd = null;
+            if (under3SecondsCoroutine != null)
+            {
+                StopCoroutine(under3SecondsCoroutine);
+                under3SecondsCoroutine = null;
+            }
+            OnUnder3Seconds = null;
         }
+    }
+
+    public IEnumerator Under3SecondsCoroutine()
+    {
+        while (time > 0 && time <= 3f)
+        {
+            OnUnder3Seconds?.Invoke();
+            yield return new WaitForSeconds(0.29f);
+        }
+        under3SecondsCoroutine = null;
     }
 
 

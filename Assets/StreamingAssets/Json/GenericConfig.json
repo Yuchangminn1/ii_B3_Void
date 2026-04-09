@@ -5,7 +5,7 @@
       "displayRight": 1
     },
     "floatParams": {
-      "resetTime": 222222222222222222222222220.0,
+      "resetTime": 20.0,
       "page4TimerDefaultTime": 3.0
     },
     "boolParams": {},
@@ -42,7 +42,7 @@
   "R_CameraTex": {
     "intParams": {},
     "floatParams": {
-      "threshold": 0.18,
+      "threshold": 0.12,
       "smoothness": 0.08
     },
     "boolParams": {},

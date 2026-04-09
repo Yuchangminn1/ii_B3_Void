@@ -5,11 +5,23 @@ using UnityEngine.UI;
 
 public class SaveShadowTexture : MonoBehaviour
 {
-    Texture2D shadowTexture;
     RenderTexture _snapshotRt;
 
-    public int CurrentIndex = 0;
+    const int MaxTextureCount = 10;
 
+    int _currentTextureIndex = 0;
+    int _capturedCount = 0;
+
+    public Texture[] textures = new Texture[MaxTextureCount];
+    readonly Vector3[] _capturedLocalPositions = new Vector3[MaxTextureCount];
+    readonly Vector2[] _capturedSizeDeltas = new Vector2[MaxTextureCount];
+    readonly Quaternion[] _capturedLocalRotations = new Quaternion[MaxTextureCount];
+    readonly Vector3[] _capturedLocalScales = new Vector3[MaxTextureCount];
+
+    public int CurrentIndex = 0;
+    public CameraValue cameraValue;
+
+    Quaternion _rectTransformRotation;
 
     RawImage _rawImage;
 
@@ -17,19 +29,46 @@ public class SaveShadowTexture : MonoBehaviour
     void Start()
     {
         _rawImage = GetComponent<RawImage>();
+        _rectTransformRotation = _rawImage.rectTransform.localRotation;
+
+        PageController.Instance.OnReset += Reset;
+
+    }
+
+    public void Reset()
+    {
+        _currentTextureIndex = 0;
+        _capturedCount = 0;
+        ReleaseSnapshotResources();
+
+        for (int i = 0; i < MaxTextureCount; i++)
+        {
+            _capturedLocalPositions[i] = Vector3.zero;
+            _capturedSizeDeltas[i] = Vector2.zero;
+            _capturedLocalRotations[i] = Quaternion.identity;
+            _capturedLocalScales[i] = Vector3.one;
+        }
     }
 
     private void OnDestroy()
     {
+        if (PageController.Instance != null)
+        {
+            PageController.Instance.OnReset -= Reset;
+        }
+
         ReleaseSnapshotResources();
     }
 
     private void ReleaseSnapshotResources()
     {
-        if (shadowTexture != null)
+        for (int i = 0; i < textures.Length; i++)
         {
-            Destroy(shadowTexture);
-            shadowTexture = null;
+            if (textures[i] != null)
+            {
+                Destroy(textures[i]);
+                textures[i] = null;
+            }
         }
 
         if (_snapshotRt != null)
@@ -52,6 +91,14 @@ public class SaveShadowTexture : MonoBehaviour
             return;
         }
 
+        RectTransform sourceRectTransform = sourceRawImage.rectTransform;
+        RectTransform targetRectTransform = targetRawImage.rectTransform;
+        if (sourceRectTransform != null && targetRectTransform != null)
+        {
+            targetRectTransform.localRotation = _rectTransformRotation * sourceRectTransform.localRotation;
+            targetRectTransform.sizeDelta = sourceRectTransform.sizeDelta;
+        }
+
         Texture texture = sourceRawImage.texture;
         if (texture == null)
         {
@@ -71,10 +118,35 @@ public class SaveShadowTexture : MonoBehaviour
         EnsureSnapshotTexture(targetWidth, targetHeight);
         EnsureSnapshotRenderTarget(targetWidth, targetHeight);
 
-        int copyWidth = Mathf.Min(texture.width, targetWidth);
-        int copyHeight = Mathf.Min(texture.height, targetHeight);
-        Rect sourceRect = new Rect(0f, 0f, (float)copyWidth / texture.width, (float)copyHeight / texture.height);
-        Rect drawRect = new Rect(0f, 0f, copyWidth, copyHeight);
+        if (cameraValue != null)
+        {
+            cameraValue.ApplyMaterialProperties();
+        }
+
+        int writeIndex = _currentTextureIndex % MaxTextureCount;
+        Texture2D capturedTexture = textures[writeIndex] as Texture2D;
+        if (capturedTexture == null)
+        {
+            capturedTexture = new Texture2D(targetWidth, targetHeight, TextureFormat.RGBA32, false);
+            textures[writeIndex] = capturedTexture;
+        }
+
+        if (targetRectTransform != null)
+        {
+            _capturedLocalPositions[writeIndex] = targetRectTransform.localPosition;
+            _capturedSizeDeltas[writeIndex] = targetRectTransform.sizeDelta;
+            _capturedLocalRotations[writeIndex] = targetRectTransform.localRotation;
+            _capturedLocalScales[writeIndex] = targetRectTransform.localScale;
+        }
+        else
+        {
+            _capturedLocalPositions[writeIndex] = Vector3.zero;
+            _capturedSizeDeltas[writeIndex] = Vector2.zero;
+            _capturedLocalRotations[writeIndex] = Quaternion.identity;
+            _capturedLocalScales[writeIndex] = Vector3.one;
+        }
+
+        Material sourceMaterial = sourceRawImage.material;
 
         RenderTexture previous = RenderTexture.active;
 
@@ -83,20 +155,80 @@ public class SaveShadowTexture : MonoBehaviour
             RenderTexture.active = _snapshotRt;
             GL.Clear(true, true, Color.clear);
 
-            GL.PushMatrix();
-            GL.LoadPixelMatrix(0, targetWidth, 0, targetHeight);
-            Graphics.DrawTexture(drawRect, texture, sourceRect, 0, 0, 0, 0);
-            GL.PopMatrix();
+            if (sourceMaterial != null)
+            {
+                Graphics.Blit(texture, _snapshotRt, sourceMaterial);
+            }
+            else
+            {
+                Graphics.Blit(texture, _snapshotRt);
+            }
 
-            shadowTexture.ReadPixels(new Rect(0, 0, targetWidth, targetHeight), 0, 0);
-            shadowTexture.Apply(false, false);
+            capturedTexture.ReadPixels(new Rect(0, 0, targetWidth, targetHeight), 0, 0);
+            capturedTexture.Apply(false, false);
         }
         finally
         {
             RenderTexture.active = previous;
         }
 
-        targetRawImage.texture = shadowTexture;
+        targetRawImage.texture = capturedTexture;
+        _currentTextureIndex++;
+        _capturedCount = Mathf.Min(_capturedCount + 1, MaxTextureCount);
+    }
+
+    public int CapturedCount
+    {
+        get { return _capturedCount; }
+    }
+
+    public Texture GetCapturedTexture(int index)
+    {
+        if (index < 0 || index >= _capturedCount)
+        {
+            return null;
+        }
+
+        return textures[index];
+    }
+
+    public bool TryGetCapturedTransform(int index, out Vector3 localPosition, out Vector2 sizeDelta, out Quaternion localRotation, out Vector3 localScale)
+    {
+        if (index < 0 || index >= _capturedCount)
+        {
+            localPosition = Vector3.zero;
+            sizeDelta = Vector2.zero;
+            localRotation = Quaternion.identity;
+            localScale = Vector3.one;
+            return false;
+        }
+
+        localPosition = _capturedLocalPositions[index];
+        sizeDelta = _capturedSizeDeltas[index];
+        localRotation = _capturedLocalRotations[index];
+        localScale = _capturedLocalScales[index];
+        return true;
+    }
+
+    public bool TryGetCurrentRectTransform(out Vector3 localPosition, out Vector2 sizeDelta, out Quaternion localRotation, out Vector3 localScale)
+    {
+        RawImage targetRawImage = _rawImage != null ? _rawImage : GetComponent<RawImage>();
+        _rawImage = targetRawImage;
+        if (targetRawImage == null || targetRawImage.rectTransform == null)
+        {
+            localPosition = Vector3.zero;
+            sizeDelta = Vector2.zero;
+            localRotation = Quaternion.identity;
+            localScale = Vector3.one;
+            return false;
+        }
+
+        RectTransform rectTransform = targetRawImage.rectTransform;
+        localPosition = rectTransform.localPosition;
+        sizeDelta = rectTransform.sizeDelta;
+        localRotation = rectTransform.localRotation;
+        localScale = rectTransform.localScale;
+        return true;
     }
 
     private Vector2Int GetRawImagePixelSize(RawImage rawImage)
@@ -119,17 +251,15 @@ public class SaveShadowTexture : MonoBehaviour
 
     private void EnsureSnapshotTexture(int width, int height)
     {
-        if (shadowTexture != null && shadowTexture.width == width && shadowTexture.height == height)
+        for (int i = 0; i < textures.Length; i++)
         {
-            return;
+            Texture2D texture = textures[i] as Texture2D;
+            if (texture != null && (texture.width != width || texture.height != height))
+            {
+                Destroy(texture);
+                textures[i] = null;
+            }
         }
-
-        if (shadowTexture != null)
-        {
-            Destroy(shadowTexture);
-        }
-
-        shadowTexture = new Texture2D(width, height, TextureFormat.RGBA32, false);
     }
 
     private void EnsureSnapshotRenderTarget(int width, int height)

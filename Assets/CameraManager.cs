@@ -158,6 +158,18 @@ public class CameraManager : MonoBehaviour
             Debug.Log($"[{current.name}] OpaqueToBlack: {current.opaqueToBlack}");
         }
 
+        if (Input.GetKeyDown(KeyCode.Y))
+        {
+            current.RenderByBool = !current.RenderByBool;
+            Debug.Log($"[{current.name}] RenderByBool: {current.RenderByBool}");
+        }
+
+        if (Input.GetKeyDown(KeyCode.U))
+        {
+            current.UseShaderOutput = !current.UseShaderOutput;
+            Debug.Log($"[{current.name}] UseShaderOutput: {current.UseShaderOutput}");
+        }
+
         if (Input.GetKeyDown(KeyCode.O))
         {
             AdjustSelectedClipPixels(0, 10, 0, 0);

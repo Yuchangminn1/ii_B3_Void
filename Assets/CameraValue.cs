@@ -17,6 +17,12 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
     public bool mirrorHorizontal = true;
     public bool mirrorVertical = false;
 
+    [Header("Capture Orientation")]
+    [Tooltip("If enabled, force horizontal inversion from capture output regardless of per-device settings.")]
+    public bool forceFlipHorizontalOnCapture = true;
+    [Tooltip("If enabled, force vertical inversion from capture output regardless of per-device settings.")]
+    public bool forceFlipVerticalOnCapture = true;
+
     public Text CameraSetUpText;
 
     [Header("Debug")]
@@ -29,6 +35,11 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
     [Range(0f, 1f)] public float smoothness = 0.1f;
 
     [Header("Output Settings")]
+    [Tooltip("Toggle camera rendering/visibility with a bool value.")]
+    [SerializeField] private bool renderByBool = false;
+    [Tooltip("Use chroma-key shader output. Turn off to show raw camera texture.")]
+    [SerializeField] private bool useShaderOutput = true;
+
     public bool opaqueToBlack = true;
     [Range(1f, 10f)] public float edgeContrast = 1f;
     [Range(0f, 1f)] public float noiseFilter = 1f;
@@ -61,8 +72,37 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
         {
             if (_isRendering == value) return;
             _isRendering = value;
+            renderByBool = value;
             UpdateRenderBindings();
         }
+    }
+
+    public bool RenderByBool
+    {
+        get { return renderByBool; }
+        set
+        {
+            if (renderByBool == value) return;
+            renderByBool = value;
+            IsRendered = value;
+        }
+    }
+
+    public bool UseShaderOutput
+    {
+        get { return useShaderOutput; }
+        set
+        {
+            if (useShaderOutput == value) return;
+            useShaderOutput = value;
+            ApplyOutputMode();
+        }
+    }
+
+    void ApplyOutputMode()
+    {
+        if (_targetRawImage == null) return;
+        _targetRawImage.material = useShaderOutput ? material : null;
     }
 
     void UpdateRenderBindings()
@@ -87,7 +127,10 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
                 webcamTexture.Play();
             }
             _targetRawImage.texture = webcamTexture;
-            if (material != null) material.mainTexture = webcamTexture;
+            if (material != null)
+            {
+                material.mainTexture = webcamTexture;
+            }
         }
     }
 
@@ -104,10 +147,12 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
         if (material == null && shader != null)
         {
             material = new Material(shader);
-            _targetRawImage.material = material;
         }
 
-        UpdateRenderBindings();
+        useShaderOutput = true;
+        ApplyOutputMode();
+
+        IsRendered = renderByBool;
     }
 
     public void StartWebcam(WebCamDevice[] devices)
@@ -226,19 +271,16 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
         if (_isRendering == false)
             return;
 
+        if (useShaderOutput == false)
+            return;
+
         if (material == null) return;
 
         material.SetColor("_KeyColor", keyColor);
         material.SetFloat("_Threshold", threshold);
         material.SetFloat("_Smooth", smoothness);
-        material.SetFloat("_Mirror", mirrorHorizontal ? 1f : 0f);
-
-        bool vflip = mirrorVertical;
-        if (webcamTexture != null)
-        {
-            vflip ^= webcamTexture.videoVerticallyMirrored;
-        }
-        material.SetFloat("_VFlip", vflip ? 1f : 0f);
+        material.SetFloat("_Mirror", 0f);
+        material.SetFloat("_VFlip", 0f);
 
         material.SetFloat("_OpaqueToBlack", opaqueToBlack ? 1f : 0f);
         material.SetFloat("_EdgeContrast", edgeContrast);
@@ -297,6 +339,16 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
         rightClipPixels = Mathf.Max(0, rightClipPixels);
         topClipPixels = Mathf.Max(0, topClipPixels);
         bottomClipPixels = Mathf.Max(0, bottomClipPixels);
+
+        if (Application.isPlaying)
+        {
+            IsRendered = renderByBool;
+            ApplyOutputMode();
+        }
+        else
+        {
+            _isRendering = renderByBool;
+        }
     }
 
     void OnDestroy()

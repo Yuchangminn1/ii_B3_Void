@@ -76,12 +76,14 @@
     <Compile Include="Assets\1Script\Singleton.cs" />
     <Compile Include="Assets\1Script\2PageSequence\PageBase.cs" />
     <Compile Include="Assets\1Script\3Singleton\GameManager.cs" />
+    <Compile Include="Assets\1Script\StopMotionCreate.cs" />
     <Compile Include="Assets\1Script\ShhotPiecePosContainer.cs" />
     <Compile Include="Assets\1Script\CamraVisible.cs" />
     <Compile Include="Assets\1Script\SaveShadowTexContainer.cs" />
     <Compile Include="Assets\1Script\CoroutineReturnManager.cs" />
     <Compile Include="Assets\Unity-Logs-Viewer\Reporter\Test\Rotate.cs" />
     <Compile Include="Assets\1Script\ShowContainer.cs" />
+    <Compile Include="Assets\1Script\SaveShadowStopMotionTexture.cs" />
     <Compile Include="Assets\1Script\LinkScript.cs" />
     <Compile Include="Assets\1Script\1Json\TextLoader.cs" />
     <Compile Include="Assets\1Script\PhotoCompositor.cs" />
@@ -112,6 +114,7 @@
     <Compile Include="Assets\1Script\1Json\JsonLoaderBase.cs" />
     <Compile Include="Assets\1Script\WaitCheck.cs" />
     <Compile Include="Assets\1Script\QuestionShadow.cs" />
+    <Compile Include="Assets\1Script\StopMotionCreateSingle.cs" />
     <Compile Include="Assets\1Script\MainGameScript.cs" />
     <Compile Include="Assets\1Script\NameText.cs" />
     <Compile Include="Assets\1Script\QuestionScript.cs" />

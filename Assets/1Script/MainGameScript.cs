@@ -27,6 +27,8 @@ public class MainGameScript : MonoBehaviour
 
     public SequenceScript sequenceScript;
 
+    public ShowShadowScript ShowShadowScript;
+
 
     void Start()
     {
@@ -95,9 +97,13 @@ public class MainGameScript : MonoBehaviour
         timer.AddOnEndListener(NextStep);
         timer.AddOnEndListener(NextStep);
 
+        timer.AddUnder3SecondsListener(ShowShadowScript.CaptureTexture);
+
+
         _gameCoroutine = null;
 
     }
+
 
     public void NextStep()
     {
@@ -137,6 +143,8 @@ public class MainGameScript : MonoBehaviour
             yield break;
 
         timer.AddOnEndListener(NextStep);
+
+        timer.AddUnder3SecondsListener(ShowShadowScript.CaptureTexture);
 
         _nextCoroutine = null;
 

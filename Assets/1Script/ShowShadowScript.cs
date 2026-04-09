@@ -17,6 +17,7 @@ public class ShowShadowScript : MonoBehaviour
 
     public SaveShadowTextureContainer SaveShadowTextureContainer;
 
+
     int currentIndex = 0;
 
     RawImage CurrentTargetRawImage
@@ -42,17 +43,23 @@ public class ShowShadowScript : MonoBehaviour
     void Start()
     {
         PageController.Instance.OnReset += Reset;
+
+
+    }
+
+    public void CaptureTexture()
+    {
+        if (currentIndex > 0)
+        {
+            SaveShadowTextureContainer.SetTexture(currentIndex);
+        }
     }
 
     public void ShowSuccess()
     {
         Debug.Log($"{name} ShowSuccess");
         SoundManager.Instance.PlayEffectSound(EffectSoundNum.ClearShadowSound);
-        if (currentIndex > 0)
-        {
-            SaveShadowTextureContainer.SetTexture(currentIndex);
 
-        }
         failImage.gameObject.SetActive(false);
         successImage.gameObject.SetActive(true);
 
@@ -70,11 +77,7 @@ public class ShowShadowScript : MonoBehaviour
     {
         Debug.Log($"{name} ShowFail");
         SoundManager.Instance.PlayEffectSound(EffectSoundNum.FailSound);
-        if (currentIndex > 0)
-        {
-            SaveShadowTextureContainer.SetTexture(currentIndex);
 
-        }
         successImage.gameObject.SetActive(false);
         failImage.gameObject.SetActive(true);
 

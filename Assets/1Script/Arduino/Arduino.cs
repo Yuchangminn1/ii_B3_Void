@@ -29,6 +29,7 @@ public class Arduino : MonoBehaviour
     [SerializeField] protected float pingIntervalSeconds = 1f;
     [SerializeField] protected int noResponseRestartCount = 3;
     [SerializeField] protected int maxReconnectAttempts = 5;
+    [SerializeField] protected float portCloseWaitSeconds = 3f;
 
     public string[] SerialPortNames =
     {
@@ -267,15 +268,16 @@ public class Arduino : MonoBehaviour
 
         stream = null;
 
+        // 포트 Close/Dispose 후 OS가 COM 포트를 완전히 해제할 때까지 대기
+        yield return CoroutineReturnManager.GetWaitForSeconds(portCloseWaitSeconds);
 
         int reconnectAttempt = 0;
         int maxAttempts = Mathf.Max(1, maxReconnectAttempts);
 
         while (_isRunning && reconnectAttempt < maxAttempts)
         {
-            yield return CoroutineReturnManager.GetWaitForSeconds(reconnectDelaySeconds);
             reconnectAttempt++;
-            yield return CoroutineReturnManager.GetWaitForSeconds(1f);
+            yield return CoroutineReturnManager.GetWaitForSeconds(reconnectDelaySeconds);
 
 
             if (!TryOpenPort("TimeoutReconnect"))

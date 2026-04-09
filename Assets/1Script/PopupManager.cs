@@ -29,7 +29,7 @@ public class PopupManager : Singleton<PopupManager>
     [Header("Touch = 0 \n Button = 1")]
     public InputType currentInputType = InputType.Touch;
 
-    string[] popupText = new string[] { "누른 상태로 3초 유지해 주세요.", "답변해 주세요." };
+    string[] popupText = new string[] { "답변해 주세요.", "답변해 주세요." };
 
     PopupType _currentPopupType = PopupType.None;
 

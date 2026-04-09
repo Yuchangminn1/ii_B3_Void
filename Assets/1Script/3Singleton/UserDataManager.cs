@@ -306,7 +306,6 @@ public class UserDataManager : MonoBehaviour
     }
     public IEnumerator ResetUserCoroutine()
     {
-        yield break;
         yield return ServerData.Instance.RequestDataCoroutine($"http://192.168.0.252:8500/api/resetStart.cfm?idx_user={userDataCache["IDX_USER"]}&code={ServerData.Instance.Code}", Answer);
 
     }
@@ -337,7 +336,6 @@ public class UserDataManager : MonoBehaviour
 
     public IEnumerator RequestRoomClear()
     {
-        yield break;
 
 
         if (userDataCache == null) yield break;
@@ -359,7 +357,6 @@ public class UserDataManager : MonoBehaviour
 
     public IEnumerator RequestContentEnd()
     {
-        yield break;
         if (userDataCache == null) yield break;
         yield return ServerData.Instance.RequestDataCoroutine($"http://192.168.0.252:8500/api/updateTime.cfm?idx_user={userDataCache["IDX_USER"]}&option=end&code={ServerData.Instance.Code}", Answer);
     }
