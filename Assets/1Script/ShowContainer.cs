@@ -131,7 +131,7 @@ public class ShowContainer : MonoBehaviour
         }
     }
 
-    public void ShowSideImages(Direction direction, TutorialShape shape, bool isOutline, int index)
+    public void ShowSideImages(Direction direction, TutorialShape shape, bool isOutline, int index, bool isClear = false)
     {
         ShapeData[] sideData = null;
         if (direction == Direction.Left)
@@ -183,9 +183,13 @@ public class ShowContainer : MonoBehaviour
         RawImage targetImage = images[index];
         targetImage.gameObject.SetActive(true);
 
+
+
         if (direction == Direction.Left)
         {
             currentLeftImage = targetImage;
+            if (isClear == true)
+                return;
             questionAChecks[0].SetTargetRawImage(currentLeftImage);
 
             questionAChecks[0].RemoveOnClearListener(_leftClearListener);
@@ -194,6 +198,8 @@ public class ShowContainer : MonoBehaviour
         else if (direction == Direction.Right)
         {
             currentRightImage = targetImage;
+            if (isClear == true)
+                return;
             questionAChecks[1].SetTargetRawImage(currentRightImage);
 
             questionAChecks[1].RemoveOnClearListener(_rightClearListener);

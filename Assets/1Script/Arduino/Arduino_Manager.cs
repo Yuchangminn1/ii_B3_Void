@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Arduino_Manager : Singleton<Arduino_Manager>, IJsonGenericTarget
+public class Arduino_Manager : MonoBehaviour, IJsonGenericTarget
 {
 
     public Arduino_SelectButton[] arduino_SelectButtons;
@@ -11,13 +11,8 @@ public class Arduino_Manager : Singleton<Arduino_Manager>, IJsonGenericTarget
     string _leftPlayerArduinoButton;
     string _rightPlayerArduinoButton;
 
-    string _touchNode;
-    string _ledNode;
 
     JsonGenericUpData _genericData = new JsonGenericUpData();
-
-
-
 
 
     void Start()
@@ -25,9 +20,6 @@ public class Arduino_Manager : Singleton<Arduino_Manager>, IJsonGenericTarget
     }
     public void Initialize(JsonGenericUpData data)
     {
-
-        Debug.Log("Initializing Arduino Manager with JSON Data");
-
 
         data.stringParams.TryGetValue("LeftPlayerArduinoButton", out _leftPlayerArduinoButton);
         data.stringParams.TryGetValue("RightPlayerArduinoButton", out _rightPlayerArduinoButton);
@@ -41,7 +33,11 @@ public class Arduino_Manager : Singleton<Arduino_Manager>, IJsonGenericTarget
             arduino.StartArduino();
         }
 
+        // ArduinoTouchManager.Instance.SerialPortNames = _touchNode;
+        // ArduinoTouchManager.Instance.StartArduino();
 
+        // ArduinoLEDManager.Instance.SerialPortNames = _ledNode;
+        // ArduinoLEDManager.Instance.StartArduino();
 
 
     }

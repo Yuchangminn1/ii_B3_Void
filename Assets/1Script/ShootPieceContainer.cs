@@ -129,7 +129,7 @@ public class ShootPieceContainer : MonoBehaviour
         if (direction == Direction.Left)
         {
             _isClearLeft = true;
-            showContainer.ShowSideImages(Direction.Left, leftPlayerTutorialShapeIndex[CurrentIndex / PieceGroupSize - 1], true, count);
+            showContainer.ShowSideImages(Direction.Left, leftPlayerTutorialShapeIndex[CurrentIndex / PieceGroupSize - 1], true, count, true);
             SoundManager.Instance.PlayEffectSound(EffectSoundNum.ClearShadowSound);
             gamePopup.ShowWaitPopupLeft();
             // cameraVisible.CameraOffLeft();
@@ -137,7 +137,7 @@ public class ShootPieceContainer : MonoBehaviour
         else
         {
             _isClearRight = true;
-            showContainer.ShowSideImages(Direction.Right, rightPlayerTutorialShapeIndex[CurrentIndex / PieceGroupSize - 1], true, count);
+            showContainer.ShowSideImages(Direction.Right, rightPlayerTutorialShapeIndex[CurrentIndex / PieceGroupSize - 1], true, count, true);
             SoundManager.Instance.PlayEffectSound(EffectSoundNum.ClearShadowSound);
             gamePopup.ShowWaitPopupRight();
             // cameraVisible.CameraOffRight();

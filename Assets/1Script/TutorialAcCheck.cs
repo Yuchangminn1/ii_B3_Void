@@ -49,11 +49,11 @@ public class TutorialAcCheck : AcCheck
 
     protected override IEnumerator DelayOnClear()
     {
+
         _rawImage.texture = _clearTexture;
 
-        yield return CoroutineReturnManager.GetWaitForSeconds(1f);
+        yield return base.DelayOnClear();
 
-        onClear?.Invoke();
     }
 
 

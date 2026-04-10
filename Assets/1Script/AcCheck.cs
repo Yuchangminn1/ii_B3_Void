@@ -108,9 +108,13 @@ public class AcCheck : MonoBehaviour
         if (outputText != null)
         {
             outputText.text = string.Format(outputFormat, detectedPercent);
+            FadeManager.Instance.SetAlphaZero(outputText);
+        }
+        else
+        {
+            // outputText is null, skip fading it
         }
 
-        FadeManager.Instance.SetAlphaZero(outputText);
         FadeManager.Instance.SetAlphaZero(targetRawImage);
     }
 
@@ -145,7 +149,11 @@ public class AcCheck : MonoBehaviour
         _isClear = false;
 
 
-        FadeManager.Instance.SetAlphaOne(outputText);
+        if (outputText != null)
+        {
+            FadeManager.Instance.SetAlphaOne(outputText);
+        }
+
         FadeManager.Instance.SetAlphaOne(targetRawImage);
 
     }
@@ -160,7 +168,10 @@ public class AcCheck : MonoBehaviour
 
         }
 
-        FadeManager.Instance.SetAlphaZero(outputText);
+        if (outputText != null)
+        {
+            FadeManager.Instance.SetAlphaZero(outputText);
+        }
 
     }
 
@@ -207,11 +218,15 @@ public class AcCheck : MonoBehaviour
 
     public void UpdateColorPercent()
     {
+
         if (targetRawImage == null || overlayRawImage == null)
         {
             ResetResult();
             return;
         }
+
+        // 디버그: 이 AcCheck 인스턴스가 어떤 타겟/오버레이를 보고 있는지 확인
+        Debug.Log($"[AcCheck {name}] target={targetRawImage?.name}, overlay={overlayRawImage?.name}, outputText={outputText?.name}");
 
         Color32[] basePixels;
         int baseWidth;
@@ -231,6 +246,7 @@ public class AcCheck : MonoBehaviour
             return;
         }
 
+        GameManager.Instance.GoToIdleCheck();
         // RectTransform 정보 가져오기
         RectTransform targetRectTransform = targetRawImage.rectTransform;
         RectTransform overlayRectTransform = overlayRawImage.rectTransform;
@@ -432,14 +448,12 @@ public class AcCheck : MonoBehaviour
         float matchedRatio = effMatchedThreshold > 0f ? Mathf.Clamp01(matchedPercent / effMatchedThreshold) : 1f;
         float protrusionRatio = effProtrusionThreshold > 0f ? Mathf.Clamp01(protrusionOverTargetPercent / effProtrusionThreshold) : 1f;
 
-        // Combine ratios (average). You can change weighting if needed.
-        float combinedRatio = (matchedRatio + protrusionRatio) * 0.5f;
+        // Combine ratios with higher weight on matchedRatio (inside coverage).
+        // matchedRatio 비중을 3배로, protrusionRatio 비중을 1배로 줌.
+        float combinedRatio = (matchedRatio * 3f + protrusionRatio * 1f) / 4f;
         float combinedPercent = Mathf.Clamp01(combinedRatio) * 100f;
 
-        // if (outputText != null)
-        // {
-        //     outputText.text = string.Format("{0:F0}%", combinedPercent);
-        // }
+
 
         // Trigger only when BOTH adjusted conditions met:
         // 1) MatchedPercent (matched / target) >= (40 - matchedAdjustPercent)
@@ -449,10 +463,22 @@ public class AcCheck : MonoBehaviour
         float effMatchedThresholdFinal = Mathf.Max(0f, MatchedPercentThreshold - matchedAdjustPercent);
         float effProtrusionThresholdFinal = Mathf.Clamp(ProtrusionOverTargetThreshold - protrusionAdjustPercent, 0f, 100f);
 
+        // if (outputText != null)
+        // {
+        //     outputText.text = $"{matchedPercentFinal:F1} / {effMatchedThresholdFinal:F1}, {protrusionOverTargetPercentFinal:F1} / {effProtrusionThresholdFinal:F1}";
+        // }
         if (outputText != null)
         {
-            outputText.text = $"{matchedPercentFinal:F1} / {effMatchedThresholdFinal:F1}, {protrusionOverTargetPercentFinal:F1} / {effProtrusionThresholdFinal:F1}";
+            if (matchedPercent >= 5f)
+            {
+                outputText.text = string.Format("{0:F0}%", combinedPercent);
+            }
+            else
+            {
+                outputText.text = string.Format("{0:F0}%", 0f);
+            }
         }
+
         if (matchedPercent >= effMatchedThresholdFinal && protrusionOverTargetPercentFinal >= effProtrusionThresholdFinal)
         {
             Debug.Log($"[AcCheck] Combined trigger met: matched={matchedPercent:F1}% (need {effMatchedThresholdFinal}%), protrusionOverTarget={protrusionOverTargetPercentFinal:F1}% (need {effProtrusionThresholdFinal}%)");
@@ -464,6 +490,7 @@ public class AcCheck : MonoBehaviour
     protected virtual IEnumerator DelayOnClear()
     {
         _isClear = true;
+        _isCheck = false;
 
         yield return CoroutineReturnManager.GetWaitForSeconds(CheckDelay);
         onClear?.Invoke();
@@ -476,7 +503,10 @@ public class AcCheck : MonoBehaviour
         StopCheck();
 
         detectedPercent = 100f;
-        outputText.text = string.Format(outputFormat, detectedPercent);
+        if (outputText != null)
+        {
+            outputText.text = string.Format(outputFormat, detectedPercent);
+        }
 
         StartCoroutine(DelayOnClear());
 

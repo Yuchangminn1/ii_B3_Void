@@ -26,6 +26,7 @@ public class Arduino_SelectButton : Arduino
     };
 
 
+    bool _isUse = false;
 
 
     public Action _onDebugPlayerLeft;
@@ -60,7 +61,6 @@ public class Arduino_SelectButton : Arduino
     bool isCommandAckReceived = false;
     string[] currentAckMessages = null;
     string currentCommandName = string.Empty;
-    bool[] _pressedState = new bool[5];
 
 
 
@@ -98,62 +98,47 @@ public class Arduino_SelectButton : Arduino
             }
         }
 
-        int buttonIndex = -1;
-        bool isOnEvent = false;
+        int tmp = 0;
 
         for (int i = 0; i < _onMessage.Length; i++)
         {
             if (received.Contains(_onMessage[i]))
             {
-                buttonIndex = i;
-                isOnEvent = true;
+                tmp = i + 1;
                 break;
             }
         }
 
-        if (buttonIndex < 0)
+
+        for (int i = 0; i < _offMessage.Length; i++)
         {
-            for (int i = 0; i < _offMessage.Length; i++)
+            if (received.Contains(_offMessage[i]))
             {
-                if (received.Contains(_offMessage[i]))
-                {
-                    buttonIndex = i;
-                    isOnEvent = false;
-                    break;
-                }
+                tmp = i + 1;
+                break;
             }
         }
 
-        if (buttonIndex < 0)
+        if (tmp == 0)
         {
             if (enableButtonDebugLog)
                 Debug.Log($"[SelectButton:{ButtonDirection}] 매칭 실패 메시지: {received}");
             return;
         }
 
-        if (isOnEvent == false)
-        {
-            _pressedState[buttonIndex] = false;
-            return;
-        }
-
-        if (_pressedState[buttonIndex])
-        {
-            if (enableButtonDebugLog)
-                Debug.Log($"[SelectButton:{ButtonDirection}] 중복 ON 입력 무시: index={buttonIndex + 1}");
-            return;
-        }
-
-        _pressedState[buttonIndex] = true;
-        int tmp = buttonIndex + 1;
-
         if (tmp != 0)
         {
+            if (PageController.Instance.CurrentPage == 3)
+            {
+                if (UserDataManager.Instance.GetPlayer(ButtonDirection).Answers[QuestionManager.Instance.CurrentIndex] == Player.noneAnswer)
+                {
+                    UserDataManager.Instance.GetPlayer(ButtonDirection).Answers[QuestionManager.Instance.CurrentIndex] = tmp;
+                    StartCoroutine(UserDataManager.Instance.RequestUserDataUpdate(QuestionManager.Instance.CurrentIndex + 1, tmp, ButtonDirection));
+                    Debug.Log($"버튼 입력 감지:{ButtonDirection}의 {QuestionManager.Instance.CurrentIndex + 1} 번째 답변이 {tmp}로 설정되었습니다.");
+                }
 
-            UserDataManager.Instance.GetPlayer(ButtonDirection).Answers[QuestionManager.Instance.CurrentIndex] = tmp;
-            StartCoroutine(UserDataManager.Instance.RequestUserDataUpdate(QuestionManager.Instance.CurrentIndex + 1, tmp, ButtonDirection));
-            Debug.Log($"버튼 입력 감지:{ButtonDirection}의 {QuestionManager.Instance.CurrentIndex + 1} 번째 답변이 {tmp}로 설정되었습니다.");
 
+            }
 
 
             if (ButtonDirection == Direction.Left)
@@ -161,8 +146,6 @@ public class Arduino_SelectButton : Arduino
 
             else if (ButtonDirection == Direction.Right)
                 _onDebugPlayerRight?.Invoke();
-
-            LEDAllOff();
 
 
             GameManager.Instance.GoToIdleCheck();
@@ -222,11 +205,9 @@ public class Arduino_SelectButton : Arduino
 
                 touchDelayCoroutine = StartCoroutine(TouchDelay());
 
-                //ArduinoTouchManager.Instance.UseTouchInput = false;
 
                 PopupManager.Instance.SetInputType(InputType.Button);
 
-                //ArduinoLEDManager.Instance.SendLEDAllOff();
 
 
                 Debug.Log("LEDAllOn 명령 전송: " + stream.PortName);
@@ -251,18 +232,58 @@ public class Arduino_SelectButton : Arduino
 
     IEnumerator TouchDelay()
     {
-        while (_isRunning)
+        if (!_isRunning)
         {
-            yield return StartCoroutine(SendCommandWithAckRetry("SoundOn", soundOnAckMessages));
-            if (!_isRunning)
-                break;
+            touchDelayCoroutine = null;
+            yield break;
+        }
 
-            yield return CoroutineReturnManager.GetWaitForSeconds(0.1f);
+        if (stream == null || !stream.IsOpen)
+        {
+            RequestReconnect("TouchDelay 시작 전 포트 미오픈");
+            touchDelayCoroutine = null;
+            yield break;
+        }
 
-            yield return StartCoroutine(SendCommandWithAckRetry("LEDAllOn", ledAllOnAckMessages));
-            if (!_isRunning)
-                break;
+        try
+        {
+            stream.WriteLine("SoundOn");
+            if (enableButtonDebugLog)
+                Debug.Log($"[SelectButton:{ButtonDirection}] 명령 전송: SoundOn");
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning($"SoundOn 전송 실패: {e.Message}");
+            RequestReconnect("SoundOn 전송 실패");
+            touchDelayCoroutine = null;
+            yield break;
+        }
 
+        yield return CoroutineReturnManager.GetWaitForSeconds(0.1f);
+
+        if (!_isRunning)
+        {
+            touchDelayCoroutine = null;
+            yield break;
+        }
+
+        if (stream == null || !stream.IsOpen)
+        {
+            RequestReconnect("LEDAllOn 전송 전 포트 미오픈");
+            touchDelayCoroutine = null;
+            yield break;
+        }
+
+        try
+        {
+            stream.WriteLine("LEDAllOn");
+            if (enableButtonDebugLog)
+                Debug.Log($"[SelectButton:{ButtonDirection}] 명령 전송: LEDAllOn");
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning($"LEDAllOn 전송 실패: {e.Message}");
+            RequestReconnect("LEDAllOn 전송 실패");
             touchDelayCoroutine = null;
             yield break;
         }
@@ -340,15 +361,6 @@ public class Arduino_SelectButton : Arduino
                 continue;
             }
 
-            // ACK 응답 대기/타임아웃 재시도 로직 비활성화:
-            // 전송이 예외 없이 완료되면 성공으로 간주하고 종료한다.
-            isWaitingCommandAck = false;
-            isCommandAckReceived = false;
-            currentAckMessages = null;
-            currentCommandName = string.Empty;
-            yield break;
-
-            /*
             float endAt = Time.realtimeSinceStartup + Mathf.Max(0.1f, commandAckTimeoutSeconds);
 
             while (_isRunning && Time.realtimeSinceStartup < endAt)
@@ -397,19 +409,12 @@ public class Arduino_SelectButton : Arduino
                 yield break;
 
             yield return CoroutineReturnManager.GetWaitForSeconds(0.05f);
-            */
         }
     }
     public void LEDAllOff()
     {
-        if (stream == null || !stream.IsOpen)
-        {
-            if (!TryOpenPort("LEDAllOff"))
-            {
-                Debug.LogWarning("시리얼 포트가 열려 있지 않음: " + SerialPortNames[0]);
-                return;
-            }
-        }
+        if (stream.IsOpen == false)
+            return;
         if (!_isRunning)
         {
             Debug.LogWarning($"[SelectButton:{ButtonDirection}] LEDAllOff 요청 무시: Arduino가 동작 중이 아님");

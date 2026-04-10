@@ -92,7 +92,8 @@ public class StopMotionCreate : MonoBehaviour
     {
         IsProcessing = true;
         int nextUploadCount = Mathf.Max(1, uploadCount);
-        bool canCreateMp4 = createMp4 && Application.isEditor;
+        // MP4를 에디터 뿐 아니라 빌드에서도 생성 가능하게 변경
+        bool canCreateMp4 = createMp4;
 
         try
         {
@@ -177,6 +178,8 @@ public class StopMotionCreate : MonoBehaviour
 
                     Task writeTask = File.WriteAllBytesAsync(framePath, pngBytes);
                     yield return new WaitUntil(() => writeTask.IsCompleted);
+                    GameManager.Instance.GoToIdleCheck();
+
 
                     if (writeTask.IsFaulted)
                     {
@@ -190,6 +193,7 @@ public class StopMotionCreate : MonoBehaviour
                     pngBytes = null;
 
                     Destroy(compositeFrame);
+
 
                     yield return null;
                 }
@@ -217,6 +221,7 @@ public class StopMotionCreate : MonoBehaviour
 
                 Task<bool> encodeVideoTask = EncodeMp4Async(inputPattern, mp4Path, outputFps);
                 yield return new WaitUntil(() => encodeVideoTask.IsCompleted);
+                GameManager.Instance.GoToIdleCheck();
 
                 if (!encodeVideoTask.Result)
                 {
@@ -229,14 +234,7 @@ public class StopMotionCreate : MonoBehaviour
             }
             else if (createMp4)
             {
-                if (!Application.isEditor)
-                {
-                    Debug.Log("[StopMotionCreate] 빌드 실행 중이므로 MP4 생성/저장은 건너뜁니다. (Editor 전용)");
-                }
-                else
-                {
-                    Debug.LogWarning("[StopMotionCreate] ffmpeg 경로가 유효하지 않아 MP4 생성을 건너뜁니다.");
-                }
+                Debug.LogWarning("[StopMotionCreate] ffmpeg 경로가 유효하지 않아 MP4 생성을 건너뜁니다.");
             }
 
             int generatedCount = pngPaths.Count;
@@ -270,6 +268,8 @@ public class StopMotionCreate : MonoBehaviour
                 if (uploadTask.Result)
                 {
                     StartTriggerAfterUploadCallback();
+                    // 업로드 완료 후 약 30초 뒤에 해당 폴더 내 파일들 삭제
+                    StartCoroutine(DeleteFolderFilesAfterDelay(framesFolder, 10f));
                 }
 
                 if (delayBetweenUploads > 0f)
@@ -301,6 +301,8 @@ public class StopMotionCreate : MonoBehaviour
             if (finalMp4UploadTask.Result)
             {
                 StartTriggerAfterUploadCallback();
+                // 업로드 완료 후 약 30초 뒤에 해당 폴더 내 파일들 삭제
+                StartCoroutine(DeleteFolderFilesAfterDelay(framesFolder, 10f));
             }
 
             if (delayBetweenUploads > 0f)
@@ -322,6 +324,30 @@ public class StopMotionCreate : MonoBehaviour
         {
             ReleaseCaptureResources();
             IsProcessing = false;
+        }
+    }
+
+    private IEnumerator DeleteFolderFilesAfterDelay(string folderPath, float delaySeconds)
+    {
+        yield return new WaitForSeconds(Mathf.Max(0f, delaySeconds));
+
+        if (string.IsNullOrWhiteSpace(folderPath) || !Directory.Exists(folderPath))
+            yield break;
+
+        string[] files;
+        try
+        {
+            files = Directory.GetFiles(folderPath);
+        }
+        catch (Exception ex)
+        {
+            Debug.LogWarning($"[StopMotionCreate] 폴더 파일 나열 실패: {folderPath}, {ex.Message}");
+            yield break;
+        }
+
+        foreach (string file in files)
+        {
+            TryDeleteFile(file);
         }
     }
 

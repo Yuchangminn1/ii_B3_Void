@@ -29,7 +29,8 @@ public class Arduino : MonoBehaviour
     [SerializeField] protected float pingIntervalSeconds = 1f;
     [SerializeField] protected int noResponseRestartCount = 3;
     [SerializeField] protected int maxReconnectAttempts = 5;
-    [SerializeField] protected float portCloseWaitSeconds = 3f;
+    [SerializeField] protected float reconnectCooldownSeconds = 2f;
+    [SerializeField] protected float openStabilizeSeconds = 2f;
 
     public string[] SerialPortNames =
     {
@@ -41,6 +42,8 @@ public class Arduino : MonoBehaviour
     protected bool isReconnecting = false;
     protected int noResponseCount = 0;
     protected float nextPingAt = 0f;
+    protected float lastPortOpenAt = -999f;
+    protected float lastReconnectAt = -999f;
 
     protected void RequestReconnect(string reason)
     {
@@ -219,6 +222,8 @@ public class Arduino : MonoBehaviour
         {
             stream = new SerialPort(portName, 9600);
             stream.ReadTimeout = readTimeoutMs;
+            stream.DtrEnable = false;
+            stream.RtsEnable = false;
         }
 
         try
@@ -226,6 +231,7 @@ public class Arduino : MonoBehaviour
             if (!stream.IsOpen)
             {
                 stream.Open();
+                lastPortOpenAt = Time.realtimeSinceStartup;
                 Debug.Log($"시리얼 포트 열림: {stream.PortName} / {PlayerIndex} / reason={reason}");
             }
 
@@ -243,7 +249,18 @@ public class Arduino : MonoBehaviour
         if (isReconnecting)
             yield break;
 
+        float now = Time.realtimeSinceStartup;
+        float minGap = Mathf.Max(0f, reconnectCooldownSeconds);
+        float elapsedSinceLastReconnect = now - lastReconnectAt;
+        if (elapsedSinceLastReconnect < minGap)
+        {
+            float wait = minGap - elapsedSinceLastReconnect;
+            if (wait > 0f)
+                yield return CoroutineReturnManager.GetWaitForSeconds(wait);
+        }
+
         isReconnecting = true;
+        lastReconnectAt = Time.realtimeSinceStartup;
         string portName = GetConfiguredPortName();
 
         Debug.LogWarning($"[{name}] 타임아웃 누적({timeoutCount})으로 포트 재연결 시도: {portName}");
@@ -268,17 +285,13 @@ public class Arduino : MonoBehaviour
 
         stream = null;
 
-        // 포트 Close/Dispose 후 OS가 COM 포트를 완전히 해제할 때까지 대기
-        yield return CoroutineReturnManager.GetWaitForSeconds(portCloseWaitSeconds);
-
         int reconnectAttempt = 0;
         int maxAttempts = Mathf.Max(1, maxReconnectAttempts);
 
         while (_isRunning && reconnectAttempt < maxAttempts)
         {
-            reconnectAttempt++;
             yield return CoroutineReturnManager.GetWaitForSeconds(reconnectDelaySeconds);
-
+            reconnectAttempt++;
 
             if (!TryOpenPort("TimeoutReconnect"))
             {
@@ -288,7 +301,8 @@ public class Arduino : MonoBehaviour
             {
                 timeoutCount = 0;
                 noResponseCount = 0;
-                nextPingAt = Time.realtimeSinceStartup + Mathf.Max(0.1f, pingIntervalSeconds);
+                float stabilize = Mathf.Max(0f, openStabilizeSeconds);
+                nextPingAt = Time.realtimeSinceStartup + Mathf.Max(Mathf.Max(0.1f, pingIntervalSeconds), stabilize);
                 _isDisconnectedNotified = false;
                 Debug.LogWarning($"[{name}] 포트 재연결 성공: {portName}");
 
@@ -324,36 +338,42 @@ public class Arduino : MonoBehaviour
                 yield break;
             }
 
-            // if (enablePingPong && !isReconnecting)
-            // {
-            //     float now = Time.realtimeSinceStartup;
-            //     if (now >= nextPingAt)
-            //     {
-            //         try
-            //         {
-            //             stream.WriteLine(pingMessage);
-            //         }
-            //         catch (Exception e)
-            //         {
-            //             NotifyDisconnected(e);
-            //             yield break;
-            //         }
+            if (enablePingPong && !isReconnecting)
+            {
+                float now = Time.realtimeSinceStartup;
+                if (now - lastPortOpenAt < Mathf.Max(0f, openStabilizeSeconds))
+                {
+                    yield return CoroutineReturnManager.GetWaitForSeconds(0.05f);
+                    continue;
+                }
 
-            //         noResponseCount++;
-            //         nextPingAt = now + Mathf.Max(0.1f, pingIntervalSeconds);
+                if (now >= nextPingAt)
+                {
+                    try
+                    {
+                        stream.WriteLine(pingMessage);
+                    }
+                    catch (Exception e)
+                    {
+                        NotifyDisconnected(e);
+                        yield break;
+                    }
 
-            //         if (enableSerialDebugLog)
-            //             Debug.Log($"[{name}] Ping 전송: {pingMessage} / noResponseCount={noResponseCount}");
+                    noResponseCount++;
+                    nextPingAt = now + Mathf.Max(0.1f, pingIntervalSeconds);
 
-            //         if (noResponseCount >= Mathf.Max(1, noResponseRestartCount))
-            //         {
-            //             Debug.LogWarning($"[{name}] 핑퐁 무응답 누적({noResponseCount})으로 포트 재연결 시도");
-            //             yield return StartCoroutine(ReopenPortAfterTimeout());
-            //             yield return CoroutineReturnManager.GetWaitForSeconds(0.1f);
-            //             continue;
-            //         }
-            //     }
-            // }
+                    if (enableSerialDebugLog)
+                        Debug.Log($"[{name}] Ping 전송: {pingMessage} / noResponseCount={noResponseCount}");
+
+                    if (noResponseCount >= Mathf.Max(1, noResponseRestartCount))
+                    {
+                        Debug.LogWarning($"[{name}] 핑퐁 무응답 누적({noResponseCount})으로 포트 재연결 시도");
+                        yield return StartCoroutine(ReopenPortAfterTimeout());
+                        yield return CoroutineReturnManager.GetWaitForSeconds(0.1f);
+                        continue;
+                    }
+                }
+            }
 
             if (IsReadingMessage())
             {

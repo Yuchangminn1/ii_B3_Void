@@ -376,7 +376,7 @@ public class UserDataManager : MonoBehaviour
         yield return StartCoroutine(ResetUserCoroutine());
         yield return StartCoroutine(RequestRoomClear());
         Reset();
-        yield return CoroutineReturnManager.GetWaitForSeconds(0.1f);
+        yield return CoroutineReturnManager.GetWaitForSeconds(3f);
 
         PageController.Instance.RequestResetOpenPage(0);
 
@@ -396,7 +396,7 @@ public class UserDataManager : MonoBehaviour
         yield return StartCoroutine(RequestContentEnd());
         yield return StartCoroutine(RequestRoomClear());
         Reset();
-        yield return CoroutineReturnManager.GetWaitForSeconds(0.1f);
+        yield return CoroutineReturnManager.GetWaitForSeconds(3f);
         PageController.Instance.RequestResetOpenPage(0);
 
     }

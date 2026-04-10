@@ -133,11 +133,13 @@ public class CameraManager : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Q))
         {
             current.threshold = Mathf.Clamp01(current.threshold + 0.01f);
+            current.StopAutoThreshold();
             Debug.Log($"[{current.name}] Threshold: {current.threshold:F2}");
         }
         if (Input.GetKeyDown(KeyCode.W))
         {
             current.threshold = Mathf.Clamp01(current.threshold - 0.01f);
+            current.StopAutoThreshold();
             Debug.Log($"[{current.name}] Threshold: {current.threshold:F2}");
         }
 

@@ -304,31 +304,24 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
         material.SetFloat("_MidValueFilter", midValueFilter);
 
         float clipAmount = 0f;
+        float rightClipAmount = 0f;
+        float topClipAmount = 0f;
+        float bottomClipAmount = 0f;
+
         if (webcamTexture != null && webcamTexture.width > 0)
         {
             clipAmount = (float)leftClipPixels / webcamTexture.width;
-        }
-        material.SetFloat("_LeftClip", Mathf.Clamp01(clipAmount));
-
-        float rightClipAmount = 0f;
-        if (webcamTexture != null && webcamTexture.width > 0)
-        {
             rightClipAmount = (float)rightClipPixels / webcamTexture.width;
         }
-        material.SetFloat("_RightClip", Mathf.Clamp01(rightClipAmount));
-
-        float topClipAmount = 0f;
         if (webcamTexture != null && webcamTexture.height > 0)
         {
             topClipAmount = (float)topClipPixels / webcamTexture.height;
-        }
-        material.SetFloat("_TopClip", Mathf.Clamp01(topClipAmount));
-
-        float bottomClipAmount = 0f;
-        if (webcamTexture != null && webcamTexture.height > 0)
-        {
             bottomClipAmount = (float)bottomClipPixels / webcamTexture.height;
         }
+
+        material.SetFloat("_LeftClip", Mathf.Clamp01(clipAmount));
+        material.SetFloat("_RightClip", Mathf.Clamp01(rightClipAmount));
+        material.SetFloat("_TopClip", Mathf.Clamp01(topClipAmount));
         material.SetFloat("_BottomClip", Mathf.Clamp01(bottomClipAmount));
     }
 
@@ -463,6 +456,7 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
     [System.NonSerialized] private float _autoMaxThresholdRuntime = 0.7f;
     [System.NonSerialized] private float _autoStepRuntime = 0.01f;
     [System.NonSerialized] private float _autoNextUpdateTime = 0f;
+    [System.NonSerialized] private float _autoThresholdStartDelayUntil = 0f; // keyColor 잡은 뒤 threshold 탐색 시작 시간
     [Tooltip("Seconds between automatic threshold increments during auto key.")]
     public float autoThresholdStepInterval = 1.0f;
 
@@ -699,13 +693,17 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
             if (keyDistances.Count > 0)
             {
                 _autoKeyDistances = keyDistances;
-                _autoSearching = true;
                 _autoCurrentThreshold = 0f;
                 _autoMaxThresholdRuntime = Mathf.Clamp01(autoMaxThreshold);
-                _autoStepRuntime = Mathf.Max(0.0005f, autoThresholdStep); // 보통 0.01
-                _autoNextUpdateTime = Time.time; // 바로 첫 단계 적용 가능
+                _autoStepRuntime = Mathf.Max(0.0005f, autoThresholdStep);
+
+                // 키값을 갱신한 시점부터 1초 동안은 threshold를 0으로 유지하고, 그 뒤에 탐색 시작
+                _autoSearching = false;
+                _autoThresholdStartDelayUntil = Time.time + 1.0f; // 1초 대기 후 시작
+                _autoNextUpdateTime = _autoThresholdStartDelayUntil; // 첫 스텝 시간도 동일하게 설정
             }
 
+            // threshold는 일단 0에서 시작해서, Update()에서 단계적으로 올린다.
             sampledThreshold = 0f;
             thresholdGoalReached = false;
             return true;
@@ -717,6 +715,16 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
     void Update()
     {
         // ...any existing Update logic before auto-threshold section...
+
+        // 키값을 찾은 뒤 일정 시간(예: 1초)이 지난 후에만 autoSearching을 활성화
+        if (!_autoSearching && _autoKeyDistances != null && _autoKeyDistances.Count > 0)
+        {
+            if (Time.time >= _autoThresholdStartDelayUntil)
+            {
+                _autoSearching = true;
+                // _autoNextUpdateTime 은 TryUpdateKeyAndThresholdFromWebcam 에서 설정됨
+            }
+        }
 
         // Auto threshold runtime stepping: increment in small steps with visual pause between updates.
         if (_autoSearching && _autoKeyDistances != null && _autoKeyDistances.Count > 0)
@@ -757,7 +765,7 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
 
         data.floatParams.TryGetValue("threshold", out threshold);
         data.floatParams.TryGetValue("smoothness", out smoothness);
-        data.floatParams.TryGetValue("autoThresholdTransparentTarget", out float autoThresholdTransparentTarget);
+        data.floatParams.TryGetValue("autoThresholdTransparentTarget", out autoThresholdTransparentTarget);
         if (data.floatParams.TryGetValue("alphaCutoff", out float loadedAlphaCutoff)) alphaCutoff = loadedAlphaCutoff;
         if (data.floatParams.TryGetValue("midValueFilter", out float loadedMidValueFilter)) midValueFilter = loadedMidValueFilter;
         if (data.intParams != null)
@@ -785,5 +793,11 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
         _genericData.intParams["topClipPixels"] = Mathf.Max(0, topClipPixels);
         _genericData.intParams["bottomClipPixels"] = Mathf.Max(0, bottomClipPixels);
         return _genericData;
+    }
+
+    public void StopAutoThreshold()
+    {
+        _autoSearching = false;
+        _autoKeyDistances = null;
     }
 }
