@@ -3,6 +3,15 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+public enum PageName
+{
+    Idle = 0,
+    Ready = 1,
+    Tutorial = 2,
+    Question = 3,
+    Main = 4
+}
+
 public class PageController : Singleton<PageController>
 {
     [SerializeField] private int openingPage = 0;

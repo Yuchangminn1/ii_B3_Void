@@ -403,12 +403,12 @@ MonoBehaviour:
   smoothness: 0.1
   autoUseEdgeSampling: 1
   autoCenterExclusionRatio: 0.4
-  autoThresholdTransparentTarget: 0.85
+  autoThresholdTransparentTarget: 0.8
   autoThresholdStep: 0.01
   autoDominantClusterTolerance: 0.1
   autoUpdateLerp: 0.35
   autoMinInlierRatio: 0.35
-  autoMaxThreshold: 0.7
+  autoMaxThreshold: 0.15
   autoExtendFocusUntilTarget: 1
   autoFocusMaxWaitSeconds: 10
   renderByBool: 0
@@ -422,6 +422,7 @@ MonoBehaviour:
   rightClipPixels: 100
   topClipPixels: 0
   bottomClipPixels: 0
+  autoThresholdStepInterval: 1
 --- !u!1 &8555454
 GameObject:
   m_ObjectHideFlags: 0
@@ -5774,7 +5775,6 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 46057291}
-  - {fileID: 1435625040}
   - {fileID: 879859378}
   - {fileID: 1102699775}
   - {fileID: 1535498008}
@@ -11316,12 +11316,12 @@ MonoBehaviour:
   smoothness: 0.1
   autoUseEdgeSampling: 1
   autoCenterExclusionRatio: 0.4
-  autoThresholdTransparentTarget: 0.85
+  autoThresholdTransparentTarget: 0.8
   autoThresholdStep: 0.01
   autoDominantClusterTolerance: 0.1
   autoUpdateLerp: 0.35
   autoMinInlierRatio: 0.35
-  autoMaxThreshold: 0.7
+  autoMaxThreshold: 0.15
   autoExtendFocusUntilTarget: 1
   autoFocusMaxWaitSeconds: 10
   renderByBool: 0
@@ -11335,6 +11335,7 @@ MonoBehaviour:
   rightClipPixels: 100
   topClipPixels: 0
   bottomClipPixels: 0
+  autoThresholdStepInterval: 1
 --- !u!1 &525237991
 GameObject:
   m_ObjectHideFlags: 0
@@ -16581,7 +16582,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 1920, y: 1200}
+  m_SizeDelta: {x: 2200, y: 1200}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &733522048
 MonoBehaviour:
@@ -20649,7 +20650,6 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1453168269}
-  - {fileID: 1043483566}
   - {fileID: 1198707085}
   - {fileID: 159831137}
   - {fileID: 1466703329}
@@ -24903,72 +24903,6 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
---- !u!1 &1043483565
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1043483566}
-  - component: {fileID: 1043483567}
-  m_Layer: 0
-  m_Name: Trigger1
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1043483566
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1043483565}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 902927455}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1043483567
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1043483565}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 01ca2ab1f3b85e843aff91333114bb74, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  audioSource: {fileID: 0}
-  nextVedeoPlayer: {fileID: 0}
-  OnSequenceStart:
-    m_PersistentCalls:
-      m_Calls: []
-  triggerCallback:
-    m_PersistentCalls:
-      m_Calls: []
-  nextSequenceCallback:
-    m_PersistentCalls:
-      m_Calls: []
-  isTrigger: 1
-  originTrigger: 0
-  nextDelayTime: 0.75
-  CutGraphics: []
-  CutCanvasGroups: []
-  FadeInGraphics: []
-  FadeOutGraphics: []
-  FadeInCanvasGroups:
-  - {fileID: 1495535224}
-  FadeOutCanvasGroups: []
-  CustomFadeDuration: 1
 --- !u!1 &1043633930
 GameObject:
   m_ObjectHideFlags: 0
@@ -34668,72 +34602,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1434550955}
   m_CullTransparentMesh: 1
---- !u!1 &1435625039
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1435625040}
-  - component: {fileID: 1435625041}
-  m_Layer: 0
-  m_Name: Trigger1
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1435625040
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1435625039}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 233809360}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1435625041
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1435625039}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 01ca2ab1f3b85e843aff91333114bb74, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  audioSource: {fileID: 0}
-  nextVedeoPlayer: {fileID: 0}
-  OnSequenceStart:
-    m_PersistentCalls:
-      m_Calls: []
-  triggerCallback:
-    m_PersistentCalls:
-      m_Calls: []
-  nextSequenceCallback:
-    m_PersistentCalls:
-      m_Calls: []
-  isTrigger: 1
-  originTrigger: 0
-  nextDelayTime: 0.75
-  CutGraphics: []
-  CutCanvasGroups: []
-  FadeInGraphics: []
-  FadeOutGraphics: []
-  FadeInCanvasGroups:
-  - {fileID: 298920487}
-  FadeOutCanvasGroups: []
-  CustomFadeDuration: 1
 --- !u!1 &1435927066
 GameObject:
   m_ObjectHideFlags: 0
@@ -37846,7 +37714,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 1920, y: 1200}
+  m_SizeDelta: {x: 2200, y: 1200}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1550686626
 MonoBehaviour:

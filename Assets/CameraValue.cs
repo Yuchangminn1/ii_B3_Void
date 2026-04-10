@@ -456,6 +456,16 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
         }
     }
 
+    [Header("Auto Threshold Runtime State")]
+    [System.NonSerialized] private bool _autoSearching = false;
+    [System.NonSerialized] private List<float> _autoKeyDistances = null;
+    [System.NonSerialized] private float _autoCurrentThreshold = 0f;
+    [System.NonSerialized] private float _autoMaxThresholdRuntime = 0.7f;
+    [System.NonSerialized] private float _autoStepRuntime = 0.01f;
+    [System.NonSerialized] private float _autoNextUpdateTime = 0f;
+    [Tooltip("Seconds between automatic threshold increments during auto key.")]
+    public float autoThresholdStepInterval = 1.0f;
+
     bool TryUpdateKeyAndThresholdFromWebcam(out Color sampledKeyColor, out float sampledThreshold, out bool thresholdGoalReached)
     {
         sampledKeyColor = keyColor;
@@ -659,22 +669,15 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
                 );
             }
 
-            float step = Mathf.Max(0.001f, autoThresholdStep);
-            float targetTransparentRatio = Mathf.Clamp01(autoThresholdTransparentTarget);
-            float maxThreshold = Mathf.Clamp01(autoMaxThreshold);
-
-            // Recalculate distances against the finalized key color, then find the minimum threshold
-            // that makes at least targetTransparentRatio samples transparent.
+            // Recalculate distances against the finalized key color using chroma-only distance.
             List<float> keyDistances = new List<float>(inlierColors.Count);
             float kr = sampledKeyColor.r;
             float kg = sampledKeyColor.g;
             float kb = sampledKeyColor.b;
-            Color.RGBToHSV(new Color(kr, kg, kb, 1f), out float keyH, out float keyS, out float keyV);
-            float wHue = 0.7f + (0.2f * keyS);
-            float wSat = 0.35f;
-            float wVal = Mathf.Lerp(0.45f, 0.12f, keyS);
-            wVal += Mathf.Clamp01((0.2f - keyV) / 0.2f) * 0.12f;
-            float norm = Mathf.Sqrt((wHue * wHue) + (wSat * wSat) + (wVal * wVal));
+
+            float keyY = 0.299f * kr + 0.587f * kg + 0.114f * kb;
+            float keyCb = (kb - keyY) * 0.5f;
+            float keyCr = (kr - keyY) * 0.5f;
 
             for (int i = 0; i < inlierColors.Count; i++)
             {
@@ -683,48 +686,69 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
                 float g = c.g / 255f;
                 float b = c.b / 255f;
 
-                Color.RGBToHSV(new Color(r, g, b, 1f), out float sampleH, out float sampleS, out float sampleV);
-                float hueDist = Mathf.Abs(sampleH - keyH);
-                hueDist = Mathf.Min(hueDist, 1f - hueDist) * 2f;
-                float satDist = Mathf.Abs(sampleS - keyS);
-                float valDist = Mathf.Abs(sampleV - keyV);
+                float y = 0.299f * r + 0.587f * g + 0.114f * b;
+                float cb = (b - y) * 0.5f;
+                float cr = (r - y) * 0.5f;
 
-                float dist = Mathf.Sqrt(
-                    (hueDist * hueDist * wHue * wHue) +
-                    (satDist * satDist * wSat * wSat) +
-                    (valDist * valDist * wVal * wVal)
-                );
-                float keyDist = dist / Mathf.Max(norm, 1e-5f);
+                float dCb = cb - keyCb;
+                float dCr = cr - keyCr;
+                float keyDist = Mathf.Sqrt(dCb * dCb + dCr * dCr);
                 keyDistances.Add(keyDist);
             }
 
-            float bestThreshold = maxThreshold;
             if (keyDistances.Count > 0)
             {
-                int total = keyDistances.Count;
-                for (float t = 0f; t <= maxThreshold + 0.0001f; t += step)
-                {
-                    int transparentCount = 0;
-                    for (int i = 0; i < total; i++)
-                    {
-                        if (keyDistances[i] <= t) transparentCount++;
-                    }
-
-                    float transparentRatio = (float)transparentCount / total;
-                    if (transparentRatio >= targetTransparentRatio)
-                    {
-                        bestThreshold = Mathf.Clamp(t, 0f, maxThreshold);
-                        thresholdGoalReached = true;
-                        break;
-                    }
-                }
+                _autoKeyDistances = keyDistances;
+                _autoSearching = true;
+                _autoCurrentThreshold = 0f;
+                _autoMaxThresholdRuntime = Mathf.Clamp01(autoMaxThreshold);
+                _autoStepRuntime = Mathf.Max(0.0005f, autoThresholdStep); // 보통 0.01
+                _autoNextUpdateTime = Time.time; // 바로 첫 단계 적용 가능
             }
 
-            sampledThreshold = bestThreshold;
+            sampledThreshold = 0f;
+            thresholdGoalReached = false;
             return true;
         }
 
         return false;
+    }
+
+    void Update()
+    {
+        // ...any existing Update logic before auto-threshold section...
+
+        // Auto threshold runtime stepping: increment in small steps with visual pause between updates.
+        if (_autoSearching && _autoKeyDistances != null && _autoKeyDistances.Count > 0)
+        {
+            if (Time.time >= _autoNextUpdateTime)
+            {
+                int total = _autoKeyDistances.Count;
+                float targetTransparentRatio = Mathf.Clamp01(autoThresholdTransparentTarget);
+                float current = _autoCurrentThreshold;
+
+                int transparentCount = 0;
+                for (int i = 0; i < total; i++)
+                {
+                    if (_autoKeyDistances[i] <= current)
+                        transparentCount++;
+                }
+
+                float transparentRatio = (float)transparentCount / total;
+                threshold = Mathf.Clamp01(current);
+
+                if (transparentRatio >= targetTransparentRatio || current >= _autoMaxThresholdRuntime)
+                {
+                    _autoSearching = false;
+                    _autoKeyGoalReached = transparentRatio >= targetTransparentRatio;
+                }
+                else
+                {
+                    _autoCurrentThreshold = Mathf.Min(current + _autoStepRuntime, _autoMaxThresholdRuntime);
+                    _autoNextUpdateTime = Time.time + Mathf.Max(0.05f, autoThresholdStepInterval);
+                }
+            }
+        }
     }
 
     public void Initialize(JsonGenericUpData data)
@@ -733,6 +757,7 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
 
         data.floatParams.TryGetValue("threshold", out threshold);
         data.floatParams.TryGetValue("smoothness", out smoothness);
+        data.floatParams.TryGetValue("autoThresholdTransparentTarget", out float autoThresholdTransparentTarget);
         if (data.floatParams.TryGetValue("alphaCutoff", out float loadedAlphaCutoff)) alphaCutoff = loadedAlphaCutoff;
         if (data.floatParams.TryGetValue("midValueFilter", out float loadedMidValueFilter)) midValueFilter = loadedMidValueFilter;
         if (data.intParams != null)
@@ -754,6 +779,7 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
         _genericData.floatParams["smoothness"] = smoothness;
         _genericData.floatParams["alphaCutoff"] = alphaCutoff;
         _genericData.floatParams["midValueFilter"] = midValueFilter;
+        _genericData.floatParams["autoThresholdTransparentTarget"] = autoThresholdTransparentTarget;
         _genericData.intParams["leftClipPixels"] = Mathf.Max(0, leftClipPixels);
         _genericData.intParams["rightClipPixels"] = Mathf.Max(0, rightClipPixels);
         _genericData.intParams["topClipPixels"] = Mathf.Max(0, topClipPixels);

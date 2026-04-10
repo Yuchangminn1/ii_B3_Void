@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class WaitCheckTutorial : WaitCheck
@@ -32,7 +33,8 @@ public class WaitCheckTutorial : WaitCheck
             }
             IsPlayer1On = true;
             Player1_Trigger.TriggerOn();
-            shootPieceContainer.ShowPiece(direction: Direction.Left);
+            if (PageController.Instance.CurrentPage == (int)PageName.Question)
+                shootPieceContainer.ShowPiece(direction: Direction.Left);
 
         }
 
@@ -62,8 +64,8 @@ public class WaitCheckTutorial : WaitCheck
             }
             IsPlayer2On = true;
             Player2_Trigger.TriggerOn();
-
-            shootPieceContainer.ShowPiece(direction: Direction.Right);
+            if (PageController.Instance.CurrentPage == (int)PageName.Question)
+                shootPieceContainer.ShowPiece(direction: Direction.Right);
 
         }
 
