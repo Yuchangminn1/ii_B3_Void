@@ -4,15 +4,15 @@ Shader "Custom/WebcamChromaKey"
     {
         _MainTex ("Texture", 2D) = "white" {}
         _KeyColor ("Key Color", Color) = (0, 1, 0, 1)
-        _Threshold ("Threshold", Range(0,1)) = 0.4
-        _Smooth ("Smoothness", Range(0,1)) = 0.1
+        _Threshold ("Threshold", Range(0,1)) = 0.48
+        _Smooth ("Smoothness", Range(0,1)) = 0.05
         _Spill ("Spill Reduction (unused)", Range(0,1)) = 0.2
         _Mirror ("Mirror Horizontal", Float) = 0
         _VFlip ("Vertical Flip", Float) = 0
         _OpaqueToBlack ("Opaque to Black", Float) = 0
-        _EdgeContrast ("Edge Contrast", Range(1,10)) = 1
-        _NoiseFilter ("Noise Filter", Range(0,1)) = 1
-        _AlphaCutoff ("Alpha Cutoff", Range(0,1)) = 0.5
+        _EdgeContrast ("Edge Contrast", Range(1,10)) = 1.6
+        _NoiseFilter ("Noise Filter", Range(0,1)) = 0.2
+        _AlphaCutoff ("Alpha Cutoff", Range(0,1)) = 0.62
         _MidValueFilter ("Mid Value Filter", Range(0,0.49)) = 0.15
         _LeftClip ("Left Clip", Range(0,1)) = 0
         _RightClip ("Right Clip", Range(0,1)) = 0
@@ -68,6 +68,38 @@ Shader "Custom/WebcamChromaKey"
                 float4 vertex : SV_POSITION;
             };
 
+            float3 RGBToHSV(float3 c)
+            {
+                float4 K = float4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
+                float4 p = lerp(float4(c.bg, K.wz), float4(c.gb, K.xy), step(c.b, c.g));
+                float4 q = lerp(float4(p.xyw, c.r), float4(c.r, p.yzx), step(p.x, c.r));
+
+                float d = q.x - min(q.w, q.y);
+                float e = 1e-10;
+                return float3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
+            }
+
+            float ComputeKeyDistance(float3 c, float3 keyHsv)
+            {
+                float3 hsv = RGBToHSV(c);
+
+                float hueDist = abs(hsv.x - keyHsv.x);
+                hueDist = min(hueDist, 1.0 - hueDist) * 2.0;
+                float satDist = abs(hsv.y - keyHsv.y);
+                float valDist = abs(hsv.z - keyHsv.z);
+
+                float keySat = keyHsv.y;
+                float keyVal = keyHsv.z;
+                float wHue = 0.7 + (0.2 * keySat);
+                float wSat = 0.35;
+                float wVal = lerp(0.45, 0.12, keySat);
+                wVal += saturate((0.2 - keyVal) / 0.2) * 0.12;
+
+                float dist = sqrt((hueDist * hueDist * wHue * wHue) + (satDist * satDist * wSat * wSat) + (valDist * valDist * wVal * wVal));
+                float norm = sqrt((wHue * wHue) + (wSat * wSat) + (wVal * wVal));
+                return dist / max(norm, 1e-5);
+            }
+
             v2f vert(appdata v)
             {
                 v2f o;
@@ -87,46 +119,34 @@ Shader "Custom/WebcamChromaKey"
                 float2 uv = i.uv;
                 float3 key = _KeyColor.rgb;
 
-                // compute chroma (ignore luminance). chroma = (R - Y, B - Y)
-                float keyY = dot(key, float3(0.299, 0.587, 0.114));
-                float2 keyCh = float2(key.r - keyY, key.b - keyY);
+                float3 keyHsv = RGBToHSV(key);
 
-                float2 s00 = tex2D(_MainTex, uv + float2(-t.x, -t.y)).rgb.xy;
                 float3 c00r = tex2D(_MainTex, uv + float2(-t.x, -t.y)).rgb;
-                float c00y = dot(c00r, float3(0.299, 0.587, 0.114));
-                float d00 = length(float2(c00r.r - c00y, c00r.b - c00y) - keyCh);
+                float d00 = ComputeKeyDistance(c00r, keyHsv);
 
                 float3 c01r = tex2D(_MainTex, uv + float2( 0.0,  -t.y)).rgb;
-                float c01y = dot(c01r, float3(0.299, 0.587, 0.114));
-                float d01 = length(float2(c01r.r - c01y, c01r.b - c01y) - keyCh);
+                float d01 = ComputeKeyDistance(c01r, keyHsv);
 
                 float3 c02r = tex2D(_MainTex, uv + float2( t.x,  -t.y)).rgb;
-                float c02y = dot(c02r, float3(0.299, 0.587, 0.114));
-                float d02 = length(float2(c02r.r - c02y, c02r.b - c02y) - keyCh);
+                float d02 = ComputeKeyDistance(c02r, keyHsv);
 
                 float3 c10r = tex2D(_MainTex, uv + float2(-t.x,  0.0)).rgb;
-                float c10y = dot(c10r, float3(0.299, 0.587, 0.114));
-                float d10 = length(float2(c10r.r - c10y, c10r.b - c10y) - keyCh);
+                float d10 = ComputeKeyDistance(c10r, keyHsv);
 
                 float3 c11r = tex2D(_MainTex, uv).rgb;
-                float c11y = dot(c11r, float3(0.299, 0.587, 0.114));
-                float d11 = length(float2(c11r.r - c11y, c11r.b - c11y) - keyCh);
+                float d11 = ComputeKeyDistance(c11r, keyHsv);
 
                 float3 c12r = tex2D(_MainTex, uv + float2( t.x,  0.0)).rgb;
-                float c12y = dot(c12r, float3(0.299, 0.587, 0.114));
-                float d12 = length(float2(c12r.r - c12y, c12r.b - c12y) - keyCh);
+                float d12 = ComputeKeyDistance(c12r, keyHsv);
 
                 float3 c20r = tex2D(_MainTex, uv + float2(-t.x,  t.y)).rgb;
-                float c20y = dot(c20r, float3(0.299, 0.587, 0.114));
-                float d20 = length(float2(c20r.r - c20y, c20r.b - c20y) - keyCh);
+                float d20 = ComputeKeyDistance(c20r, keyHsv);
 
                 float3 c21r = tex2D(_MainTex, uv + float2( 0.0,   t.y)).rgb;
-                float c21y = dot(c21r, float3(0.299, 0.587, 0.114));
-                float d21 = length(float2(c21r.r - c21y, c21r.b - c21y) - keyCh);
+                float d21 = ComputeKeyDistance(c21r, keyHsv);
 
                 float3 c22r = tex2D(_MainTex, uv + float2( t.x,   t.y)).rgb;
-                float c22y = dot(c22r, float3(0.299, 0.587, 0.114));
-                float d22 = length(float2(c22r.r - c22y, c22r.b - c22y) - keyCh);
+                float d22 = ComputeKeyDistance(c22r, keyHsv);
 
                 float avgDist = (d00 + d01 + d02 + d10 + d11 + d12 + d20 + d21 + d22) / 9.0;
                 float filteredDist = lerp(d11, avgDist, _NoiseFilter);

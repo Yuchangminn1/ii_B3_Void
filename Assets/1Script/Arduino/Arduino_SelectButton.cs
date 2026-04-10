@@ -10,19 +10,19 @@ public class Arduino_SelectButton : Arduino
     bool enableButtonDebugLog = false;
 
     string[] _onMessage = {
-        "5On",
-        "4On",
-        "3On",
+        "1On",
         "2On",
-        "1On"
+        "3On",
+        "4On",
+        "5On"
     };
 
     string[] _offMessage = {
-        "5Off",
-        "4Off",
-        "3Off",
+        "1Off",
         "2Off",
-        "1Off"
+        "3Off",
+        "4Off",
+        "5Off"
     };
 
 
@@ -60,6 +60,7 @@ public class Arduino_SelectButton : Arduino
     bool isCommandAckReceived = false;
     string[] currentAckMessages = null;
     string currentCommandName = string.Empty;
+    bool[] _pressedState = new bool[5];
 
 
 
@@ -97,47 +98,62 @@ public class Arduino_SelectButton : Arduino
             }
         }
 
-        int tmp = 0;
+        int buttonIndex = -1;
+        bool isOnEvent = false;
 
         for (int i = 0; i < _onMessage.Length; i++)
         {
             if (received.Contains(_onMessage[i]))
             {
-                tmp = i + 1;
+                buttonIndex = i;
+                isOnEvent = true;
                 break;
             }
         }
 
-
-        for (int i = 0; i < _offMessage.Length; i++)
+        if (buttonIndex < 0)
         {
-            if (received.Contains(_offMessage[i]))
+            for (int i = 0; i < _offMessage.Length; i++)
             {
-                tmp = i + 1;
-                break;
+                if (received.Contains(_offMessage[i]))
+                {
+                    buttonIndex = i;
+                    isOnEvent = false;
+                    break;
+                }
             }
         }
 
-        if (tmp == 0)
+        if (buttonIndex < 0)
         {
             if (enableButtonDebugLog)
                 Debug.Log($"[SelectButton:{ButtonDirection}] 매칭 실패 메시지: {received}");
             return;
         }
 
+        if (isOnEvent == false)
+        {
+            _pressedState[buttonIndex] = false;
+            return;
+        }
+
+        if (_pressedState[buttonIndex])
+        {
+            if (enableButtonDebugLog)
+                Debug.Log($"[SelectButton:{ButtonDirection}] 중복 ON 입력 무시: index={buttonIndex + 1}");
+            return;
+        }
+
+        _pressedState[buttonIndex] = true;
+        int tmp = buttonIndex + 1;
+
         if (tmp != 0)
         {
-            if (PageController.Instance.CurrentPage == 4)
-            {
-                if (UserDataManager.Instance.GetPlayer(ButtonDirection).Answers[QuestionManager.Instance.CurrentIndex] == Player.noneAnswer)
-                {
-                    UserDataManager.Instance.GetPlayer(ButtonDirection).Answers[QuestionManager.Instance.CurrentIndex] = tmp;
-                    StartCoroutine(UserDataManager.Instance.RequestUserDataUpdate(QuestionManager.Instance.CurrentIndex + 1, tmp, ButtonDirection));
-                    Debug.Log($"버튼 입력 감지:{ButtonDirection}의 {QuestionManager.Instance.CurrentIndex + 1} 번째 답변이 {tmp}로 설정되었습니다.");
-                }
 
+            UserDataManager.Instance.GetPlayer(ButtonDirection).Answers[QuestionManager.Instance.CurrentIndex] = tmp;
+            StartCoroutine(UserDataManager.Instance.RequestUserDataUpdate(QuestionManager.Instance.CurrentIndex + 1, tmp, ButtonDirection));
+            Debug.Log($"버튼 입력 감지:{ButtonDirection}의 {QuestionManager.Instance.CurrentIndex + 1} 번째 답변이 {tmp}로 설정되었습니다.");
 
-            }
 
 
             if (ButtonDirection == Direction.Left)
@@ -145,6 +161,8 @@ public class Arduino_SelectButton : Arduino
 
             else if (ButtonDirection == Direction.Right)
                 _onDebugPlayerRight?.Invoke();
+
+            LEDAllOff();
 
 
             GameManager.Instance.GoToIdleCheck();

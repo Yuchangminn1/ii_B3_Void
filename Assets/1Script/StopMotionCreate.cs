@@ -48,15 +48,23 @@ public class StopMotionCreate : MonoBehaviour
     [Header("Upload")]
     [SerializeField] private bool uploadToServer = false;
     [SerializeField] private int uploadCount = 1;
+    // Current upload endpoint: http://192.168.0.252:8500/api/uploadFile.cfm
     [SerializeField] private string uploadUrl = "http://192.168.0.252:8500/api/uploadFile.cfm";
     [SerializeField] private int maxRetries = 10;
     [SerializeField] private float retryDelay = 1f;
     [SerializeField] private float delayBetweenUploads = 0.3f;
 
+    [Header("Upload Complete Callback")]
+    [SerializeField] private SequenceScript[] sequenceScripts;
+    [SerializeField] private float triggerDelayAfterUploadSeconds = 5f;
+
     public bool IsProcessing { get; private set; }
+
+    SequenceScript[] sequenceScript;
 
     private RenderTexture _captureRenderTexture;
     private Texture2D _capturedCanvasTexture;
+    private Coroutine _triggerAfterUploadCoroutine;
     private readonly List<SaveShadowTextureContainer.SaveShadowCapturedFrame> _resolvedLeftFrames = new List<SaveShadowTextureContainer.SaveShadowCapturedFrame>(TargetFrameCount);
     private readonly List<SaveShadowTextureContainer.SaveShadowCapturedFrame> _resolvedRightFrames = new List<SaveShadowTextureContainer.SaveShadowCapturedFrame>(TargetFrameCount);
 
@@ -96,6 +104,9 @@ public class StopMotionCreate : MonoBehaviour
             string rootPath = GetRootPath();
             string framesFolder = Path.Combine(rootPath, "Frames");
             Directory.CreateDirectory(framesFolder);
+
+            float pipelineStartTime = Time.realtimeSinceStartup;
+            float uploadStartTime = -1f;
 
             Debug.Log($"[StopMotionCreate] 파일 저장 경로: {framesFolder}");
 
@@ -196,6 +207,7 @@ public class StopMotionCreate : MonoBehaviour
             }
 
             Debug.Log($"[StopMotionCreate] 총 {pngPaths.Count}개 프레임 저장 완료. 경로: {framesFolder}");
+            Debug.Log($"[StopMotionCreate]  프레임 추출/저장 소요: {(Time.realtimeSinceStartup - pipelineStartTime):F2}초");
 
             string mp4Path = null;
             if (canCreateMp4 && HasFfmpeg())
@@ -232,8 +244,11 @@ public class StopMotionCreate : MonoBehaviour
             if (!uploadToServer)
             {
                 Debug.Log($"[StopMotionCreate] 생성 완료 (업로드 비활성): {generatedCount}장 - 경로: {framesFolder}");
+                Debug.Log($"[StopMotionCreate] 디버그 - 총 소요(추출 시작~종료, 업로드 없음): {(Time.realtimeSinceStartup - pipelineStartTime):F2}초");
                 yield break;
             }
+
+            uploadStartTime = Time.realtimeSinceStartup;
 
             if (!TryGetUploadIdentity(out string idxUser, out string uid))
             {
@@ -249,8 +264,13 @@ public class StopMotionCreate : MonoBehaviour
                     yield break;
                 }
 
-                Task uploadTask = UploadFileAsync(mp4Path, "mp4", nextUploadCount++, outputSize.x, outputSize.y, "all", idxUser, uid);
+                Task<bool> uploadTask = UploadFileAsync(mp4Path, "mp4", nextUploadCount++, outputSize.x, outputSize.y, "left", idxUser, uid);
                 yield return new WaitUntil(() => uploadTask.IsCompleted);
+
+                if (uploadTask.Result)
+                {
+                    StartTriggerAfterUploadCallback();
+                }
 
                 if (delayBetweenUploads > 0f)
                 {
@@ -264,45 +284,39 @@ public class StopMotionCreate : MonoBehaviour
 
                 pngPaths.Clear();
                 Debug.Log($"[StopMotionCreate] 완료(MP4 전용): {generatedCount}장");
+                Debug.Log($"[StopMotionCreate] 업로드 소요: {(Time.realtimeSinceStartup - uploadStartTime):F2}초");
+                Debug.Log($"[StopMotionCreate]  총 소요(추출 시작~업로드 완료): {(Time.realtimeSinceStartup - pipelineStartTime):F2}초");
                 yield break;
             }
 
-            if (forceMp4UploadOnly && !canCreateMp4)
+            if (string.IsNullOrEmpty(mp4Path) || !File.Exists(mp4Path))
             {
-                Debug.LogWarning("[StopMotionCreate] MP4 전용 모드가 켜져 있지만 Editor가 아니므로 PNG 업로드로 폴백합니다.");
+                Debug.LogError("[StopMotionCreate] MP4 파일이 없어서 업로드를 중단합니다. 이미지 업로드는 비활성화되어 있습니다.");
+                yield break;
             }
 
-            if (!string.IsNullOrEmpty(mp4Path) && File.Exists(mp4Path))
+            Task<bool> finalMp4UploadTask = UploadFileAsync(mp4Path, "mp4", nextUploadCount++, outputSize.x, outputSize.y, "left", idxUser, uid);
+            yield return new WaitUntil(() => finalMp4UploadTask.IsCompleted);
+
+            if (finalMp4UploadTask.Result)
             {
-                Task uploadTask = UploadFileAsync(mp4Path, "mp4", nextUploadCount++, outputSize.x, outputSize.y, "all", idxUser, uid);
-                yield return new WaitUntil(() => uploadTask.IsCompleted);
-
-                if (delayBetweenUploads > 0f)
-                {
-                    yield return new WaitForSeconds(delayBetweenUploads);
-                }
-
-                if (deleteMp4AfterUpload)
-                {
-                    TryDeleteFile(mp4Path);
-                }
+                StartTriggerAfterUploadCallback();
             }
-            else
-            {
-                for (int i = 0; i < pngPaths.Count; i++)
-                {
-                    Task uploadTask = UploadFileAsync(pngPaths[i], "png", nextUploadCount++, outputSize.x, outputSize.y, "all", idxUser, uid);
-                    yield return new WaitUntil(() => uploadTask.IsCompleted);
 
-                    if (delayBetweenUploads > 0f)
-                    {
-                        yield return new WaitForSeconds(delayBetweenUploads);
-                    }
-                }
+            if (delayBetweenUploads > 0f)
+            {
+                yield return new WaitForSeconds(delayBetweenUploads);
+            }
+
+            if (deleteMp4AfterUpload)
+            {
+                TryDeleteFile(mp4Path);
             }
 
             pngPaths.Clear();
             Debug.Log($"[StopMotionCreate] 완료: {generatedCount}장");
+            Debug.Log($"[StopMotionCreate] 디버그 - 업로드 소요: {(Time.realtimeSinceStartup - uploadStartTime):F2}초");
+            Debug.Log($"[StopMotionCreate] 디버그 - 총 소요(추출 시작~업로드 완료): {(Time.realtimeSinceStartup - pipelineStartTime):F2}초");
         }
         finally
         {
@@ -677,33 +691,16 @@ public class StopMotionCreate : MonoBehaviour
         }
 
         idxUser = UserDataManager.Instance.FindValue("IDX_USER");
-        uid = ResolveUploadUid();
+        uid = UserDataManager.Instance.FindValue("UID_LEFT");
         return !string.IsNullOrWhiteSpace(idxUser) && !string.IsNullOrWhiteSpace(uid);
     }
 
-    private string ResolveUploadUid()
-    {
-        string leftUid = UserDataManager.Instance.FindValue("UID_LEFT");
-        if (!string.IsNullOrWhiteSpace(leftUid))
-        {
-            return leftUid;
-        }
-
-        string rightUid = UserDataManager.Instance.FindValue("UID_RIGHT");
-        if (!string.IsNullOrWhiteSpace(rightUid))
-        {
-            return rightUid;
-        }
-
-        return null;
-    }
-
-    private async Task UploadFileAsync(string filePath, string type, int requestCount, int width, int height, string side, string idxUser, string uid)
+    private async Task<bool> UploadFileAsync(string filePath, string type, int requestCount, int width, int height, string side, string idxUser, string uid)
     {
         if (!File.Exists(filePath))
         {
             Debug.LogError($"[StopMotionCreate] 업로드 실패: 파일 없음 {filePath}");
-            return;
+            return false;
         }
 
         string code = UnityWebRequest.EscapeURL(ServerData.Instance.Code);
@@ -711,7 +708,8 @@ public class StopMotionCreate : MonoBehaviour
         string safeSide = UnityWebRequest.EscapeURL(string.IsNullOrWhiteSpace(side) ? "unknown" : side);
 
         string requestUrl =
-            $"{uploadUrl}?idx_user={idxUser}&uid={uid}&code={code}&type={safeType}&count={Mathf.Max(1, requestCount)}&width={Mathf.Max(1, width)}&height={Mathf.Max(1, height)}&side={safeSide}";
+            $"{uploadUrl}?idx_user={idxUser}&uid={uid}&code={code}&type={safeType}&side={safeSide}";
+        // $"{uploadUrl}?idx_user={idxUser}&uid={uid}&code={code}&type={safeType}&count={Mathf.Max(1, requestCount)}&width={Mathf.Max(1, width)}&height={Mathf.Max(1, height)}&side={safeSide}";
 
         for (int attempt = 0; attempt < Mathf.Max(1, maxRetries); attempt++)
         {
@@ -734,7 +732,7 @@ public class StopMotionCreate : MonoBehaviour
                 if (webRequest.result == UnityWebRequest.Result.Success)
                 {
                     Debug.Log($"[StopMotionCreate] 업로드 성공 ({safeType}, {safeSide}): {Path.GetFileName(filePath)}");
-                    return;
+                    return true;
                 }
 
                 if (attempt < maxRetries - 1)
@@ -748,6 +746,41 @@ public class StopMotionCreate : MonoBehaviour
                 }
             }
         }
+
+        return false;
+    }
+
+    private void StartTriggerAfterUploadCallback()
+    {
+        if (_triggerAfterUploadCoroutine != null)
+        {
+            StopCoroutine(_triggerAfterUploadCoroutine);
+        }
+
+        _triggerAfterUploadCoroutine = StartCoroutine(TriggerAfterUploadCoroutine());
+    }
+
+    private IEnumerator TriggerAfterUploadCoroutine()
+    {
+        yield return new WaitForSeconds(Mathf.Max(0f, triggerDelayAfterUploadSeconds));
+
+        if (sequenceScripts == null || sequenceScripts.Length == 0)
+        {
+            _triggerAfterUploadCoroutine = null;
+            yield break;
+        }
+
+        foreach (SequenceScript sequenceScript in sequenceScripts)
+        {
+            if (sequenceScript == null)
+            {
+                continue;
+            }
+
+            sequenceScript.TriggerOn();
+        }
+
+        _triggerAfterUploadCoroutine = null;
     }
 
     private Task SendWebRequestAsync(UnityWebRequest request)

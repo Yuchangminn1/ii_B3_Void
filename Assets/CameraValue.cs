@@ -34,6 +34,20 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
     [Range(0f, 1f)] public float threshold = 0.4f;
     [Range(0f, 1f)] public float smoothness = 0.1f;
 
+    [Header("Auto Key Tuning")]
+    [Tooltip("Sample mostly around the ROI edges so centered subjects affect keying less.")]
+    public bool autoUseEdgeSampling = true;
+    [Range(0f, 0.8f)] public float autoCenterExclusionRatio = 0.4f;
+    [Range(0f, 1f)] public float autoThresholdTransparentTarget = 0.95f;
+    [Range(0.001f, 0.1f)] public float autoThresholdStep = 0.01f;
+    [Range(0.01f, 0.4f)] public float autoDominantClusterTolerance = 0.10f;
+    [Range(0f, 1f)] public float autoUpdateLerp = 0.35f;
+    [Range(0f, 1f)] public float autoMinInlierRatio = 0.35f;
+    [Range(0f, 1f)] public float autoMaxThreshold = 0.7f;
+    [Tooltip("If enabled, initial autofocus keeps running until target ratio is reached (or max wait time).")]
+    public bool autoExtendFocusUntilTarget = true;
+    [Range(1f, 30f)] public float autoFocusMaxWaitSeconds = 10f;
+
     [Header("Output Settings")]
     [Tooltip("Toggle camera rendering/visibility with a bool value.")]
     [SerializeField] private bool renderByBool = false;
@@ -59,6 +73,7 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
     private RawImage _targetRawImage;
     private Coroutine _autoKeyRoutine;
     private Coroutine _autoKeyTimeoutRoutine;
+    private bool _autoKeyGoalReached;
 
     JsonGenericUpData _genericData = new JsonGenericUpData();
 
@@ -362,24 +377,57 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
 
     public void AutoFocus()
     {
-        StartAutoKeyForSeconds(2f);
+        StartAutoKeyForSeconds(2f, autoExtendFocusUntilTarget);
     }
 
     // --- Auto Key Color Logic ---
     public void StartAutoKeyForSeconds(float seconds)
     {
-        if (_autoKeyRoutine != null) StopCoroutine(_autoKeyRoutine);
-        if (_autoKeyTimeoutRoutine != null) StopCoroutine(_autoKeyTimeoutRoutine);
-
-        _autoKeyRoutine = StartCoroutine(AutoPickKeyColorRoutine());
-        _autoKeyTimeoutRoutine = StartCoroutine(StopAutoKeyAfterDelay(seconds));
-        Debug.Log($"[CameraValue] Auto key color started for '{gameObject.name}' for {seconds} seconds.");
+        StartAutoKeyForSeconds(seconds, false);
     }
 
-    IEnumerator StopAutoKeyAfterDelay(float delay)
+    public void StartAutoKeyForSeconds(float seconds, bool keepUntilGoal)
+    {
+        if (_autoKeyRoutine != null) StopCoroutine(_autoKeyRoutine);
+        if (_autoKeyTimeoutRoutine != null) StopCoroutine(_autoKeyTimeoutRoutine);
+        _autoKeyGoalReached = false;
+
+        _autoKeyRoutine = StartCoroutine(AutoPickKeyColorRoutine());
+        _autoKeyTimeoutRoutine = StartCoroutine(StopAutoKeyAfterDelay(seconds, keepUntilGoal));
+        Debug.Log($"[CameraValue] Auto key color started for '{gameObject.name}' for {seconds} seconds. keepUntilGoal={keepUntilGoal}");
+    }
+
+    IEnumerator StopAutoKeyAfterDelay(float delay, bool keepUntilGoal)
     {
         SetWarningText("Auto picking key color...");
-        yield return new WaitForSeconds(delay);
+
+        float baseDelay = Mathf.Max(0f, delay);
+        float maxWait = Mathf.Max(baseDelay, autoFocusMaxWaitSeconds);
+        float elapsed = 0f;
+
+        while (true)
+        {
+            bool passedBaseDelay = elapsed >= baseDelay;
+            bool shouldStop = passedBaseDelay;
+
+            if (keepUntilGoal)
+            {
+                shouldStop = passedBaseDelay && _autoKeyGoalReached;
+                if (elapsed >= maxWait)
+                {
+                    if (!_autoKeyGoalReached)
+                        Debug.LogWarning($"[CameraValue] Auto key goal not reached within max wait ({maxWait:F1}s) on '{gameObject.name}'.");
+                    shouldStop = true;
+                }
+            }
+
+            if (shouldStop)
+                break;
+
+            yield return null;
+            elapsed += Time.deltaTime;
+        }
+
         if (_autoKeyRoutine != null)
         {
             StopCoroutine(_autoKeyRoutine);
@@ -395,16 +443,25 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
         var wait = new WaitForSeconds(1f);
         while (true)
         {
-            if (TryUpdateKeyColorFromWebcam())
+            if (TryUpdateKeyAndThresholdFromWebcam(out Color sampledKeyColor, out float sampledThreshold, out bool thresholdGoalReached))
             {
-                Debug.Log($"Auto Color Value for {gameObject.name}: {keyColor}");
+                // Smooth updates to avoid visible flicker when webcam noise spikes.
+                float lerpFactor = Mathf.Clamp01(autoUpdateLerp);
+                keyColor = Color.Lerp(keyColor, sampledKeyColor, lerpFactor);
+                threshold = Mathf.Lerp(threshold, sampledThreshold, lerpFactor);
+                _autoKeyGoalReached = thresholdGoalReached;
+                Debug.Log($"Auto Color/Threshold for {gameObject.name}: {keyColor} / {threshold:F3}");
             }
             yield return wait;
         }
     }
 
-    bool TryUpdateKeyColorFromWebcam()
+    bool TryUpdateKeyAndThresholdFromWebcam(out Color sampledKeyColor, out float sampledThreshold, out bool thresholdGoalReached)
     {
+        sampledKeyColor = keyColor;
+        sampledThreshold = threshold;
+        thresholdGoalReached = false;
+
         if (webcamTexture == null || !webcamTexture.isPlaying || webcamTexture.width <= 16) return false;
 
         Color32[] pixels;
@@ -412,7 +469,10 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
         {
             pixels = webcamTexture.GetPixels32();
         }
-        catch { return false; }
+        catch
+        {
+            return false;
+        }
 
         int w = webcamTexture.width;
         int h = webcamTexture.height;
@@ -421,6 +481,23 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
         int stepX = Mathf.Max(1, (x1 - x0) / 32);
         int stepY = Mathf.Max(1, (y1 - y0) / 18);
 
+        int cx0 = x0;
+        int cy0 = y0;
+        int cx1 = x1;
+        int cy1 = y1;
+        if (autoUseEdgeSampling)
+        {
+            float exclusion = Mathf.Clamp01(autoCenterExclusionRatio);
+            int roiW = x1 - x0;
+            int roiH = y1 - y0;
+            int padX = Mathf.RoundToInt((roiW * exclusion) * 0.5f);
+            int padY = Mathf.RoundToInt((roiH * exclusion) * 0.5f);
+            cx0 = x0 + padX;
+            cy0 = y0 + padY;
+            cx1 = x1 - padX;
+            cy1 = y1 - padY;
+        }
+
         long sr = 0, sg = 0, sb = 0;
         int count = 0;
         for (int y = y0; y < y1; y += stepY)
@@ -428,6 +505,8 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
             int row = y * w;
             for (int x = x0; x < x1; x += stepX)
             {
+                if (autoUseEdgeSampling && x >= cx0 && x < cx1 && y >= cy0 && y < cy1) continue;
+
                 Color32 c = pixels[row + x];
                 sr += c.r;
                 sg += c.g;
@@ -436,11 +515,215 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
             }
         }
 
-        if (count > 0)
+        if (count <= 0) return false;
+
+        float meanR = (float)sr / (255f * count);
+        float meanG = (float)sg / (255f * count);
+        float meanB = (float)sb / (255f * count);
+
+        List<float> distances = new List<float>(count);
+        float sumDist = 0f;
+        for (int y = y0; y < y1; y += stepY)
         {
-            keyColor = new Color((float)sr / (255f * count), (float)sg / (255f * count), (float)sb / (255f * count), 1f);
+            int row = y * w;
+            for (int x = x0; x < x1; x += stepX)
+            {
+                if (autoUseEdgeSampling && x >= cx0 && x < cx1 && y >= cy0 && y < cy1) continue;
+
+                Color32 c = pixels[row + x];
+                float r = c.r / 255f;
+                float g = c.g / 255f;
+                float b = c.b / 255f;
+                float dr = r - meanR;
+                float dg = g - meanG;
+                float db = b - meanB;
+                float dist = Mathf.Sqrt((dr * dr + dg * dg + db * db) / 3f);
+                distances.Add(dist);
+                sumDist += dist;
+            }
+        }
+
+        float meanDist = sumDist / distances.Count;
+        float variance = 0f;
+        for (int i = 0; i < distances.Count; i++)
+        {
+            float delta = distances[i] - meanDist;
+            variance += delta * delta;
+        }
+        variance /= distances.Count;
+        float stdDist = Mathf.Sqrt(variance);
+
+        // Keep only near-cluster colors so moving foreground has less influence.
+        float inlierCutoff = meanDist + (stdDist * 1.5f);
+        long inlierSr = 0, inlierSg = 0, inlierSb = 0;
+        int inlierCount = 0;
+        List<Color32> inlierColors = new List<Color32>(distances.Count);
+
+        int sampleIndex = 0;
+        for (int y = y0; y < y1; y += stepY)
+        {
+            int row = y * w;
+            for (int x = x0; x < x1; x += stepX)
+            {
+                if (autoUseEdgeSampling && x >= cx0 && x < cx1 && y >= cy0 && y < cy1) continue;
+
+                float dist = distances[sampleIndex++];
+                if (dist > inlierCutoff) continue;
+
+                Color32 c = pixels[row + x];
+                inlierSr += c.r;
+                inlierSg += c.g;
+                inlierSb += c.b;
+                inlierCount++;
+                inlierColors.Add(c);
+            }
+        }
+
+        if (inlierCount > 0)
+        {
+            float inlierRatio = (float)inlierCount / count;
+            if (inlierRatio < Mathf.Clamp01(autoMinInlierRatio))
+            {
+                return false;
+            }
+
+            sampledKeyColor = new Color(
+                (float)inlierSr / (255f * inlierCount),
+                (float)inlierSg / (255f * inlierCount),
+                (float)inlierSb / (255f * inlierCount),
+                1f
+            );
+
+            // Pick dominant color bin first (robust for solid screens with some foreground contamination).
+            Dictionary<int, int> binCounts = new Dictionary<int, int>(64);
+            for (int i = 0; i < inlierColors.Count; i++)
+            {
+                Color32 c = inlierColors[i];
+                int rb = c.r >> 4;
+                int gb = c.g >> 4;
+                int bb = c.b >> 4;
+                int key = (rb << 8) | (gb << 4) | bb;
+                if (binCounts.TryGetValue(key, out int v))
+                {
+                    binCounts[key] = v + 1;
+                }
+                else
+                {
+                    binCounts[key] = 1;
+                }
+            }
+
+            int dominantKey = 0;
+            int dominantCount = -1;
+            foreach (KeyValuePair<int, int> kv in binCounts)
+            {
+                if (kv.Value > dominantCount)
+                {
+                    dominantCount = kv.Value;
+                    dominantKey = kv.Key;
+                }
+            }
+
+            float dcr = (((dominantKey >> 8) & 0xF) + 0.5f) / 16f;
+            float dcg = (((dominantKey >> 4) & 0xF) + 0.5f) / 16f;
+            float dcb = ((dominantKey & 0xF) + 0.5f) / 16f;
+            float dominantTolerance = Mathf.Clamp(autoDominantClusterTolerance, 0.01f, 0.4f);
+
+            long dsr = 0, dsg = 0, dsb = 0;
+            int dominantSampleCount = 0;
+            for (int i = 0; i < inlierColors.Count; i++)
+            {
+                Color32 c = inlierColors[i];
+                float r = c.r / 255f;
+                float g = c.g / 255f;
+                float b = c.b / 255f;
+                float dr = r - dcr;
+                float dg = g - dcg;
+                float db = b - dcb;
+                float dist = Mathf.Sqrt((dr * dr + dg * dg + db * db) / 3f);
+                if (dist > dominantTolerance) continue;
+
+                dsr += c.r;
+                dsg += c.g;
+                dsb += c.b;
+                dominantSampleCount++;
+            }
+
+            if (dominantSampleCount > 0)
+            {
+                sampledKeyColor = new Color(
+                    (float)dsr / (255f * dominantSampleCount),
+                    (float)dsg / (255f * dominantSampleCount),
+                    (float)dsb / (255f * dominantSampleCount),
+                    1f
+                );
+            }
+
+            float step = Mathf.Max(0.001f, autoThresholdStep);
+            float targetTransparentRatio = Mathf.Clamp01(autoThresholdTransparentTarget);
+            float maxThreshold = Mathf.Clamp01(autoMaxThreshold);
+
+            // Recalculate distances against the finalized key color, then find the minimum threshold
+            // that makes at least targetTransparentRatio samples transparent.
+            List<float> keyDistances = new List<float>(inlierColors.Count);
+            float kr = sampledKeyColor.r;
+            float kg = sampledKeyColor.g;
+            float kb = sampledKeyColor.b;
+            Color.RGBToHSV(new Color(kr, kg, kb, 1f), out float keyH, out float keyS, out float keyV);
+            float wHue = 0.7f + (0.2f * keyS);
+            float wSat = 0.35f;
+            float wVal = Mathf.Lerp(0.45f, 0.12f, keyS);
+            wVal += Mathf.Clamp01((0.2f - keyV) / 0.2f) * 0.12f;
+            float norm = Mathf.Sqrt((wHue * wHue) + (wSat * wSat) + (wVal * wVal));
+
+            for (int i = 0; i < inlierColors.Count; i++)
+            {
+                Color32 c = inlierColors[i];
+                float r = c.r / 255f;
+                float g = c.g / 255f;
+                float b = c.b / 255f;
+
+                Color.RGBToHSV(new Color(r, g, b, 1f), out float sampleH, out float sampleS, out float sampleV);
+                float hueDist = Mathf.Abs(sampleH - keyH);
+                hueDist = Mathf.Min(hueDist, 1f - hueDist) * 2f;
+                float satDist = Mathf.Abs(sampleS - keyS);
+                float valDist = Mathf.Abs(sampleV - keyV);
+
+                float dist = Mathf.Sqrt(
+                    (hueDist * hueDist * wHue * wHue) +
+                    (satDist * satDist * wSat * wSat) +
+                    (valDist * valDist * wVal * wVal)
+                );
+                float keyDist = dist / Mathf.Max(norm, 1e-5f);
+                keyDistances.Add(keyDist);
+            }
+
+            float bestThreshold = maxThreshold;
+            if (keyDistances.Count > 0)
+            {
+                int total = keyDistances.Count;
+                for (float t = 0f; t <= maxThreshold + 0.0001f; t += step)
+                {
+                    int transparentCount = 0;
+                    for (int i = 0; i < total; i++)
+                    {
+                        if (keyDistances[i] <= t) transparentCount++;
+                    }
+
+                    float transparentRatio = (float)transparentCount / total;
+                    if (transparentRatio >= targetTransparentRatio)
+                    {
+                        bestThreshold = Mathf.Clamp(t, 0f, maxThreshold);
+                        thresholdGoalReached = true;
+                        break;
+                    }
+                }
+            }
+
+            sampledThreshold = bestThreshold;
             return true;
         }
+
         return false;
     }
 

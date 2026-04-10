@@ -96,7 +96,6 @@ public class SaveShadowTexture : MonoBehaviour
         if (sourceRectTransform != null && targetRectTransform != null)
         {
             targetRectTransform.localRotation = _rectTransformRotation * sourceRectTransform.localRotation;
-            targetRectTransform.sizeDelta = sourceRectTransform.sizeDelta;
         }
 
         Texture texture = sourceRawImage.texture;
@@ -107,7 +106,7 @@ public class SaveShadowTexture : MonoBehaviour
             return;
         }
 
-        Vector2Int targetSize = GetRawImagePixelSize(sourceRawImage);
+        Vector2Int targetSize = GetRawImagePixelSize(targetRawImage);
         int targetWidth = targetSize.x;
         int targetHeight = targetSize.y;
         if (targetWidth <= 0 || targetHeight <= 0)

@@ -57,6 +57,7 @@ public class ResultStampContainer : MonoBehaviour
             for (int i = 0; i < stampCount; i++)
             {
                 answerStamps[i].color = getStampColor;
+                SoundManager.Instance.PlayEffectSound(EffectSoundNum.SoulPieceSound);
                 yield return CoroutineReturnManager.GetWaitForSeconds(0.8f);
             }
         }

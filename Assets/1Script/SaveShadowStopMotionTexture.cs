@@ -59,10 +59,9 @@ public class SaveShadowStopMotionTexture : MonoBehaviour
         if (_rectTransform != null && sourceRectTransform != null && targetRectTransform != null)
         {
             targetRectTransform.localRotation = _rectTransform.localRotation * sourceRectTransform.localRotation;
-            targetRectTransform.sizeDelta = sourceRectTransform.sizeDelta;
         }
 
-        Vector2Int targetSize = GetRawImagePixelSize(sourceRawImage);
+        Vector2Int targetSize = GetRawImagePixelSize(target);
         if (targetSize.x <= 0 || targetSize.y <= 0)
         {
             return;
