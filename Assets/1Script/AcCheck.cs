@@ -54,6 +54,8 @@ public class AcCheck : MonoBehaviour
     [Header("텍스트 포맷 예시: {0:F1}%")]
     [SerializeField] string outputFormat = "{0:F1}%";
 
+    CameraValue cameraValue = null;
+
 
     const int MatchedPercentThreshold = 20;
 
@@ -222,6 +224,16 @@ public class AcCheck : MonoBehaviour
         if (targetRawImage == null || overlayRawImage == null)
         {
             ResetResult();
+            return;
+        }
+
+        if (cameraValue == null)
+        {
+            cameraValue = overlayRawImage.GetComponent<CameraValue>();
+        }
+
+        if (cameraValue.CameraOnDelay)
+        {
             return;
         }
 

@@ -77,6 +77,13 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
 
     JsonGenericUpData _genericData = new JsonGenericUpData();
 
+    bool _cameraOnDelay = false;
+
+    public bool CameraOnDelay
+    {
+        get { return _cameraOnDelay; }
+    }
+
 
     bool _isRendering = false;
 
@@ -86,6 +93,10 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
         set
         {
             if (_isRendering == value) return;
+            if (_isRendering == false && value == true)
+            {
+                StartCoroutine(DelayFalse());
+            }
             _isRendering = value;
             renderByBool = value;
             UpdateRenderBindings();
@@ -147,6 +158,14 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
                 material.mainTexture = webcamTexture;
             }
         }
+    }
+
+    IEnumerator DelayFalse()
+    {
+        _cameraOnDelay = true;
+        yield return new WaitForSeconds(1f);
+
+        _cameraOnDelay = false;
     }
 
 
