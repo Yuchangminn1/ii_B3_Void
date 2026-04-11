@@ -56,9 +56,9 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
 
     public bool opaqueToBlack = true;
     [Range(1f, 10f)] public float edgeContrast = 1f;
-    [Range(0f, 1f)] public float noiseFilter = 1f;
-    [Range(0f, 1f)] public float alphaCutoff = 0.5f;
-    [Range(0f, 0.49f)] public float midValueFilter = 0.15f;
+    float noiseFilter = 0.0f;
+    [Range(0f, 1f)] public float alphaCutoff = 0.4f;
+    float midValueFilter = 0f;
 
     [Header("Left Clipping")]
     public int leftClipPixels = 0;
@@ -74,6 +74,16 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
     private Coroutine _autoKeyRoutine;
     private Coroutine _autoKeyTimeoutRoutine;
     private bool _autoKeyGoalReached;
+
+    [System.NonSerialized] private bool _autoSearching = false;
+    [System.NonSerialized] private List<float> _autoKeyDistances = null;
+    [System.NonSerialized] private float _autoCurrentThreshold = 0f;
+    [System.NonSerialized] private float _autoMaxThresholdRuntime = 0.7f;
+    [System.NonSerialized] private float _autoStepRuntime = 0.01f;
+    [System.NonSerialized] private float _autoNextUpdateTime = 0f;
+    [System.NonSerialized] private float _autoThresholdStartDelayUntil = 0f; // keyColor 잡은 뒤 threshold 탐색 시작 시간
+    [Tooltip("Seconds between automatic threshold increments during auto key.")]
+    public float autoThresholdStepInterval = 1.0f;
 
     JsonGenericUpData _genericData = new JsonGenericUpData();
 
@@ -400,8 +410,18 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
 
     public void StartAutoKeyForSeconds(float seconds, bool keepUntilGoal)
     {
-        if (_autoKeyRoutine != null) StopCoroutine(_autoKeyRoutine);
-        if (_autoKeyTimeoutRoutine != null) StopCoroutine(_autoKeyTimeoutRoutine);
+        // 이전 오토가 돌고 있으면 먼저 정지
+        if (_autoKeyRoutine != null)
+        {
+            StopCoroutine(_autoKeyRoutine);
+            _autoKeyRoutine = null;
+        }
+        if (_autoKeyTimeoutRoutine != null)
+        {
+            StopCoroutine(_autoKeyTimeoutRoutine);
+            _autoKeyTimeoutRoutine = null;
+        }
+
         _autoKeyGoalReached = false;
 
         _autoKeyRoutine = StartCoroutine(AutoPickKeyColorRoutine());
@@ -446,6 +466,10 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
             _autoKeyRoutine = null;
         }
         _autoKeyTimeoutRoutine = null;
+
+        // 오토 종료 시점의 최종 키/쓰레숄드 로그
+        Debug.Log($"[CameraValue] Auto key color finished for '{gameObject.name}'. Final Key={keyColor}, Threshold={threshold:F3}");
+
         OffWarningText();
         Debug.Log($"[CameraValue] Auto key color stopped for '{gameObject.name}'.");
     }
@@ -467,17 +491,6 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
             yield return wait;
         }
     }
-
-    [Header("Auto Threshold Runtime State")]
-    [System.NonSerialized] private bool _autoSearching = false;
-    [System.NonSerialized] private List<float> _autoKeyDistances = null;
-    [System.NonSerialized] private float _autoCurrentThreshold = 0f;
-    [System.NonSerialized] private float _autoMaxThresholdRuntime = 0.7f;
-    [System.NonSerialized] private float _autoStepRuntime = 0.01f;
-    [System.NonSerialized] private float _autoNextUpdateTime = 0f;
-    [System.NonSerialized] private float _autoThresholdStartDelayUntil = 0f; // keyColor 잡은 뒤 threshold 탐색 시작 시간
-    [Tooltip("Seconds between automatic threshold increments during auto key.")]
-    public float autoThresholdStepInterval = 1.0f;
 
     bool TryUpdateKeyAndThresholdFromWebcam(out Color sampledKeyColor, out float sampledThreshold, out bool thresholdGoalReached)
     {
@@ -733,8 +746,6 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
 
     void Update()
     {
-        // ...any existing Update logic before auto-threshold section...
-
         // 키값을 찾은 뒤 일정 시간(예: 1초)이 지난 후에만 autoSearching을 활성화
         if (!_autoSearching && _autoKeyDistances != null && _autoKeyDistances.Count > 0)
         {

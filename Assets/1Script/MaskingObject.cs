@@ -17,23 +17,29 @@ public class MaskingObject : MonoBehaviour
     [SerializeField] private KeyCode toggleInputModeKey = KeyCode.T;
     [SerializeField] private KeyCode moveLeftKey = KeyCode.LeftArrow;
     [SerializeField] private KeyCode moveRightKey = KeyCode.RightArrow;
-    [SerializeField] private KeyCode rotateUpKey = KeyCode.UpArrow;
-    [SerializeField] private KeyCode rotateDownKey = KeyCode.DownArrow;
+    [SerializeField] private KeyCode moveUpKey = KeyCode.UpArrow;
+    [SerializeField] private KeyCode moveDownKey = KeyCode.DownArrow;
     [SerializeField] private KeyCode increaseWidthKey = KeyCode.E;
     [SerializeField] private KeyCode decreaseWidthKey = KeyCode.Q;
+    [SerializeField] private KeyCode increaseHeightKey = KeyCode.R;
+    [SerializeField] private KeyCode decreaseHeightKey = KeyCode.W;
+    [SerializeField] private KeyCode toggleStepSizeKey = KeyCode.Y;
     [SerializeField] private KeyCode debugAllRawImagesKey = KeyCode.F;
 
     [Header("Control Values")]
-    [SerializeField] private float moveStep = 1f;
-    [SerializeField] private float rotateStep = 5f;
-    [SerializeField] private float widthStep = 10f;
+    [SerializeField] private float baseMoveStep = 1f;
+    [SerializeField] private float baseWidthStep = 10f;
+    [SerializeField] private float baseHeightStep = 10f;
     [SerializeField] private float minWidth = 20f;
     [SerializeField] private float maxWidth = 2000f;
+    [SerializeField] private float minHeight = 20f;
+    [SerializeField] private float maxHeight = 2000f;
 
     [Header("Input Mode")]
     [SerializeField] private InputReadMode inputReadMode = InputReadMode.GetKeyDown;
 
     private int currentTargetIndex;
+    private float stepMultiplier = 1f; // 0.1, 1, 10 중 하나
 
     private void Update()
     {
@@ -62,6 +68,11 @@ public class MaskingObject : MonoBehaviour
             Debug.Log($"[MaskingObject] Selected RawImage index: {currentTargetIndex}");
         }
 
+        if (Input.GetKeyDown(toggleStepSizeKey))
+        {
+            ToggleStepMultiplier();
+        }
+
         RawImage selectedRawImage = targetRawImages[currentTargetIndex];
         if (selectedRawImage == null)
         {
@@ -69,6 +80,10 @@ public class MaskingObject : MonoBehaviour
         }
 
         RectTransform rectTransform = selectedRawImage.rectTransform;
+
+        float moveStep = baseMoveStep * stepMultiplier;
+        float widthStep = baseWidthStep * stepMultiplier;
+        float heightStep = baseHeightStep * stepMultiplier;
 
         if (IsControlPressed(moveLeftKey))
         {
@@ -80,14 +95,14 @@ public class MaskingObject : MonoBehaviour
             rectTransform.anchoredPosition += Vector2.right * moveStep;
         }
 
-        if (IsControlPressed(rotateUpKey))
+        if (IsControlPressed(moveUpKey))
         {
-            rectTransform.Rotate(0f, 0f, rotateStep);
+            rectTransform.anchoredPosition += Vector2.up * moveStep;
         }
 
-        if (IsControlPressed(rotateDownKey))
+        if (IsControlPressed(moveDownKey))
         {
-            rectTransform.Rotate(0f, 0f, -rotateStep);
+            rectTransform.anchoredPosition += Vector2.down * moveStep;
         }
 
         if (IsControlPressed(increaseWidthKey))
@@ -99,6 +114,34 @@ public class MaskingObject : MonoBehaviour
         {
             ChangeWidth(rectTransform, -widthStep);
         }
+
+        if (IsControlPressed(increaseHeightKey))
+        {
+            ChangeHeight(rectTransform, heightStep);
+        }
+
+        if (IsControlPressed(decreaseHeightKey))
+        {
+            ChangeHeight(rectTransform, -heightStep);
+        }
+    }
+
+    private void ToggleStepMultiplier()
+    {
+        if (Mathf.Approximately(stepMultiplier, 0.1f))
+        {
+            stepMultiplier = 1f;
+        }
+        else if (Mathf.Approximately(stepMultiplier, 1f))
+        {
+            stepMultiplier = 10f;
+        }
+        else
+        {
+            stepMultiplier = 0.1f;
+        }
+
+        Debug.Log($"[MaskingObject] Step multiplier changed to: {stepMultiplier}");
     }
 
     private bool IsControlPressed(KeyCode key)
@@ -112,6 +155,13 @@ public class MaskingObject : MonoBehaviour
     {
         Vector2 size = rectTransform.sizeDelta;
         size.x = Mathf.Clamp(size.x + delta, minWidth, maxWidth);
+        rectTransform.sizeDelta = size;
+    }
+
+    private void ChangeHeight(RectTransform rectTransform, float delta)
+    {
+        Vector2 size = rectTransform.sizeDelta;
+        size.y = Mathf.Clamp(size.y + delta, minHeight, maxHeight);
         rectTransform.sizeDelta = size;
     }
 

@@ -483,7 +483,7 @@ public class AcCheck : MonoBehaviour
         {
             if (matchedPercent >= 5f)
             {
-                outputText.text = string.Format("{0:F0}%", combinedPercent);
+                outputText.text = string.Format("{0:F0}%", combinedPercent - 1f);
             }
             else
             {
@@ -503,6 +503,11 @@ public class AcCheck : MonoBehaviour
     {
         _isClear = true;
         _isCheck = false;
+        if (outputText != null)
+        {
+            outputText.text = string.Format("{0:F0}%", 100f);
+
+        }
 
         yield return CoroutineReturnManager.GetWaitForSeconds(CheckDelay);
         onClear?.Invoke();
