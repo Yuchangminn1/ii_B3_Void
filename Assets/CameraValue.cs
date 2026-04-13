@@ -89,6 +89,8 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
 
     bool _cameraOnDelay = false;
 
+    RectTransform _rectTransform;
+
     public bool CameraOnDelay
     {
         get { return _cameraOnDelay; }
@@ -133,6 +135,64 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
             useShaderOutput = value;
             ApplyOutputMode();
         }
+    }
+
+    public void SetSize()
+    {
+        if (_targetRawImage == null)
+            return;
+
+        // RectTransform rawRect = _targetRawImage.rectTransform;
+        // RectTransform targetRect = targetRawImage.GetComponent<RectTransform>();
+        // if (rawRect == null || targetRect == null)
+        //     return;
+
+        Vector2 targetSize;
+        targetSize.x = 556f;
+        targetSize.y = 536f;
+
+        // if (targetSize.x <= 0f || targetSize.y <= 0f)
+        // {
+        //     targetSize = targetRect.sizeDelta;
+        // }
+        // if (targetSize.x <= 0f || targetSize.y <= 0f)
+        //     return;
+
+        float sourceAspect = 1f;
+        if (webcamTexture != null && webcamTexture.width > 0 && webcamTexture.height > 0)
+        {
+            sourceAspect = (float)webcamTexture.width / webcamTexture.height;
+        }
+        else if (requestedWidth > 0 && requestedHeight > 0)
+        {
+            sourceAspect = (float)requestedWidth / requestedHeight;
+        }
+
+        float targetAspect = targetSize.x / targetSize.y;
+        float width;
+        float height;
+
+        // Keep aspect ratio and scale to cover target bounds.
+        if (sourceAspect >= targetAspect)
+        {
+            height = targetSize.y;
+            width = height * sourceAspect;
+        }
+        else
+        {
+            width = targetSize.x;
+            height = width / sourceAspect;
+        }
+
+        float finalWidth = Mathf.Max(width, targetSize.x);
+        float finalHeight = Mathf.Max(height, targetSize.y);
+
+        _targetRawImage.rectTransform.sizeDelta = new Vector2(finalWidth, finalHeight);
+
+        float addedHeight = finalHeight - targetSize.y;
+        Vector2 anchoredPos = _targetRawImage.rectTransform.anchoredPosition;
+        anchoredPos.y = addedHeight * 0.5f;
+        _targetRawImage.rectTransform.anchoredPosition = anchoredPos;
     }
 
     void ApplyOutputMode()
@@ -297,6 +357,11 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
             Destroy(webcamTexture);
             webcamTexture = null;
         }
+    }
+
+    public void Start()
+    {
+        _rectTransform = GetComponent<RectTransform>();
     }
 
     public void SetWarningText(string message)

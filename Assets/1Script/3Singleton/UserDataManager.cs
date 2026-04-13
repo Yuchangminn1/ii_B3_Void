@@ -667,7 +667,8 @@ public class UserDataManager : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.T))
         {
-            TestKey();
+            if (userDataCache == null)
+                TestKey();
         }
     }
     public void Reset()

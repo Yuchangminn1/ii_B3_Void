@@ -18,6 +18,8 @@ public class TutorialAcCheck : AcCheck
 
     RawImage _rawImage;
 
+    public CameraValue _CameraValue;
+
 
     void Awake()
     {
@@ -42,6 +44,7 @@ public class TutorialAcCheck : AcCheck
     {
         _rawImage.texture = _defaultTexture;
 
+        //_CameraValue?.SetSize();
         base.StartCheck();
 
     }
