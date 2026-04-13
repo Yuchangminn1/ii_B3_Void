@@ -483,7 +483,11 @@ public class AcCheck : MonoBehaviour
         {
             if (matchedPercent >= 5f)
             {
-                outputText.text = string.Format("{0:F0}%", combinedPercent - 1f);
+                if (combinedPercent > 99f)
+                {
+                    combinedPercent = 99f;
+                }
+                outputText.text = string.Format("{0:F0}%", combinedPercent);
             }
             else
             {

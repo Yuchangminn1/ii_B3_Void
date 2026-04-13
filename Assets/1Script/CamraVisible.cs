@@ -7,6 +7,7 @@ public class CameraVisible : MonoBehaviour
 
     public CanvasGroup[] CameraCanvasGroup;
 
+
     public Graphic[] Camera_Graphics;
 
     public CameraValue[] CameraValues;
@@ -71,7 +72,9 @@ public class CameraVisible : MonoBehaviour
             {
                 CameraCanvasGroup[i].alpha = 1;
                 CameraCanvasGroup[i].blocksRaycasts = true;
+
                 CameraValues[i].IsRendered = true;
+
             }
             _cameraDelayOpenCoroutine = StartCoroutine(CameraDelayOpen());
         }
