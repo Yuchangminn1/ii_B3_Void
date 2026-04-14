@@ -121,6 +121,7 @@
     <Compile Include="Assets\1Script\AnswerStamp.cs" />
     <Compile Include="Assets\1Script\ShootPieceContainer.cs" />
     <Compile Include="Assets\1Script\3Singleton\QuestionManager.cs" />
+    <Compile Include="Assets\1Script\ShadowMaskContainer.cs" />
     <Compile Include="Assets\1Script\2PageSequence\SequenceScript.cs" />
     <Compile Include="Assets\1Script\2PageSequence\PageButton.cs" />
     <Compile Include="Assets\Unity-Logs-Viewer\Reporter\Reporter.cs" />

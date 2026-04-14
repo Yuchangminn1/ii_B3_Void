@@ -49,6 +49,8 @@ public class AcCheck : MonoBehaviour
     [Tooltip("MatchedPercent: 기존 방식(matched/target). ProtrusionOverTarget: 삐져나온 픽 기준(target). ProtrusionOverOverlap: 삐져나온 픽을 겹친 픽 기준으로 계산.")]
     public DetectionMode detectionMode = DetectionMode.MatchedPercent;
 
+    public ShadowMaskContainer shadowMaskContainer;
+
     [Header("결과를 표시할 UI Text (선택)")]
     [SerializeField] protected Text outputText;
     [Header("텍스트 포맷 예시: {0:F1}%")]
@@ -99,6 +101,17 @@ public class AcCheck : MonoBehaviour
     {
         PageController.Instance.OnReset += Reset;
 
+        foreach (ShadowMaskContainer tmp in FindObjectsOfType<ShadowMaskContainer>())
+        {
+            if (tmp.CurrentDirection == CurrentDirection)
+            {
+                shadowMaskContainer = tmp;
+                break;
+            }
+
+        }
+
+
     }
 
     public void Reset()
@@ -145,11 +158,17 @@ public class AcCheck : MonoBehaviour
         UpdateColorPercent();
     }
 
+
+
     public virtual void StartCheck()
     {
         _isCheck = true;
         _isClear = false;
 
+        Debug.Log("AcCheck - StartCheck: " + CurrentDirection);
+
+
+        shadowMaskContainer.CurrentIndex++;
 
         if (outputText != null)
         {
@@ -160,11 +179,12 @@ public class AcCheck : MonoBehaviour
 
     }
 
+
     public void StopCheck()
     {
 
         _isCheck = false;
-
+        shadowMaskContainer.HideShadowMasks();
         if (_isClear == false)
         {
 
@@ -179,6 +199,8 @@ public class AcCheck : MonoBehaviour
 
     public void SetTargetRawImage(RawImage rawImage)
     {
+        //shadowMaskContainer.CurrentIndex++;
+
         targetRawImage = rawImage;
         StartCheck();
     }
@@ -238,7 +260,6 @@ public class AcCheck : MonoBehaviour
         }
 
         // 디버그: 이 AcCheck 인스턴스가 어떤 타겟/오버레이를 보고 있는지 확인
-        Debug.Log($"[AcCheck {name}] target={targetRawImage?.name}, overlay={overlayRawImage?.name}, outputText={outputText?.name}");
 
         Color32[] basePixels;
         int baseWidth;

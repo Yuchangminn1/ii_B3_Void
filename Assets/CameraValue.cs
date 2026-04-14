@@ -69,6 +69,8 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
     // 런타임 데이터 (인스펙터에 표시 안 됨)
     [System.NonSerialized] public WebCamTexture webcamTexture;
     [System.NonSerialized] public Material material;
+    [System.NonSerialized] private RenderTexture _croppedTexture;
+    [System.NonSerialized] private Texture2D _analysisReadbackTexture;
 
     private RawImage _targetRawImage;
     private Coroutine _autoKeyRoutine;
@@ -213,6 +215,7 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
             }
             _targetRawImage.texture = null;
             if (material != null) material.mainTexture = null;
+            ReleaseCroppedTexture();
             return;
         }
 
@@ -222,12 +225,126 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
             {
                 webcamTexture.Play();
             }
-            _targetRawImage.texture = webcamTexture;
+            Texture outputTexture = GetProcessedOutputTexture();
+            _targetRawImage.texture = outputTexture;
             if (material != null)
             {
-                material.mainTexture = webcamTexture;
+                material.mainTexture = outputTexture;
             }
         }
+    }
+
+    Texture GetProcessedOutputTexture()
+    {
+        if (webcamTexture == null || webcamTexture.width <= 0 || webcamTexture.height <= 0)
+            return webcamTexture;
+
+        int sourceWidth = webcamTexture.width;
+        int sourceHeight = webcamTexture.height;
+
+        int left = Mathf.Max(0, leftClipPixels);
+        int right = Mathf.Max(0, rightClipPixels);
+        int top = Mathf.Max(0, topClipPixels);
+        int bottom = Mathf.Max(0, bottomClipPixels);
+
+        int croppedWidth = sourceWidth - left - right;
+        int croppedHeight = sourceHeight - top - bottom;
+
+        if (croppedWidth <= 0 || croppedHeight <= 0)
+        {
+            ReleaseCroppedTexture();
+            return webcamTexture;
+        }
+
+        bool needCrop = left > 0 || right > 0 || top > 0 || bottom > 0;
+        if (!needCrop)
+        {
+            ReleaseCroppedTexture();
+            return webcamTexture;
+        }
+
+        if (_croppedTexture == null || _croppedTexture.width != croppedWidth || _croppedTexture.height != croppedHeight)
+        {
+            ReleaseCroppedTexture();
+            _croppedTexture = new RenderTexture(croppedWidth, croppedHeight, 0, RenderTextureFormat.ARGB32);
+            _croppedTexture.filterMode = FilterMode.Bilinear;
+            _croppedTexture.wrapMode = TextureWrapMode.Clamp;
+            _croppedTexture.Create();
+        }
+
+        Vector2 scale = new Vector2(
+            (float)croppedWidth / sourceWidth,
+            (float)croppedHeight / sourceHeight
+        );
+        Vector2 offset = new Vector2(
+            (float)left / sourceWidth,
+            (float)bottom / sourceHeight
+        );
+
+        Graphics.Blit(webcamTexture, _croppedTexture, scale, offset);
+        return _croppedTexture;
+    }
+
+    void ReleaseCroppedTexture()
+    {
+        if (_croppedTexture == null) return;
+        _croppedTexture.Release();
+        Destroy(_croppedTexture);
+        _croppedTexture = null;
+    }
+
+    bool TryGetProcessingPixels(out Color32[] pixels, out int width, out int height)
+    {
+        pixels = null;
+        width = 0;
+        height = 0;
+
+        if (webcamTexture == null || !webcamTexture.isPlaying || webcamTexture.width <= 16)
+            return false;
+
+        Texture processedTexture = GetProcessedOutputTexture();
+        if (processedTexture == null)
+            return false;
+
+        if (processedTexture == webcamTexture)
+        {
+            try
+            {
+                pixels = webcamTexture.GetPixels32();
+            }
+            catch
+            {
+                return false;
+            }
+
+            width = webcamTexture.width;
+            height = webcamTexture.height;
+            return pixels != null && pixels.Length > 0;
+        }
+
+        RenderTexture rt = processedTexture as RenderTexture;
+        if (rt == null || rt.width <= 0 || rt.height <= 0)
+            return false;
+
+        if (_analysisReadbackTexture == null || _analysisReadbackTexture.width != rt.width || _analysisReadbackTexture.height != rt.height)
+        {
+            if (_analysisReadbackTexture != null)
+            {
+                Destroy(_analysisReadbackTexture);
+            }
+            _analysisReadbackTexture = new Texture2D(rt.width, rt.height, TextureFormat.RGBA32, false);
+        }
+
+        RenderTexture previousActive = RenderTexture.active;
+        RenderTexture.active = rt;
+        _analysisReadbackTexture.ReadPixels(new Rect(0, 0, rt.width, rt.height), 0, 0);
+        _analysisReadbackTexture.Apply(false, false);
+        RenderTexture.active = previousActive;
+
+        pixels = _analysisReadbackTexture.GetPixels32();
+        width = rt.width;
+        height = rt.height;
+        return pixels != null && pixels.Length > 0;
     }
 
     IEnumerator DelayFalse()
@@ -357,6 +474,8 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
             Destroy(webcamTexture);
             webcamTexture = null;
         }
+
+        ReleaseCroppedTexture();
     }
 
     public void Start()
@@ -397,26 +516,11 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
         material.SetFloat("_AlphaCutoff", alphaCutoff);
         material.SetFloat("_MidValueFilter", midValueFilter);
 
-        float clipAmount = 0f;
-        float rightClipAmount = 0f;
-        float topClipAmount = 0f;
-        float bottomClipAmount = 0f;
-
-        if (webcamTexture != null && webcamTexture.width > 0)
-        {
-            clipAmount = (float)leftClipPixels / webcamTexture.width;
-            rightClipAmount = (float)rightClipPixels / webcamTexture.width;
-        }
-        if (webcamTexture != null && webcamTexture.height > 0)
-        {
-            topClipAmount = (float)topClipPixels / webcamTexture.height;
-            bottomClipAmount = (float)bottomClipPixels / webcamTexture.height;
-        }
-
-        material.SetFloat("_LeftClip", Mathf.Clamp01(clipAmount));
-        material.SetFloat("_RightClip", Mathf.Clamp01(rightClipAmount));
-        material.SetFloat("_TopClip", Mathf.Clamp01(topClipAmount));
-        material.SetFloat("_BottomClip", Mathf.Clamp01(bottomClipAmount));
+        // Clipping is already applied to the source texture before shader processing.
+        material.SetFloat("_LeftClip", 0f);
+        material.SetFloat("_RightClip", 0f);
+        material.SetFloat("_TopClip", 0f);
+        material.SetFloat("_BottomClip", 0f);
     }
 
     public void SetClipPixels(int left, int right, int top, int bottom)
@@ -456,6 +560,11 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
     void OnDestroy()
     {
         StopWebcam();
+        if (_analysisReadbackTexture != null)
+        {
+            Destroy(_analysisReadbackTexture);
+            _analysisReadbackTexture = null;
+        }
         if (material != null)
         {
             Destroy(material);
@@ -563,20 +672,11 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
         sampledThreshold = threshold;
         thresholdGoalReached = false;
 
-        if (webcamTexture == null || !webcamTexture.isPlaying || webcamTexture.width <= 16) return false;
-
-        Color32[] pixels;
-        try
-        {
-            pixels = webcamTexture.GetPixels32();
-        }
-        catch
+        if (!TryGetProcessingPixels(out Color32[] pixels, out int w, out int h))
         {
             return false;
         }
 
-        int w = webcamTexture.width;
-        int h = webcamTexture.height;
         int x0 = w / 4, y0 = h / 4;
         int x1 = (w * 3) / 4, y1 = (h * 3) / 4;
         int stepX = Mathf.Max(1, (x1 - x0) / 32);
@@ -811,6 +911,19 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
 
     void Update()
     {
+        if (_isRendering && webcamTexture != null && webcamTexture.isPlaying && _targetRawImage != null)
+        {
+            Texture outputTexture = GetProcessedOutputTexture();
+            if (_targetRawImage.texture != outputTexture)
+            {
+                _targetRawImage.texture = outputTexture;
+            }
+            if (material != null && material.mainTexture != outputTexture)
+            {
+                material.mainTexture = outputTexture;
+            }
+        }
+
         // 키값을 찾은 뒤 일정 시간(예: 1초)이 지난 후에만 autoSearching을 활성화
         if (!_autoSearching && _autoKeyDistances != null && _autoKeyDistances.Count > 0)
         {
