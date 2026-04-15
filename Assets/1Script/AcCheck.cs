@@ -58,18 +58,22 @@ public class AcCheck : MonoBehaviour
 
     CameraValue cameraValue = null;
 
-
-    const int MatchedPercentThreshold = 20;
-
-    const int ProtrusionOverTargetThreshold = 93;
+    //영역 채우기 임계값
+    const int MatchedPercentThreshold = 50;
+    //영역 들어오기 임계값
+    //const int ProtrusionOverTargetThreshold = 93;
 
 
     protected float matchedAdjustPercent = 0f;
-    protected float protrusionAdjustPercent = 0f;
+    //protected float protrusionAdjustPercent = 0f;
 
     public const float CheckDelay = 0.1f;
 
     float modifier = 0f;
+
+    int ansCount = 0;
+
+    Coroutine _returnCheckCoroutine = null;
 
 
 
@@ -85,7 +89,7 @@ public class AcCheck : MonoBehaviour
 
     protected bool _isClear = false;
 
-    bool _isCheck = false;
+    protected bool _isCheck = false;
 
     protected Action onClear;
 
@@ -110,8 +114,12 @@ public class AcCheck : MonoBehaviour
             }
 
         }
+    }
 
-
+    IEnumerator ResetAnsCount()
+    {
+        yield return CoroutineReturnManager.GetWaitForSeconds(1.5f);
+        ansCount = 0;
     }
 
     public void Reset()
@@ -162,7 +170,7 @@ public class AcCheck : MonoBehaviour
 
     public virtual void StartCheck()
     {
-        _isCheck = true;
+        StartCoroutine(DelayToCheckStart());
         _isClear = false;
 
         Debug.Log("AcCheck - StartCheck: " + CurrentDirection);
@@ -179,16 +187,20 @@ public class AcCheck : MonoBehaviour
 
     }
 
+    protected IEnumerator DelayToCheckStart()
+    {
+        yield return CoroutineReturnManager.GetWaitForSeconds(2f);
+        _isCheck = true;
 
-    public void StopCheck()
+    }
+
+
+    public virtual void StopCheck()
     {
 
         _isCheck = false;
         shadowMaskContainer.HideShadowMasks();
-        if (_isClear == false)
-        {
 
-        }
 
         if (outputText != null)
         {
@@ -476,15 +488,17 @@ public class AcCheck : MonoBehaviour
 
         // Effective thresholds include adjustments
         float effMatchedThreshold = Mathf.Max(0f, MatchedPercentThreshold - matchedAdjustPercent);
-        float effProtrusionThreshold = Mathf.Clamp(ProtrusionOverTargetThreshold - protrusionAdjustPercent, 0f, 100f);
+        //float effProtrusionThreshold = Mathf.Clamp(ProtrusionOverTargetThreshold - protrusionAdjustPercent, 0f, 100f);
 
         float matchedRatio = effMatchedThreshold > 0f ? Mathf.Clamp01(matchedPercent / effMatchedThreshold) : 1f;
-        float protrusionRatio = effProtrusionThreshold > 0f ? Mathf.Clamp01(protrusionOverTargetPercent / effProtrusionThreshold) : 1f;
+
+        Debug.LogWarning($"matchedRatio = {matchedRatio}");
+        //float protrusionRatio = effProtrusionThreshold > 0f ? Mathf.Clamp01(protrusionOverTargetPercent / effProtrusionThreshold) : 1f;
 
         // Combine ratios with higher weight on matchedRatio (inside coverage).
         // matchedRatio 비중을 3배로, protrusionRatio 비중을 1배로 줌.
-        float combinedRatio = (matchedRatio * 3f + protrusionRatio * 1f) / 4f;
-        float combinedPercent = Mathf.Clamp01(combinedRatio) * 100f;
+        //float combinedRatio = (matchedRatio * 3f + protrusionRatio * 1f) / 4f;
+        float combinedPercent = (100f / MatchedPercentThreshold) * matchedRatio * 100f;
 
 
 
@@ -492,9 +506,9 @@ public class AcCheck : MonoBehaviour
         // 1) MatchedPercent (matched / target) >= (40 - matchedAdjustPercent)
         // 2) ProtrusionOverTarget >= (100 - protrusionAdjustPercent)
         float matchedPercentFinal = total > 0 ? (matched * 100f / total) : 0f;
-        float protrusionOverTargetPercentFinal = total > 0 ? (Mathf.Clamp01(1f - ((float)protruding / (float)total)) * 100f) : 0f;
+        //float protrusionOverTargetPercentFinal = total > 0 ? (Mathf.Clamp01(1f - ((float)protruding / (float)total)) * 100f) : 0f;
         float effMatchedThresholdFinal = Mathf.Max(0f, MatchedPercentThreshold - matchedAdjustPercent);
-        float effProtrusionThresholdFinal = Mathf.Clamp(ProtrusionOverTargetThreshold - protrusionAdjustPercent, 0f, 100f);
+        //float effProtrusionThresholdFinal = Mathf.Clamp(ProtrusionOverTargetThreshold - protrusionAdjustPercent, 0f, 100f);
 
         // if (outputText != null)
         // {
@@ -515,12 +529,34 @@ public class AcCheck : MonoBehaviour
                 outputText.text = string.Format("{0:F0}%", 0f);
             }
         }
+        //if (matchedPercent >= effMatchedThresholdFinal && protrusionOverTargetPercentFinal >= effProtrusionThresholdFinal)
 
-        if (matchedPercent >= effMatchedThresholdFinal && protrusionOverTargetPercentFinal >= effProtrusionThresholdFinal)
+        if (matchedPercent >= effMatchedThresholdFinal)
         {
-            Debug.Log($"[AcCheck] Combined trigger met: matched={matchedPercent:F1}% (need {effMatchedThresholdFinal}%), protrusionOverTarget={protrusionOverTargetPercentFinal:F1}% (need {effProtrusionThresholdFinal}%)");
+            CheckOn(matchedPercent, effMatchedThresholdFinal);
+
+        }
+    }
+
+    protected virtual void CheckOn(float matchedPercent, float effMatchedThresholdFinal)
+    {
+        ansCount++;
+        if (ansCount > 2)
+        {
+            ansCount = 0;
+            _returnCheckCoroutine = StartCoroutine(ResetAnsCount());
+            //Debug.Log($"[AcCheck] Combined trigger met: matched={matchedPercent:F1}% (need {effMatchedThresholdFinal}%), protrusionOverTarget={protrusionOverTargetPercentFinal:F1}% (need {effProtrusionThresholdFinal}%)");
+            Debug.Log($"[AcCheck] Combined trigger met: matched={matchedPercent:F1}% (need {effMatchedThresholdFinal}%),");
+
             StopCheck();
             StartCoroutine(DelayOnClear());
+        }
+        else
+        {
+            if (_returnCheckCoroutine != null)
+            {
+                StopCoroutine(_returnCheckCoroutine);
+            }
         }
     }
 

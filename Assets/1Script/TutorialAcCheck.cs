@@ -44,8 +44,23 @@ public class TutorialAcCheck : AcCheck
     {
         _rawImage.texture = _defaultTexture;
 
-        //_CameraValue?.SetSize();
-        base.StartCheck();
+        StartCoroutine(DelayToCheckStart());
+
+        _isClear = false;
+
+        Debug.Log("AcCheck - StartCheck: " + CurrentDirection);
+
+        if (shadowMaskContainer != null)
+        {
+            shadowMaskContainer.CurrentIndex = 0;
+        }
+
+        if (outputText != null)
+        {
+            FadeManager.Instance.SetAlphaOne(outputText);
+        }
+
+        FadeManager.Instance.SetAlphaOne(targetRawImage);
 
     }
 

@@ -148,6 +148,7 @@ public class PageController : Singleton<PageController>
         {
             playerController.PageSetUp(openingPage);
         }
+        yield return CoroutineReturnManager.GetWaitForSeconds(2f);
 
         OnReset?.Invoke();
 

@@ -29,10 +29,24 @@ public class MainGameScript : MonoBehaviour
 
     public ShowShadowScript ShowShadowScript;
 
+    ShadowMaskContainer _shadowMaskContainer;
+
+    const int FirstMaskImageIndex = 17;
+
+
 
     void Start()
     {
         PageController.Instance.OnReset += Reset;
+
+        foreach (ShadowMaskContainer shadowMaskContainer in FindObjectsOfType<ShadowMaskContainer>())
+        {
+            if (shadowMaskContainer.CurrentDirection == CurrentDirection)
+            {
+                _shadowMaskContainer = shadowMaskContainer;
+                break;
+            }
+        }
     }
 
 
@@ -88,6 +102,8 @@ public class MainGameScript : MonoBehaviour
         if (_gameCoroutine == null)
             yield break;
 
+        _shadowMaskContainer.CurrentIndex = FirstMaskImageIndex;
+
         CShowShadowScript.SetACcheck(CAcCheck);
 
         cameraVisible.CameraOn();
@@ -123,6 +139,9 @@ public class MainGameScript : MonoBehaviour
 
         _currentIndex++;
 
+        _shadowMaskContainer.CurrentIndex++;
+
+
         if (_currentIndex >= CShowShadowScript.GetShowImageLength())
         {
             Debug.Log("게임 클리어");
@@ -130,6 +149,7 @@ public class MainGameScript : MonoBehaviour
             _nextCoroutine = null;
             yield break;
         }
+
 
         CShowShadowScript.ResultImageClear();
 

@@ -76,7 +76,7 @@
       "ClearShadowSoundVolume": 1.0,
       "SecondSound3Volume": 1.0,
       "SecondSound5Volume": 1.0,
-      "QuestionSoundVolume": 2.0,
+      "QuestionSoundVolume": 4.0,
       "StartSoundVolume": 1.0,
       "SecondSound10Volume": 1.0,
       "AllReadySoundVolume": 1.0,

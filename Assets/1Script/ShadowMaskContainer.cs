@@ -7,6 +7,8 @@ public class ShadowMaskContainer : MonoBehaviour
 {
     public Direction CurrentDirection;
 
+    CameraVisible cameraVisible;
+
 
     RawImage[] shadowMasks;
 
@@ -37,6 +39,8 @@ public class ShadowMaskContainer : MonoBehaviour
     void Start()
     {
         PageController.Instance.OnReset += Reset;
+
+        cameraVisible = FindAnyObjectByType<CameraVisible>();
     }
 
 
@@ -52,6 +56,15 @@ public class ShadowMaskContainer : MonoBehaviour
 
     public void HideShadowMasks()
     {
+        if (CurrentDirection == Direction.Left)
+        {
+            cameraVisible.CameraOffLeft();
+        }
+        else if (CurrentDirection == Direction.Right)
+        {
+            cameraVisible.CameraOffRight();
+        }
+
         for (int i = 0; i < shadowMasks.Length; i++)
         {
             shadowMasks[i].enabled = false;

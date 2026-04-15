@@ -66,7 +66,7 @@ public class AcCheckStep : AcCheck
     {
         base.Start();
 
-        protrusionAdjustPercent += 8f;
+        //protrusionAdjustPercent += 8f;
 
 
     }
@@ -75,7 +75,18 @@ public class AcCheckStep : AcCheck
         StartCoroutine(DelayOnFailed());
 
     }
+    public override void StopCheck()
+    {
 
+        _isCheck = false;
+
+
+        if (outputText != null)
+        {
+            FadeManager.Instance.SetAlphaZero(outputText);
+        }
+
+    }
     IEnumerator DelayOnFailed()
     {
         yield return CoroutineReturnManager.GetWaitForSeconds(CheckDelay);
@@ -106,5 +117,11 @@ public class AcCheckStep : AcCheck
         FadeManager.Instance.SetAlphaZero(outputText);
 
 
+    }
+
+    protected override void CheckOn(float matchedPercent, float effMatchedThresholdFinal)
+    {
+        StopCheck();
+        StartCoroutine(DelayOnClear());
     }
 }
