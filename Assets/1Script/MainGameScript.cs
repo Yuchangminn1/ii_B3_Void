@@ -113,7 +113,7 @@ public class MainGameScript : MonoBehaviour
         timer.AddOnEndListener(NextStep);
         timer.AddOnEndListener(NextStep);
 
-        timer.AddUnder3SecondsListener(ShowShadowScript.CaptureTexture);
+        timer.AddUnder3SecondsListener(Capture);
 
 
         _gameCoroutine = null;
@@ -164,9 +164,14 @@ public class MainGameScript : MonoBehaviour
 
         timer.AddOnEndListener(NextStep);
 
-        timer.AddUnder3SecondsListener(ShowShadowScript.CaptureTexture);
+        timer.AddUnder3SecondsListener(Capture);
 
         _nextCoroutine = null;
 
+    }
+
+    public void Capture()
+    {
+        ShowShadowScript.CaptureTexture();
     }
 }

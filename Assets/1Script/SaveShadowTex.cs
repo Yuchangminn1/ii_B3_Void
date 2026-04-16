@@ -28,6 +28,7 @@ public class SaveShadowTexture : MonoBehaviour
     Quaternion _rectTransformRotation;
 
     RawImage _rawImage;
+    int _lastProcessedFrame = -1;
 
 
     void Start()
@@ -104,14 +105,17 @@ public class SaveShadowTexture : MonoBehaviour
 
     public void SetTexture(RawImage sourceRawImage, RawImage maskTargetRawImage, float maskMinAlpha)
     {
+        if (Time.frameCount == _lastProcessedFrame)
+        {
+            return;
+        }
+
         RawImage targetRawImage = _rawImage != null ? _rawImage : GetComponent<RawImage>();
         _rawImage = targetRawImage;
 
 
         if (sourceRawImage == null || targetRawImage == null)
         {
-            Debug.LogError($"1텍스처 재사용: ");
-
             return;
         }
 
@@ -127,8 +131,13 @@ public class SaveShadowTexture : MonoBehaviour
         {
             ReleaseSnapshotResources();
             targetRawImage.texture = null;
-            Debug.LogError($"2텍스처 재사용: ");
+            return;
+        }
 
+        // Avoid full readback/mask processing when webcam has not produced a new frame.
+        WebCamTexture webcamTexture = texture as WebCamTexture;
+        if (webcamTexture != null && !webcamTexture.didUpdateThisFrame)
+        {
             return;
         }
 
@@ -137,8 +146,6 @@ public class SaveShadowTexture : MonoBehaviour
         int targetHeight = targetSize.y;
         if (targetWidth <= 0 || targetHeight <= 0)
         {
-            Debug.LogError($"3텍스처 재사용: ");
-
             return;
         }
 
@@ -149,19 +156,12 @@ public class SaveShadowTexture : MonoBehaviour
         {
             cameraValue.ApplyMaterialProperties();
         }
-        int writeIndex = _currentTextureIndex;
-        //% MaxTextureCount;
+        int writeIndex = _currentTextureIndex % MaxTextureCount;
         Texture2D capturedTexture = textures[writeIndex] as Texture2D;
         if (capturedTexture == null)
         {
             capturedTexture = new Texture2D(targetWidth, targetHeight, TextureFormat.RGBA32, false);
             textures[writeIndex] = capturedTexture;
-            Debug.LogError($"텍스처 생성: {writeIndex}");
-        }
-        else
-        {
-
-            Debug.LogError($"텍스처 재사용: {writeIndex}");
         }
 
         if (targetRectTransform != null)
@@ -223,6 +223,7 @@ public class SaveShadowTexture : MonoBehaviour
         targetRawImage.texture = capturedTexture;
         _currentTextureIndex++;
         _capturedCount = Mathf.Min(_capturedCount + 1, MaxTextureCount);
+        _lastProcessedFrame = Time.frameCount;
     }
 
     public int CapturedCount
@@ -379,10 +380,28 @@ public class SaveShadowTexture : MonoBehaviour
         int capturedWidth = capturedTexture.width;
         int capturedHeight = capturedTexture.height;
 
+        Matrix4x4 sourceToMask = maskRectTransform.worldToLocalMatrix * sourceRectTransform.localToWorldMatrix;
+
+        float sourceX0 = sourceRect.xMin;
+        float sourceY0 = sourceRect.yMin;
+        float sourceDx = capturedWidth > 1 ? sourceRect.width / (capturedWidth - 1f) : 0f;
+        float sourceDy = capturedHeight > 1 ? sourceRect.height / (capturedHeight - 1f) : 0f;
+
+        Vector3 rowStart = sourceToMask.MultiplyPoint3x4(new Vector3(sourceX0, sourceY0, 0f));
+        Vector3 stepX = sourceToMask.MultiplyVector(new Vector3(sourceDx, 0f, 0f));
+        Vector3 stepY = sourceToMask.MultiplyVector(new Vector3(0f, sourceDy, 0f));
+
+        float maskWidthInv = 1f / (maskRect.xMax - maskRect.xMin);
+        float maskHeightInv = 1f / (maskRect.yMax - maskRect.yMin);
+        float uvSpanX = maskUvRect.xMax - maskUvRect.xMin;
+        float uvSpanY = maskUvRect.yMax - maskUvRect.yMin;
+        int maxMaskX = maskWidth - 1;
+        int maxMaskY = maskHeight - 1;
+        float minAlpha255 = maskMinAlpha * 255f;
+
         for (int y = 0; y < capturedHeight; y++)
         {
-            float sourceV = capturedHeight > 1 ? (float)y / (capturedHeight - 1) : 0.5f;
-            float sourceLocalY = Mathf.Lerp(sourceRect.yMin, sourceRect.yMax, sourceV);
+            Vector3 maskPoint = rowStart;
 
             for (int x = 0; x < capturedWidth; x++)
             {
@@ -390,31 +409,33 @@ public class SaveShadowTexture : MonoBehaviour
                 Color32 capturedPixel = capturedPixels[pixelIndex];
                 if (capturedPixel.a == 0)
                 {
+                    maskPoint += stepX;
                     continue;
                 }
 
-                float sourceU = capturedWidth > 1 ? (float)x / (capturedWidth - 1) : 0.5f;
-                float sourceLocalX = Mathf.Lerp(sourceRect.xMin, sourceRect.xMax, sourceU);
-
-                Vector3 worldPoint = sourceRectTransform.TransformPoint(new Vector3(sourceLocalX, sourceLocalY, 0f));
-                Vector3 maskLocalPoint = maskRectTransform.InverseTransformPoint(worldPoint);
-
-                if (maskLocalPoint.x < maskRect.xMin || maskLocalPoint.x > maskRect.xMax || maskLocalPoint.y < maskRect.yMin || maskLocalPoint.y > maskRect.yMax)
+                if (maskPoint.x < maskRect.xMin || maskPoint.x > maskRect.xMax || maskPoint.y < maskRect.yMin || maskPoint.y > maskRect.yMax)
                 {
                     capturedPixels[pixelIndex].a = 0;
+                    maskPoint += stepX;
                     continue;
                 }
 
-                float maskU = Mathf.InverseLerp(maskRect.xMin, maskRect.xMax, maskLocalPoint.x);
-                float maskV = Mathf.InverseLerp(maskRect.yMin, maskRect.yMax, maskLocalPoint.y);
-                float sampledU = Mathf.Lerp(maskUvRect.xMin, maskUvRect.xMax, maskU);
-                float sampledV = Mathf.Lerp(maskUvRect.yMin, maskUvRect.yMax, maskV);
+                float maskU = (maskPoint.x - maskRect.xMin) * maskWidthInv;
+                float maskV = (maskPoint.y - maskRect.yMin) * maskHeightInv;
+                float sampledU = maskUvRect.xMin + (uvSpanX * maskU);
+                float sampledV = maskUvRect.yMin + (uvSpanY * maskV);
 
-                if (SampleAlpha(maskPixels, maskWidth, maskHeight, sampledU, sampledV) < maskMinAlpha)
+                int sampleX = Mathf.Clamp(Mathf.RoundToInt(Mathf.Clamp01(sampledU) * maxMaskX), 0, maxMaskX);
+                int sampleY = Mathf.Clamp(Mathf.RoundToInt(Mathf.Clamp01(sampledV) * maxMaskY), 0, maxMaskY);
+                if (maskPixels[sampleY * maskWidth + sampleX].a < minAlpha255)
                 {
                     capturedPixels[pixelIndex].a = 0;
                 }
+
+                maskPoint += stepX;
             }
+
+            rowStart += stepY;
         }
 
         capturedTexture.SetPixels32(capturedPixels);

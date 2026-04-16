@@ -180,10 +180,11 @@ public class Timer : MonoBehaviour
 
     public IEnumerator Under3SecondsCoroutine()
     {
-        while (time > 0 && time <= 5f)
+        while (time > 0 && time <= 3f)
         {
+            Debug.Log($"Under3SecondsCoroutine 재사용: time {time}");
             OnUnder3Seconds?.Invoke();
-            yield return new WaitForSeconds(0.2f);
+            yield return CoroutineReturnManager.GetWaitForSeconds(0.275f);
         }
         under3SecondsCoroutine = null;
     }
