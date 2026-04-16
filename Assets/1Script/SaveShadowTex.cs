@@ -5,7 +5,11 @@ using UnityEngine.UI;
 
 public class SaveShadowTexture : MonoBehaviour
 {
+    static readonly int ShaderPropTargetMaskEnabled = Shader.PropertyToID("_TargetMaskEnabled");
+
     RenderTexture _snapshotRt;
+    Material _snapshotMaterial;
+    Texture2D _maskReadbackTexture;
 
     const int MaxTextureCount = 10;
 
@@ -77,11 +81,28 @@ public class SaveShadowTexture : MonoBehaviour
             Destroy(_snapshotRt);
             _snapshotRt = null;
         }
+
+        if (_snapshotMaterial != null)
+        {
+            Destroy(_snapshotMaterial);
+            _snapshotMaterial = null;
+        }
+
+        if (_maskReadbackTexture != null)
+        {
+            Destroy(_maskReadbackTexture);
+            _maskReadbackTexture = null;
+        }
     }
 
 
 
     public void SetTexture(RawImage sourceRawImage)
+    {
+        SetTexture(sourceRawImage, null, 0.01f);
+    }
+
+    public void SetTexture(RawImage sourceRawImage, RawImage maskTargetRawImage, float maskMinAlpha)
     {
         RawImage targetRawImage = _rawImage != null ? _rawImage : GetComponent<RawImage>();
         _rawImage = targetRawImage;
@@ -145,7 +166,7 @@ public class SaveShadowTexture : MonoBehaviour
             _capturedLocalScales[writeIndex] = Vector3.one;
         }
 
-        Material sourceMaterial = sourceRawImage.material;
+        Material sourceMaterial = GetSnapshotMaterial(sourceRawImage.material);
 
         RenderTexture previous = RenderTexture.active;
 
@@ -164,7 +185,22 @@ public class SaveShadowTexture : MonoBehaviour
             }
 
             capturedTexture.ReadPixels(new Rect(0, 0, targetWidth, targetHeight), 0, 0);
-            capturedTexture.Apply(false, false);
+
+            RawImage resolvedMaskTarget = maskTargetRawImage;
+            float resolvedMaskMinAlpha = Mathf.Clamp01(maskMinAlpha);
+            if (resolvedMaskTarget == null)
+            {
+                TryResolveMaskTarget(sourceRawImage, out resolvedMaskTarget, out resolvedMaskMinAlpha);
+            }
+
+            if (resolvedMaskTarget != null)
+            {
+                ApplyTargetMask(capturedTexture, sourceRawImage, resolvedMaskTarget, resolvedMaskMinAlpha);
+            }
+            else
+            {
+                capturedTexture.Apply(false, false);
+            }
         }
         finally
         {
@@ -291,6 +327,276 @@ public class SaveShadowTexture : MonoBehaviour
         }
 
         return false;
+    }
+
+    private void ApplyTargetMask(Texture2D capturedTexture, RawImage sourceRawImage, RawImage maskTargetRawImage, float maskMinAlpha)
+    {
+        if (capturedTexture == null || sourceRawImage == null || maskTargetRawImage == null)
+        {
+            capturedTexture?.Apply(false, false);
+            return;
+        }
+
+        RectTransform sourceRectTransform = sourceRawImage.rectTransform;
+        RectTransform maskRectTransform = maskTargetRawImage.rectTransform;
+        if (sourceRectTransform == null || maskRectTransform == null)
+        {
+            capturedTexture.Apply(false, false);
+            return;
+        }
+
+        Texture maskTexture = GetRawImageTexture(maskTargetRawImage);
+        if (!TryGetPixels(maskTexture, ref _maskReadbackTexture, out Color32[] maskPixels, out int maskWidth, out int maskHeight))
+        {
+            capturedTexture.Apply(false, false);
+            return;
+        }
+
+        Rect sourceRect = sourceRectTransform.rect;
+        Rect maskRect = maskRectTransform.rect;
+        if (Mathf.Abs(sourceRect.width) <= Mathf.Epsilon || Mathf.Abs(sourceRect.height) <= Mathf.Epsilon || Mathf.Abs(maskRect.width) <= Mathf.Epsilon || Mathf.Abs(maskRect.height) <= Mathf.Epsilon)
+        {
+            capturedTexture.Apply(false, false);
+            return;
+        }
+
+        Rect sourceUvRect = sourceRawImage.uvRect;
+        Rect maskUvRect = maskTargetRawImage.uvRect;
+        Color32[] capturedPixels = capturedTexture.GetPixels32();
+        int capturedWidth = capturedTexture.width;
+        int capturedHeight = capturedTexture.height;
+
+        for (int y = 0; y < capturedHeight; y++)
+        {
+            float sourceV = capturedHeight > 1 ? (float)y / (capturedHeight - 1) : 0.5f;
+            float sourceLocalY = Mathf.Lerp(sourceRect.yMin, sourceRect.yMax, sourceV);
+
+            for (int x = 0; x < capturedWidth; x++)
+            {
+                int pixelIndex = y * capturedWidth + x;
+                Color32 capturedPixel = capturedPixels[pixelIndex];
+                if (capturedPixel.a == 0)
+                {
+                    continue;
+                }
+
+                float sourceU = capturedWidth > 1 ? (float)x / (capturedWidth - 1) : 0.5f;
+                float sourceLocalX = Mathf.Lerp(sourceRect.xMin, sourceRect.xMax, sourceU);
+
+                Vector3 worldPoint = sourceRectTransform.TransformPoint(new Vector3(sourceLocalX, sourceLocalY, 0f));
+                Vector3 maskLocalPoint = maskRectTransform.InverseTransformPoint(worldPoint);
+
+                if (maskLocalPoint.x < maskRect.xMin || maskLocalPoint.x > maskRect.xMax || maskLocalPoint.y < maskRect.yMin || maskLocalPoint.y > maskRect.yMax)
+                {
+                    capturedPixels[pixelIndex].a = 0;
+                    continue;
+                }
+
+                float maskU = Mathf.InverseLerp(maskRect.xMin, maskRect.xMax, maskLocalPoint.x);
+                float maskV = Mathf.InverseLerp(maskRect.yMin, maskRect.yMax, maskLocalPoint.y);
+                float sampledU = Mathf.Lerp(maskUvRect.xMin, maskUvRect.xMax, maskU);
+                float sampledV = Mathf.Lerp(maskUvRect.yMin, maskUvRect.yMax, maskV);
+
+                if (SampleAlpha(maskPixels, maskWidth, maskHeight, sampledU, sampledV) < maskMinAlpha)
+                {
+                    capturedPixels[pixelIndex].a = 0;
+                }
+            }
+        }
+
+        capturedTexture.SetPixels32(capturedPixels);
+        capturedTexture.Apply(false, false);
+    }
+
+    private bool TryResolveMaskTarget(RawImage sourceRawImage, out RawImage maskTargetRawImage, out float maskMinAlpha)
+    {
+        maskTargetRawImage = null;
+        maskMinAlpha = 0.01f;
+
+        if (sourceRawImage == null)
+        {
+            return false;
+        }
+
+        AcCheck[] checks = FindObjectsOfType<AcCheck>(true);
+        for (int i = 0; i < checks.Length; i++)
+        {
+            AcCheck check = checks[i];
+            if (check == null || check.overlayRawImage != sourceRawImage || check.targetRawImage == null)
+            {
+                continue;
+            }
+
+            maskTargetRawImage = check.targetRawImage;
+            return true;
+        }
+
+        return false;
+    }
+
+    private Texture GetRawImageTexture(RawImage rawImage)
+    {
+        if (rawImage == null)
+        {
+            return null;
+        }
+
+        if (rawImage.texture != null)
+        {
+            return rawImage.texture;
+        }
+
+        if (rawImage.material != null)
+        {
+            return rawImage.material.mainTexture;
+        }
+
+        return null;
+    }
+
+    private float SampleAlpha(Color32[] pixels, int width, int height, float u, float v)
+    {
+        if (pixels == null || pixels.Length == 0 || width <= 0 || height <= 0)
+        {
+            return 0f;
+        }
+
+        int x = Mathf.Clamp(Mathf.RoundToInt(Mathf.Clamp01(u) * (width - 1)), 0, width - 1);
+        int y = Mathf.Clamp(Mathf.RoundToInt(Mathf.Clamp01(v) * (height - 1)), 0, height - 1);
+        return pixels[y * width + x].a / 255f;
+    }
+
+    private bool TryGetPixels(Texture texture, ref Texture2D readbackCache, out Color32[] pixels, out int width, out int height)
+    {
+        pixels = null;
+        width = 0;
+        height = 0;
+
+        if (texture == null)
+        {
+            return false;
+        }
+
+        if (texture is Texture2D texture2D)
+        {
+            width = texture2D.width;
+            height = texture2D.height;
+            if (width <= 0 || height <= 0)
+            {
+                return false;
+            }
+
+            try
+            {
+                pixels = texture2D.GetPixels32();
+                return pixels != null && pixels.Length > 0;
+            }
+            catch
+            {
+                return TryReadByBlit(texture, ref readbackCache, out pixels, out width, out height);
+            }
+        }
+
+        if (texture is RenderTexture renderTexture)
+        {
+            return TryReadRenderTexture(renderTexture, ref readbackCache, out pixels, out width, out height);
+        }
+
+        return TryReadByBlit(texture, ref readbackCache, out pixels, out width, out height);
+    }
+
+    private bool TryReadByBlit(Texture source, ref Texture2D readbackCache, out Color32[] pixels, out int width, out int height)
+    {
+        pixels = null;
+        width = source.width;
+        height = source.height;
+        if (width <= 0 || height <= 0)
+        {
+            return false;
+        }
+
+        RenderTexture temp = RenderTexture.GetTemporary(width, height, 0, RenderTextureFormat.ARGB32);
+        try
+        {
+            Graphics.Blit(source, temp);
+            return TryReadRenderTexture(temp, ref readbackCache, out pixels, out width, out height);
+        }
+        finally
+        {
+            RenderTexture.ReleaseTemporary(temp);
+        }
+    }
+
+    private bool TryReadRenderTexture(RenderTexture renderTexture, ref Texture2D readbackCache, out Color32[] pixels, out int width, out int height)
+    {
+        pixels = null;
+        width = renderTexture.width;
+        height = renderTexture.height;
+        if (width <= 0 || height <= 0)
+        {
+            return false;
+        }
+
+        if (readbackCache == null || readbackCache.width != width || readbackCache.height != height)
+        {
+            if (readbackCache != null)
+            {
+                Destroy(readbackCache);
+            }
+
+            readbackCache = new Texture2D(width, height, TextureFormat.RGBA32, false);
+        }
+
+        RenderTexture previous = RenderTexture.active;
+        try
+        {
+            RenderTexture.active = renderTexture;
+            readbackCache.ReadPixels(new Rect(0, 0, width, height), 0, 0);
+            readbackCache.Apply(false, false);
+            pixels = readbackCache.GetPixels32();
+            return pixels != null && pixels.Length > 0;
+        }
+        catch
+        {
+            return false;
+        }
+        finally
+        {
+            RenderTexture.active = previous;
+        }
+    }
+
+    private Material GetSnapshotMaterial(Material sourceMaterial)
+    {
+        if (sourceMaterial == null)
+        {
+            if (_snapshotMaterial != null)
+            {
+                Destroy(_snapshotMaterial);
+                _snapshotMaterial = null;
+            }
+
+            return null;
+        }
+
+        if (_snapshotMaterial == null || _snapshotMaterial.shader != sourceMaterial.shader)
+        {
+            if (_snapshotMaterial != null)
+            {
+                Destroy(_snapshotMaterial);
+            }
+
+            _snapshotMaterial = new Material(sourceMaterial.shader);
+        }
+
+        _snapshotMaterial.CopyPropertiesFromMaterial(sourceMaterial);
+
+        if (_snapshotMaterial.HasProperty(ShaderPropTargetMaskEnabled))
+        {
+            _snapshotMaterial.SetFloat(ShaderPropTargetMaskEnabled, 0f);
+        }
+
+        return _snapshotMaterial;
     }
 
 

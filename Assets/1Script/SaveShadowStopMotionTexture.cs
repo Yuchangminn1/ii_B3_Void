@@ -5,6 +5,8 @@ using UnityEngine.UI;
 
 public class SaveShadowStopMotionTexture : MonoBehaviour
 {
+    static readonly int ShaderPropTargetMaskEnabled = Shader.PropertyToID("_TargetMaskEnabled");
+
     public int MaxCaptureCount = 100;
     public CameraValue cameraValue;
 
@@ -18,6 +20,7 @@ public class SaveShadowStopMotionTexture : MonoBehaviour
 
     readonly List<Texture2D> _capturedTextures = new List<Texture2D>();
     RenderTexture _snapshotRt;
+    Material _snapshotMaterial;
     RawImage _selfRawImage;
     RectTransform _rectTransform;
     int _nextWriteIndex = 0;
@@ -44,6 +47,12 @@ public class SaveShadowStopMotionTexture : MonoBehaviour
     {
         ReleaseSnapshotRenderTarget();
         ClearCapturedTextures();
+
+        if (_snapshotMaterial != null)
+        {
+            Destroy(_snapshotMaterial);
+            _snapshotMaterial = null;
+        }
     }
 
     public void CaptureTexture(RawImage sourceRawImage)
@@ -75,7 +84,7 @@ public class SaveShadowStopMotionTexture : MonoBehaviour
             cameraValue.ApplyMaterialProperties();
         }
 
-        Material sourceMaterial = sourceRawImage.material;
+        Material sourceMaterial = GetSnapshotMaterial(sourceRawImage.material);
         Texture texture = sourceRawImage.texture;
         if (texture == null)
         {
@@ -263,5 +272,38 @@ public class SaveShadowStopMotionTexture : MonoBehaviour
         _snapshotRt.Release();
         Destroy(_snapshotRt);
         _snapshotRt = null;
+    }
+
+    private Material GetSnapshotMaterial(Material sourceMaterial)
+    {
+        if (sourceMaterial == null)
+        {
+            if (_snapshotMaterial != null)
+            {
+                Destroy(_snapshotMaterial);
+                _snapshotMaterial = null;
+            }
+
+            return null;
+        }
+
+        if (_snapshotMaterial == null || _snapshotMaterial.shader != sourceMaterial.shader)
+        {
+            if (_snapshotMaterial != null)
+            {
+                Destroy(_snapshotMaterial);
+            }
+
+            _snapshotMaterial = new Material(sourceMaterial.shader);
+        }
+
+        _snapshotMaterial.CopyPropertiesFromMaterial(sourceMaterial);
+
+        if (_snapshotMaterial.HasProperty(ShaderPropTargetMaskEnabled))
+        {
+            _snapshotMaterial.SetFloat(ShaderPropTargetMaskEnabled, 0f);
+        }
+
+        return _snapshotMaterial;
     }
 }

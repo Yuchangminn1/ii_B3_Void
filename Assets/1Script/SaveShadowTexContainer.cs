@@ -23,6 +23,11 @@ public class SaveShadowTextureContainer : MonoBehaviour
 
     public RawImage TargetRawImage;
 
+    public RawImage MaskTargetRawImage;
+
+    [Range(0f, 1f)]
+    public float MaskMinAlpha = 0.01f;
+
 
     public int CurrentIndex = 0;
 
@@ -71,6 +76,11 @@ public class SaveShadowTextureContainer : MonoBehaviour
 
     public void SetTexture(int CurrentIndex)
     {
+        SetTexture(CurrentIndex, null);
+    }
+
+    public void SetTexture(int CurrentIndex, RawImage maskTargetRawImage)
+    {
         if (SaveShadowTextures == null || SaveShadowTextures.Length == 0)
         {
             return;
@@ -88,7 +98,8 @@ public class SaveShadowTextureContainer : MonoBehaviour
             return;
         }
 
-        target.SetTexture(TargetRawImage);
+        RawImage resolvedMaskTarget = maskTargetRawImage != null ? maskTargetRawImage : MaskTargetRawImage;
+        target.SetTexture(TargetRawImage, resolvedMaskTarget, MaskMinAlpha);
     }
 
     public List<Texture> GetCapturedTextures()

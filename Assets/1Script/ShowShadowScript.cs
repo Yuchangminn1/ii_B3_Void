@@ -51,7 +51,8 @@ public class ShowShadowScript : MonoBehaviour
     {
         if (currentIndex > 0)
         {
-            SaveShadowTextureContainer.SetTexture(currentIndex);
+            RawImage maskTargetRawImage = CurrentAcCheck != null ? CurrentAcCheck.targetRawImage : null;
+            SaveShadowTextureContainer.SetTexture(currentIndex, maskTargetRawImage);
         }
     }
 

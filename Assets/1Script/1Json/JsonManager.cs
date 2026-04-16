@@ -1,7 +1,6 @@
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using UnityEngine.UI;
-using UnityEngine.Video;
 public interface JsonInitilze
 {
     public string JsonAddress { get; set; }
@@ -38,9 +37,17 @@ public class JsonManager : MonoBehaviour
     GenericLoader _genericLoader = new GenericLoader("Json/GenericConfig.JSON");
     public GenericLoader GetGenericLoader { get { return _genericLoader; } }
 
-    QuestionLoader _questionLoader = new QuestionLoader("Json/QuestionConfig.json");
-    public QuestionLoader GetQuestionLoader { get { return _questionLoader; } }
-
+    readonly QuestionLoader[] _questionLoaders = new QuestionLoader[]
+     {
+        new QuestionLoader("Json/QuestionConfig1.json"),
+        new QuestionLoader("Json/QuestionConfig2.json"),
+        new QuestionLoader("Json/QuestionConfig3.json"),
+        new QuestionLoader("Json/QuestionConfig4.json"),
+        new QuestionLoader("Json/QuestionConfig5.json")
+     };
+    public QuestionLoader GetQuestionLoader { get { return _questionLoaders[0]; } }
+    readonly List<IQuestionTarget> _questionTargets = new List<IQuestionTarget>();
+    int _selectedQuestionCartridge = 1;
 
     void Awake()
     {
@@ -93,8 +100,10 @@ public class JsonManager : MonoBehaviour
 
         _genericLoader.Load();
 
-        _questionLoader.Load();
-
+        foreach (var questionLoader in _questionLoaders)
+        {
+            questionLoader.Load();
+        }
 
         // Text[] tempText = FindObjectsOfType<Text>();
         // foreach (Text t in tempText)
@@ -128,16 +137,31 @@ public class JsonManager : MonoBehaviour
             Debug.Log("Register GenericTarget: " + ((Component)t).gameObject.name);
             _genericLoader.Register(((Component)t).gameObject.name, t);
         }
+        var allCartridges = new List<QuestionInfo>[_questionLoaders.Length];
+        for (int i = 0; i < _questionLoaders.Length; i++)
+        {
+            allCartridges[i] = _questionLoaders[i].GetQuestions("QuestionManager");
+            Debug.Log($"Cartridge {i + 1} loaded: {allCartridges[i]?.Count ?? 0} questions");
+        }
+
+        _questionTargets.Clear();
+
         var tempQuestionTargets = FindObjectsOfType<MonoBehaviour>().OfType<IQuestionTarget>();
         foreach (IQuestionTarget t in tempQuestionTargets)
         {
-            Debug.Log("Register QuestionTarget: " + ((Component)t).gameObject.name);
-            _questionLoader.Register(((Component)t).gameObject.name, t);
+            _questionTargets.Add(t);
+            t.InitializeCartridges(allCartridges);
         }
+        SetCartridge(_selectedQuestionCartridge);
 
 
 
+    }
 
+    public void SetCartridge(int value)
+    {
+        _selectedQuestionCartridge = value;
+        QuestionManager.Instance.SetRELATION(value);
     }
 
 }

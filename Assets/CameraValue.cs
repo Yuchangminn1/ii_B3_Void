@@ -74,6 +74,10 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
     [Tooltip("Use chroma-key shader output. Turn off to show raw camera texture.")]
     [SerializeField] private bool useShaderOutput = true;
 
+    [Header("Mask Debug")]
+    [Tooltip("AcCheck에서 현재 이 카메라 오버레이에 적용 중인 마스크 기준 RawImage (런타임 표시용).")]
+    public RawImage CurrentMaskTargetRawImage;
+
     public bool opaqueToBlack = true;
     [Range(1f, 10f)] public float edgeContrast = 1f;
     float noiseFilter = 0.0f;
@@ -93,6 +97,7 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
     [System.NonSerialized] private Texture2D _analysisReadbackTexture;
 
     private RawImage _targetRawImage;
+    float _nextMaskTargetResolveTime = 0f;
     private Coroutine _autoKeyRoutine;
     private bool _autoKeyGoalReached;
 
@@ -526,6 +531,7 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
     public void Start()
     {
         _cameraVisible = FindAnyObjectByType<CameraVisible>();
+        ResolveCurrentMaskTargetRawImage();
     }
 
     public void SetWarningText(string message)
@@ -1138,6 +1144,12 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
 
     void Update()
     {
+        if (Time.unscaledTime >= _nextMaskTargetResolveTime)
+        {
+            _nextMaskTargetResolveTime = Time.unscaledTime + 0.5f;
+            ResolveCurrentMaskTargetRawImage();
+        }
+
         if (_isRendering && webcamTexture != null && webcamTexture.isPlaying && _targetRawImage != null)
         {
             Texture outputTexture = GetProcessedOutputTexture();
@@ -1311,6 +1323,36 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
         topRatio = topTotal > 0 ? (float)topTransparent / topTotal : 0f;
         bottomRatio = bottomTotal > 0 ? (float)bottomTransparent / bottomTotal : 0f;
         return leftTotal > 0 && rightTotal > 0 && topTotal > 0 && bottomTotal > 0;
+    }
+
+    void ResolveCurrentMaskTargetRawImage()
+    {
+        if (_targetRawImage == null)
+        {
+            _targetRawImage = GetComponent<RawImage>();
+        }
+
+        if (_targetRawImage == null)
+        {
+            CurrentMaskTargetRawImage = null;
+            return;
+        }
+
+        RawImage resolved = null;
+        AcCheck[] checks = FindObjectsOfType<AcCheck>(true);
+        for (int i = 0; i < checks.Length; i++)
+        {
+            AcCheck check = checks[i];
+            if (check == null || check.overlayRawImage != _targetRawImage)
+            {
+                continue;
+            }
+
+            resolved = check.targetRawImage;
+            break;
+        }
+
+        CurrentMaskTargetRawImage = resolved;
     }
 
     public void Initialize(JsonGenericUpData data)
