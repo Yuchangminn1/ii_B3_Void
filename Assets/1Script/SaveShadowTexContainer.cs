@@ -83,18 +83,24 @@ public class SaveShadowTextureContainer : MonoBehaviour
     {
         if (SaveShadowTextures == null || SaveShadowTextures.Length == 0)
         {
+            Debug.LogError($"1TQ: ");
+
             return;
         }
 
         int targetIndex = CurrentIndex - 1;
         if (targetIndex < 0 || targetIndex >= SaveShadowTextures.Length)
         {
+            Debug.LogError($"2TQ: ");
+
             return;
         }
 
         SaveShadowTexture target = SaveShadowTextures[targetIndex];
         if (target == null)
         {
+            Debug.LogError($"3TQ: ");
+
             return;
         }
 

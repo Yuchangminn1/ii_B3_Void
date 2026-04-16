@@ -107,8 +107,11 @@ public class SaveShadowTexture : MonoBehaviour
         RawImage targetRawImage = _rawImage != null ? _rawImage : GetComponent<RawImage>();
         _rawImage = targetRawImage;
 
+
         if (sourceRawImage == null || targetRawImage == null)
         {
+            Debug.LogError($"1텍스처 재사용: ");
+
             return;
         }
 
@@ -124,6 +127,8 @@ public class SaveShadowTexture : MonoBehaviour
         {
             ReleaseSnapshotResources();
             targetRawImage.texture = null;
+            Debug.LogError($"2텍스처 재사용: ");
+
             return;
         }
 
@@ -132,6 +137,8 @@ public class SaveShadowTexture : MonoBehaviour
         int targetHeight = targetSize.y;
         if (targetWidth <= 0 || targetHeight <= 0)
         {
+            Debug.LogError($"3텍스처 재사용: ");
+
             return;
         }
 
@@ -142,13 +149,19 @@ public class SaveShadowTexture : MonoBehaviour
         {
             cameraValue.ApplyMaterialProperties();
         }
-
-        int writeIndex = _currentTextureIndex % MaxTextureCount;
+        int writeIndex = _currentTextureIndex;
+        //% MaxTextureCount;
         Texture2D capturedTexture = textures[writeIndex] as Texture2D;
         if (capturedTexture == null)
         {
             capturedTexture = new Texture2D(targetWidth, targetHeight, TextureFormat.RGBA32, false);
             textures[writeIndex] = capturedTexture;
+            Debug.LogError($"텍스처 생성: {writeIndex}");
+        }
+        else
+        {
+
+            Debug.LogError($"텍스처 재사용: {writeIndex}");
         }
 
         if (targetRectTransform != null)

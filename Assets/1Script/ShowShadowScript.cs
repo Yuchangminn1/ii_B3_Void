@@ -49,7 +49,7 @@ public class ShowShadowScript : MonoBehaviour
 
     public void CaptureTexture()
     {
-        if (currentIndex > 0)
+        if (currentIndex >= 0)
         {
             RawImage maskTargetRawImage = CurrentAcCheck != null ? CurrentAcCheck.targetRawImage : null;
             SaveShadowTextureContainer.SetTexture(currentIndex, maskTargetRawImage);
