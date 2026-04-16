@@ -83,6 +83,13 @@ public class AcCheck : MonoBehaviour
     Texture2D _baseReadbackTexture;
     Texture2D _overlayReadbackTexture;
 
+    static readonly int ShaderPropTargetMaskEnabled = Shader.PropertyToID("_TargetMaskEnabled");
+    static readonly int ShaderPropTargetMaskTex = Shader.PropertyToID("_TargetMaskTex");
+    static readonly int ShaderPropTargetWorldToLocal = Shader.PropertyToID("_TargetWorldToLocal");
+    static readonly int ShaderPropTargetRectMinMax = Shader.PropertyToID("_TargetRectMinMax");
+    static readonly int ShaderPropTargetUvRect = Shader.PropertyToID("_TargetUvRect");
+    static readonly int ShaderPropTargetMaskMinAlpha = Shader.PropertyToID("_TargetMaskMinAlpha");
+
     public float DetectedPercent => detectedPercent;
     public int DebugTotalPixels => debugTotalPixels;
     public int DebugMatchedPixels => debugMatchedPixels;
@@ -126,6 +133,7 @@ public class AcCheck : MonoBehaviour
     {
         _isCheck = false;
         _isClear = false;
+        ClearOverlayShaderMask();
 
 
         if (outputText != null)
@@ -160,6 +168,9 @@ public class AcCheck : MonoBehaviour
 
         if (_isCheck == false)
             return;
+
+        ApplyOverlayShaderMaskFromTarget();
+
         if (Time.unscaledTime < _nextUpdateTime) return;
 
         _nextUpdateTime = Time.unscaledTime + Mathf.Max(0.5f, updateInterval);
@@ -172,6 +183,7 @@ public class AcCheck : MonoBehaviour
     {
         StartCoroutine(DelayToCheckStart());
         _isClear = false;
+        ApplyOverlayShaderMaskFromTarget();
 
         Debug.Log("AcCheck - StartCheck: " + CurrentDirection);
 
@@ -199,6 +211,7 @@ public class AcCheck : MonoBehaviour
     {
 
         _isCheck = false;
+        ClearOverlayShaderMask();
         shadowMaskContainer.HideShadowMasks();
 
 
@@ -220,6 +233,8 @@ public class AcCheck : MonoBehaviour
 
     void OnDestroy()
     {
+        ClearOverlayShaderMask();
+
         if (_baseReadbackTexture != null)
         {
             Destroy(_baseReadbackTexture);
@@ -254,6 +269,7 @@ public class AcCheck : MonoBehaviour
 
     public void UpdateColorPercent()
     {
+        ApplyOverlayShaderMaskFromTarget();
 
         if (targetRawImage == null || overlayRawImage == null)
         {
@@ -631,9 +647,17 @@ public class AcCheck : MonoBehaviour
 
         if (rawImage == null) return false;
 
-        // If RawImage has a material (shader) we must render the material output into an RT
-        // so that shader effects (alpha cutoffs, discard, color transforms) are included in the readback.
-        if (rawImage.material != null)
+        // If RawImage has a material (shader) we usually render material output into RT.
+        // However, target-mask shader path relies on UI mesh local coordinates and can break in Graphics.Blit.
+        bool canUseMaterialReadback = rawImage.material != null;
+        if (canUseMaterialReadback
+            && rawImage.material.HasProperty(ShaderPropTargetMaskEnabled)
+            && rawImage.material.GetFloat(ShaderPropTargetMaskEnabled) > 0.5f)
+        {
+            canUseMaterialReadback = false;
+        }
+
+        if (canUseMaterialReadback)
         {
             Texture src = GetRawImageTexture(rawImage) ?? rawImage.material.mainTexture;
             if (src == null) return false;
@@ -816,5 +840,44 @@ public class AcCheck : MonoBehaviour
         {
             RenderTexture.active = previous;
         }
+    }
+
+    void ApplyOverlayShaderMaskFromTarget()
+    {
+        if (targetRawImage == null || overlayRawImage == null) return;
+
+        Material overlayMaterial = overlayRawImage.material;
+        if (overlayMaterial == null) return;
+
+        if (!overlayMaterial.HasProperty(ShaderPropTargetMaskEnabled)) return;
+
+        Texture targetTexture = GetRawImageTexture(targetRawImage);
+        if (targetTexture == null)
+        {
+            overlayMaterial.SetFloat(ShaderPropTargetMaskEnabled, 0f);
+            return;
+        }
+
+        RectTransform targetRectTransform = targetRawImage.rectTransform;
+        Rect targetRect = targetRectTransform.rect;
+        Rect uvRect = targetRawImage.uvRect;
+
+        overlayMaterial.SetTexture(ShaderPropTargetMaskTex, targetTexture);
+        overlayMaterial.SetFloat(ShaderPropTargetMaskEnabled, 1f);
+        overlayMaterial.SetFloat(ShaderPropTargetMaskMinAlpha, baseMinAlpha);
+        overlayMaterial.SetMatrix(ShaderPropTargetWorldToLocal, targetRectTransform.worldToLocalMatrix);
+        overlayMaterial.SetVector(ShaderPropTargetRectMinMax, new Vector4(targetRect.xMin, targetRect.yMin, targetRect.xMax, targetRect.yMax));
+        overlayMaterial.SetVector(ShaderPropTargetUvRect, new Vector4(uvRect.xMin, uvRect.yMin, uvRect.xMax, uvRect.yMax));
+    }
+
+    void ClearOverlayShaderMask()
+    {
+        if (overlayRawImage == null) return;
+
+        Material overlayMaterial = overlayRawImage.material;
+        if (overlayMaterial == null) return;
+
+        if (!overlayMaterial.HasProperty(ShaderPropTargetMaskEnabled)) return;
+        overlayMaterial.SetFloat(ShaderPropTargetMaskEnabled, 0f);
     }
 }

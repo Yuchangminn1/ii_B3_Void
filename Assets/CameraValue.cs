@@ -46,7 +46,7 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
     [Range(0f, 1f)] public float autoMaxThreshold = 0.7f;
     [Tooltip("If enabled, initial autofocus keeps running until target ratio is reached (or max wait time).")]
     public bool autoExtendFocusUntilTarget = true;
-    [Range(1f, 30f)] public float autoFocusMaxWaitSeconds = 10f;
+    [Range(1f, 180f)] public float autoFocusMaxWaitSeconds = 120f;
 
     [Header("Output Settings")]
     [Tooltip("Toggle camera rendering/visibility with a bool value.")]
@@ -599,8 +599,9 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
         _autoKeyGoalReached = false;
 
         _autoKeyRoutine = StartCoroutine(AutoPickKeyColorRoutine());
-        _autoKeyTimeoutRoutine = StartCoroutine(StopAutoKeyAfterDelay(seconds, keepUntilGoal));
-        Debug.Log($"[CameraValue] Auto key color started for '{gameObject.name}' for {seconds} seconds. keepUntilGoal={keepUntilGoal}");
+        float effectiveSeconds = Mathf.Max(seconds, 10f);
+        _autoKeyTimeoutRoutine = StartCoroutine(StopAutoKeyAfterDelay(effectiveSeconds, keepUntilGoal));
+        Debug.Log($"[CameraValue] Auto key color started for '{gameObject.name}' for {effectiveSeconds} seconds. keepUntilGoal={keepUntilGoal}");
     }
 
     IEnumerator StopAutoKeyAfterDelay(float delay, bool keepUntilGoal)
@@ -610,25 +611,27 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
         float baseDelay = Mathf.Max(0f, delay);
         float maxWait = Mathf.Max(baseDelay, autoFocusMaxWaitSeconds);
         float elapsed = 0f;
+        bool stoppedByGoal = false;
 
         while (true)
         {
-            bool passedBaseDelay = elapsed >= baseDelay;
-            bool shouldStop = passedBaseDelay;
-
-            if (keepUntilGoal)
+            if (_autoKeyGoalReached)
             {
-                shouldStop = passedBaseDelay && _autoKeyGoalReached;
-                if (elapsed >= maxWait)
-                {
-                    if (!_autoKeyGoalReached)
-                        Debug.LogWarning($"[CameraValue] Auto key goal not reached within max wait ({maxWait:F1}s) on '{gameObject.name}'.");
-                    shouldStop = true;
-                }
+                stoppedByGoal = true;
+                break;
             }
 
-            if (shouldStop)
+            if (!keepUntilGoal && elapsed >= baseDelay)
+            {
                 break;
+            }
+
+            if (elapsed >= maxWait)
+            {
+                if (!_autoKeyGoalReached)
+                    Debug.LogWarning($"[CameraValue] Auto key goal not reached within max wait ({maxWait:F1}s) on '{gameObject.name}'.");
+                break;
+            }
 
             yield return null;
             elapsed += Time.deltaTime;
@@ -643,6 +646,12 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
 
         // 오토 종료 시점의 최종 키/쓰레숄드 로그
         Debug.Log($"[CameraValue] Auto key color finished for '{gameObject.name}'. Final Key={keyColor}, Threshold={threshold:F3}");
+
+        if (stoppedByGoal)
+        {
+            IsRendered = false;
+            Debug.Log($"[CameraValue] Auto key goal reached. Camera rendering disabled for '{gameObject.name}'.");
+        }
 
         OffWarningText();
         Debug.Log($"[CameraValue] Auto key color stopped for '{gameObject.name}'.");

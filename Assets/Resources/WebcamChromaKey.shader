@@ -3,6 +3,7 @@ Shader "Custom/WebcamChromaKey"
     Properties
     {
         _MainTex ("Texture", 2D) = "white" {}
+        _TargetMaskTex ("Target Mask Texture", 2D) = "white" {}
         _KeyColor ("Key Color", Color) = (0, 1, 0, 1)
         _Threshold ("Threshold", Range(0,1)) = 0.48
         _Smooth ("Smoothness", Range(0,1)) = 0.05
@@ -18,6 +19,10 @@ Shader "Custom/WebcamChromaKey"
         _RightClip ("Right Clip", Range(0,1)) = 0
         _TopClip ("Top Clip", Range(0,1)) = 0
         _BottomClip ("Bottom Clip", Range(0,1)) = 0
+        _TargetMaskEnabled ("Target Mask Enabled", Float) = 0
+        _TargetMaskMinAlpha ("Target Mask Min Alpha", Range(0,1)) = 0.01
+        _TargetRectMinMax ("Target Rect MinMax", Vector) = (0,0,1,1)
+        _TargetUvRect ("Target UV Rect", Vector) = (0,0,1,1)
     }
 
     SubShader
@@ -39,6 +44,7 @@ Shader "Custom/WebcamChromaKey"
             sampler2D _MainTex;
             float4 _MainTex_ST;
             float4 _MainTex_TexelSize;
+            sampler2D _TargetMaskTex;
 
             float4 _KeyColor;
             float _Threshold;
@@ -55,6 +61,11 @@ Shader "Custom/WebcamChromaKey"
             float _RightClip;
             float _TopClip;
             float _BottomClip;
+            float _TargetMaskEnabled;
+            float _TargetMaskMinAlpha;
+            float4 _TargetRectMinMax;
+            float4 _TargetUvRect;
+            float4x4 _TargetWorldToLocal;
 
             struct appdata
             {
@@ -66,6 +77,7 @@ Shader "Custom/WebcamChromaKey"
             {
                 float2 uv : TEXCOORD0;
                 float4 vertex : SV_POSITION;
+                float3 localPos : TEXCOORD1;
             };
 
             float3 RGBToHSV(float3 c)
@@ -110,6 +122,7 @@ Shader "Custom/WebcamChromaKey"
                 if (_VFlip > 0.5) uv.y = 1.0 - uv.y;
 
                 o.uv = uv;
+                o.localPos = v.vertex.xyz;
                 return o;
             }
 
@@ -163,6 +176,41 @@ Shader "Custom/WebcamChromaKey"
                 alpha *= step(uv.x, 1.0 - _RightClip);
                 alpha *= step(_BottomClip, uv.y);
                 alpha *= step(uv.y, 1.0 - _TopClip);
+
+                // Clip overlay by target mask area (driven from AcCheck).
+                if (_TargetMaskEnabled > 0.5)
+                {
+                    float4 worldPos = mul(unity_ObjectToWorld, float4(i.localPos, 1.0));
+                    float4 targetLocalPos4 = mul(_TargetWorldToLocal, worldPos);
+                    float2 targetLocalPos = targetLocalPos4.xy;
+
+                    float inRect =
+                        step(_TargetRectMinMax.x, targetLocalPos.x) *
+                        step(targetLocalPos.x, _TargetRectMinMax.z) *
+                        step(_TargetRectMinMax.y, targetLocalPos.y) *
+                        step(targetLocalPos.y, _TargetRectMinMax.w);
+
+                    if (inRect < 0.5)
+                    {
+                        alpha = 0.0;
+                    }
+                    else
+                    {
+                        float2 rectSize = _TargetRectMinMax.zw - _TargetRectMinMax.xy;
+                        float2 targetNormalized = (targetLocalPos - _TargetRectMinMax.xy) / max(rectSize, float2(1e-5, 1e-5));
+                        targetNormalized = saturate(targetNormalized);
+
+                        float2 targetUv;
+                        targetUv.x = lerp(_TargetUvRect.x, _TargetUvRect.z, targetNormalized.x);
+                        targetUv.y = lerp(_TargetUvRect.y, _TargetUvRect.w, targetNormalized.y);
+
+                        float targetAlpha = tex2D(_TargetMaskTex, targetUv).a;
+                        if (targetAlpha < _TargetMaskMinAlpha)
+                        {
+                            alpha = 0.0;
+                        }
+                    }
+                }
 
                 float3 c = tex2D(_MainTex, uv).rgb;
                 float3 rgb = (_OpaqueToBlack > 0.5) ? float3(0.0, 0.0, 0.0) : c;

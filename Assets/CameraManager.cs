@@ -185,8 +185,8 @@ public class CameraManager : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.A))
         {
-            current.StartAutoKeyForSeconds(5f);
-            Debug.Log($"[{current.name}] Auto Key Started for 10 seconds");
+            current.StartAutoKeyForSeconds(20f);
+            Debug.Log($"[{current.name}] Auto Key Started for 20 seconds");
         }
     }
 
