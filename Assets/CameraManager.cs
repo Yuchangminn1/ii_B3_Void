@@ -28,6 +28,8 @@ public class CameraManager : MonoBehaviour
 
     private int _currentlyControlledIndex = 0;
 
+    const int defaultFocusTime = 20;
+
     public Text SelectCameraText;
 
     Shader GetSupportedShader(Shader shader)
@@ -185,8 +187,8 @@ public class CameraManager : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.A))
         {
-            current.StartAutoKeyForSeconds(20f);
-            Debug.Log($"[{current.name}] Auto Key Started for 20 seconds");
+            current.StartAutoKeyForSeconds(defaultFocusTime);
+            Debug.Log($"[{current.name}] Auto Key Started for {defaultFocusTime} seconds");
         }
     }
 
@@ -212,24 +214,23 @@ public class CameraManager : MonoBehaviour
 
     public IEnumerator StartFocusCheckCoroutine()
     {
+        yield return CoroutineReturnManager.GetWaitForSeconds(5f);
+
         while (GameManager.Instance.IsStarted == false)
         {
             yield return CoroutineReturnManager.GetWaitForSeconds(0.5f);
         }
-        yield return CoroutineReturnManager.GetWaitForSeconds(3f);
         cameraVisible.CameraOn();
-        yield return CoroutineReturnManager.GetWaitForSeconds(1f);
+        yield return CoroutineReturnManager.GetWaitForSeconds(3f);
         foreach (var instance in cameraInstances)
         {
             if (instance != null)
             {
-                instance.StartAutoKeyForSeconds(4f);
+                instance.StartAutoKeyForSeconds(defaultFocusTime);
             }
         }
 
-        yield return CoroutineReturnManager.GetWaitForSeconds(5f);
 
-        cameraVisible.CameraOff();
 
 
     }

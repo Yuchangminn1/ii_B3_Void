@@ -29,7 +29,7 @@ public class MainGameScript : MonoBehaviour
 
     public ShowShadowScript ShowShadowScript;
 
-    ShadowMaskContainer _shadowMaskContainer;
+    //ShadowMaskContainer _shadowMaskContainer;
 
     const int FirstMaskImageIndex = 17;
 
@@ -39,14 +39,14 @@ public class MainGameScript : MonoBehaviour
     {
         PageController.Instance.OnReset += Reset;
 
-        foreach (ShadowMaskContainer shadowMaskContainer in FindObjectsOfType<ShadowMaskContainer>())
-        {
-            if (shadowMaskContainer.CurrentDirection == CurrentDirection)
-            {
-                _shadowMaskContainer = shadowMaskContainer;
-                break;
-            }
-        }
+        // foreach (ShadowMaskContainer shadowMaskContainer in FindObjectsOfType<ShadowMaskContainer>())
+        // {
+        //     if (shadowMaskContainer.CurrentDirection == CurrentDirection)
+        //     {
+        //         _shadowMaskContainer = shadowMaskContainer;
+        //         break;
+        //     }
+        // }
     }
 
 
@@ -102,7 +102,7 @@ public class MainGameScript : MonoBehaviour
         if (_gameCoroutine == null)
             yield break;
 
-        _shadowMaskContainer.CurrentIndex = FirstMaskImageIndex;
+        //_shadowMaskContainer.CurrentIndex = FirstMaskImageIndex;
 
         CShowShadowScript.SetACcheck(CAcCheck);
 
@@ -139,7 +139,7 @@ public class MainGameScript : MonoBehaviour
 
         _currentIndex++;
 
-        _shadowMaskContainer.CurrentIndex++;
+        //_shadowMaskContainer.CurrentIndex++;
 
 
         if (_currentIndex >= CShowShadowScript.GetShowImageLength())

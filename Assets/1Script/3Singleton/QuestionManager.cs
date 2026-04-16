@@ -61,10 +61,10 @@ public class QuestionManager : Singleton<QuestionManager>, IQuestionTarget
 
     public void Initialize(List<QuestionInfo> items)
     {
-        // for (int i = 0; i < items.Count; i++)
-        // {
-        //     Debug.Log($"{i} : {items[i].Question}");
-        // }
+        for (int i = 0; i < items.Count; i++)
+        {
+            Debug.Log($"{i} : {items[i].Question}");
+        }
         questionInfos = items;
 
         Debug.Log("로드된 질문 수: " + items.Count);

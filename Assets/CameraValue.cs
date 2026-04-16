@@ -10,6 +10,7 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
     public string deviceName = "";
     [Header("Device Filters")]
     [Tooltip("If non-empty and the selected device's name contains this substring, this CameraValue will skip starting the webcam.")]
+
     public string[] ignoreDeviceNameContains;
     public int requestedWidth = 1280;
     public int requestedHeight = 720;
@@ -28,6 +29,8 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
     [Header("Debug")]
     [Tooltip("Enable verbose debug logs for CameraValue operations.")]
     public bool verboseDebug = false;
+    [Tooltip("Log keyed transparent percentage every frame while rendering.")]
+    public bool debugPercentEveryFrame = false;
 
     [Header("Color Key Settings")]
     public Color keyColor = Color.green;
@@ -47,6 +50,23 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
     [Tooltip("If enabled, initial autofocus keeps running until target ratio is reached (or max wait time).")]
     public bool autoExtendFocusUntilTarget = true;
     [Range(1f, 180f)] public float autoFocusMaxWaitSeconds = 120f;
+
+    [Header("Auto Threshold ROI")]
+    [Tooltip("Use a fixed normalized ROI for transparent-percent evaluation. Keep off to use legacy center ROI.")]
+    public bool autoUseFixedPercentRoi = false;
+    [Range(0f, 1f)] public float autoPercentRoiXMin = 0.25f;
+    [Range(0f, 1f)] public float autoPercentRoiYMin = 0.25f;
+    [Range(0f, 1f)] public float autoPercentRoiXMax = 0.75f;
+    [Range(0f, 1f)] public float autoPercentRoiYMax = 0.75f;
+
+    [Header("Post Focus Edge Stabilization")]
+    [Tooltip("After focus completes, stabilize only the outer border lines without changing global threshold.")]
+    public bool enableEdgeLineStabilization = true;
+    [Range(2, 64)] public int edgeStabilizationBandPixels = 12;
+    [Range(0.005f, 0.3f)] public float edgeStabilizationTolerance = 0.04f;
+    [Range(1, 20)] public int edgeStabilizationClipStep = 2;
+    [Range(0, 80)] public int edgeStabilizationMaxExtraClip = 24;
+    [Range(0.05f, 2f)] public float edgeStabilizationCheckInterval = 0.2f;
 
     [Header("Output Settings")]
     [Tooltip("Toggle camera rendering/visibility with a bool value.")]
@@ -74,24 +94,35 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
 
     private RawImage _targetRawImage;
     private Coroutine _autoKeyRoutine;
-    private Coroutine _autoKeyTimeoutRoutine;
     private bool _autoKeyGoalReached;
 
-    [System.NonSerialized] private bool _autoSearching = false;
-    [System.NonSerialized] private List<float> _autoKeyDistances = null;
-    [System.NonSerialized] private float _autoCurrentThreshold = 0f;
-    [System.NonSerialized] private float _autoMaxThresholdRuntime = 0.7f;
-    [System.NonSerialized] private float _autoStepRuntime = 0.01f;
-    [System.NonSerialized] private float _autoNextUpdateTime = 0f;
-    [System.NonSerialized] private float _autoThresholdStartDelayUntil = 0f; // keyColor 잡은 뒤 threshold 탐색 시작 시간
+    [System.NonSerialized] private float _autoFocusDeadlineTime = 0f;
+    [System.NonSerialized] private bool _edgeBaselineReady = false;
+    [System.NonSerialized] private float _edgeBaselineLeftRatio = 0f;
+    [System.NonSerialized] private float _edgeBaselineRightRatio = 0f;
+    [System.NonSerialized] private float _edgeBaselineTopRatio = 0f;
+    [System.NonSerialized] private float _edgeBaselineBottomRatio = 0f;
+    [System.NonSerialized] private int _edgeBaseLeftClip = 0;
+    [System.NonSerialized] private int _edgeBaseRightClip = 0;
+    [System.NonSerialized] private int _edgeBaseTopClip = 0;
+    [System.NonSerialized] private int _edgeBaseBottomClip = 0;
+    [System.NonSerialized] private float _edgeNextCheckTime = 0f;
+
+
+    public Text GuideText;
+
+
+
     [Tooltip("Seconds between automatic threshold increments during auto key.")]
     public float autoThresholdStepInterval = 1.0f;
+    public Direction CurrentDirection;
+
+    CameraVisible _cameraVisible;
+
 
     JsonGenericUpData _genericData = new JsonGenericUpData();
 
     bool _cameraOnDelay = false;
-
-    RectTransform _rectTransform;
 
     public bool CameraOnDelay
     {
@@ -293,6 +324,20 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
         _croppedTexture = null;
     }
 
+    public void GuideTextOn()
+    {
+        if (GuideText != null)
+        {
+            GuideText.gameObject.SetActive(true);
+        }
+    }
+    public void GuideTextOff()
+    {
+        if (GuideText != null)
+        {
+            GuideText.gameObject.SetActive(false);
+        }
+    }
     bool TryGetProcessingPixels(out Color32[] pixels, out int width, out int height)
     {
         pixels = null;
@@ -480,7 +525,7 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
 
     public void Start()
     {
-        _rectTransform = GetComponent<RectTransform>();
+        _cameraVisible = FindAnyObjectByType<CameraVisible>();
     }
 
     public void SetWarningText(string message)
@@ -539,6 +584,14 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
         bottomClipPixels = Mathf.Max(0, bottomClipPixels + bottomDelta);
     }
 
+    public void CloseCamera()
+    {
+        if (CurrentDirection == Direction.Left)
+            _cameraVisible.CameraOffLeft();
+        else if (CurrentDirection == Direction.Right)
+            _cameraVisible.CameraOffRight();
+    }
+
     void OnValidate()
     {
         leftClipPixels = Mathf.Max(0, leftClipPixels);
@@ -579,7 +632,7 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
     // --- Auto Key Color Logic ---
     public void StartAutoKeyForSeconds(float seconds)
     {
-        StartAutoKeyForSeconds(seconds, false);
+        StartAutoKeyForSeconds(seconds, true);
     }
 
     public void StartAutoKeyForSeconds(float seconds, bool keepUntilGoal)
@@ -590,89 +643,155 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
             StopCoroutine(_autoKeyRoutine);
             _autoKeyRoutine = null;
         }
-        if (_autoKeyTimeoutRoutine != null)
-        {
-            StopCoroutine(_autoKeyTimeoutRoutine);
-            _autoKeyTimeoutRoutine = null;
-        }
 
         _autoKeyGoalReached = false;
+        _edgeBaselineReady = false;
+
+        float initialDuration = Mathf.Max(0.05f, seconds);
+        float maxDuration = keepUntilGoal ? float.PositiveInfinity : initialDuration;
+        _autoFocusDeadlineTime = keepUntilGoal ? float.PositiveInfinity : (Time.time + Mathf.Max(0.05f, maxDuration));
 
         _autoKeyRoutine = StartCoroutine(AutoPickKeyColorRoutine());
-        float effectiveSeconds = Mathf.Max(seconds, 10f);
-        _autoKeyTimeoutRoutine = StartCoroutine(StopAutoKeyAfterDelay(effectiveSeconds, keepUntilGoal));
-        Debug.Log($"[CameraValue] Auto key color started for '{gameObject.name}' for {effectiveSeconds} seconds. keepUntilGoal={keepUntilGoal}");
-    }
-
-    IEnumerator StopAutoKeyAfterDelay(float delay, bool keepUntilGoal)
-    {
-        SetWarningText("Auto picking key color...");
-
-        float baseDelay = Mathf.Max(0f, delay);
-        float maxWait = Mathf.Max(baseDelay, autoFocusMaxWaitSeconds);
-        float elapsed = 0f;
-        bool stoppedByGoal = false;
-
-        while (true)
-        {
-            if (_autoKeyGoalReached)
-            {
-                stoppedByGoal = true;
-                break;
-            }
-
-            if (!keepUntilGoal && elapsed >= baseDelay)
-            {
-                break;
-            }
-
-            if (elapsed >= maxWait)
-            {
-                if (!_autoKeyGoalReached)
-                    Debug.LogWarning($"[CameraValue] Auto key goal not reached within max wait ({maxWait:F1}s) on '{gameObject.name}'.");
-                break;
-            }
-
-            yield return null;
-            elapsed += Time.deltaTime;
-        }
-
-        if (_autoKeyRoutine != null)
-        {
-            StopCoroutine(_autoKeyRoutine);
-            _autoKeyRoutine = null;
-        }
-        _autoKeyTimeoutRoutine = null;
-
-        // 오토 종료 시점의 최종 키/쓰레숄드 로그
-        Debug.Log($"[CameraValue] Auto key color finished for '{gameObject.name}'. Final Key={keyColor}, Threshold={threshold:F3}");
-
-        if (stoppedByGoal)
-        {
-            IsRendered = false;
-            Debug.Log($"[CameraValue] Auto key goal reached. Camera rendering disabled for '{gameObject.name}'.");
-        }
-
-        OffWarningText();
-        Debug.Log($"[CameraValue] Auto key color stopped for '{gameObject.name}'.");
+        string deadlineText = keepUntilGoal ? "INF" : maxDuration.ToString("F2");
+        Debug.Log($"[CameraValue] Auto key color started for '{gameObject.name}'. Initial={initialDuration:F2}s, KeepUntilGoal={keepUntilGoal}, DeadlineIn={deadlineText}s");
     }
 
     IEnumerator AutoPickKeyColorRoutine()
     {
-        var wait = new WaitForSeconds(1f);
-        while (true)
+        SetWarningText("Auto picking key color...");
+        float targetTransparentRatio = Mathf.Clamp01(autoThresholdTransparentTarget);
+        float currentTransparentRatio = -1f;
+
+        bool keyAcquired = false;
+        while (!keyAcquired)
         {
+            if (Time.time >= _autoFocusDeadlineTime)
+            {
+                break;
+            }
+
             if (TryUpdateKeyAndThresholdFromWebcam(out Color sampledKeyColor, out float sampledThreshold, out bool thresholdGoalReached))
             {
-                // Smooth updates to avoid visible flicker when webcam noise spikes.
-                float lerpFactor = Mathf.Clamp01(autoUpdateLerp);
-                keyColor = Color.Lerp(keyColor, sampledKeyColor, lerpFactor);
-                threshold = Mathf.Lerp(threshold, sampledThreshold, lerpFactor);
+                // Phase 1 is key acquisition; apply sampled key immediately.
+                keyColor = sampledKeyColor;
+                threshold = sampledThreshold;
                 _autoKeyGoalReached = thresholdGoalReached;
-                Debug.Log($"Auto Color/Threshold for {gameObject.name}: {keyColor} / {threshold:F3}");
+                Debug.Log($"[CameraValue] Key acquired for {gameObject.name}: {keyColor}");
+                keyAcquired = true;
             }
-            yield return wait;
+
+            if (!keyAcquired)
+                yield return new WaitForSeconds(0.05f);
         }
+
+        if (!keyAcquired)
+        {
+            OffWarningText();
+            Debug.LogWarning($"[CameraValue] Auto key color stopped for '{gameObject.name}' because key acquisition timed out.");
+            _autoKeyRoutine = null;
+            yield break;
+        }
+
+        if (keyAcquired)
+        {
+            // Procedural phase 2: adjust threshold and compare black-pixel ratio against target.
+            float currentThreshold = Mathf.Clamp01(threshold);
+            float thresholdStep = Mathf.Max(0.0005f, autoThresholdStep);
+            float stepInterval = Mathf.Max(0.05f, autoThresholdStepInterval);
+            float maxThreshold = Mathf.Clamp01(autoMaxThreshold);
+
+            threshold = currentThreshold;
+
+            while (true)
+            {
+                if (!TryComputeTransparentRatioFromCurrentFrame(
+                    out float transparentRatio,
+                    out int transparentCount,
+                    out int totalCount,
+                    true,
+                    false
+                ))
+                {
+                    yield return new WaitForSeconds(0.05f);
+                    continue;
+                }
+
+                currentTransparentRatio = transparentRatio;
+                _autoKeyGoalReached = transparentRatio >= targetTransparentRatio;
+
+                if (verboseDebug)
+                {
+                    Debug.Log($"[CameraValue] Auto threshold step '{gameObject.name}': Threshold={currentThreshold:F3}, Transparent={transparentRatio * 100f:F1}% ({transparentCount}/{totalCount}), Target={targetTransparentRatio * 100f:F1}%, Key=({keyColor.r:F3},{keyColor.g:F3},{keyColor.b:F3})");
+                }
+
+                if (_autoKeyGoalReached)
+                {
+                    break;
+                }
+
+                if (Time.time >= _autoFocusDeadlineTime)
+                {
+                    break;
+                }
+
+                // Move threshold in the direction that increases transparent ratio.
+                float nextThreshold = Mathf.Min(maxThreshold, currentThreshold + thresholdStep);
+                if (Mathf.Approximately(nextThreshold, currentThreshold))
+                {
+                    break;
+                }
+
+                currentThreshold = nextThreshold;
+                threshold = currentThreshold;
+
+                yield return new WaitForSeconds(stepInterval);
+
+            }
+        }
+
+        bool stoppedByGoal = keyAcquired && _autoKeyGoalReached;
+        bool stoppedByDeadline = Time.time >= _autoFocusDeadlineTime;
+        float currentPercent = Mathf.Clamp01(currentTransparentRatio < 0f ? 0f : currentTransparentRatio) * 100f;
+        float targetPercent = targetTransparentRatio * 100f;
+
+        if (TryComputeEdgeBandRatios(out float leftRatio, out float rightRatio, out float topRatio, out float bottomRatio))
+        {
+            _edgeBaselineLeftRatio = leftRatio;
+            _edgeBaselineRightRatio = rightRatio;
+            _edgeBaselineTopRatio = topRatio;
+            _edgeBaselineBottomRatio = bottomRatio;
+
+            _edgeBaseLeftClip = leftClipPixels;
+            _edgeBaseRightClip = rightClipPixels;
+            _edgeBaseTopClip = topClipPixels;
+            _edgeBaseBottomClip = bottomClipPixels;
+
+            _edgeBaselineReady = true;
+            _edgeNextCheckTime = Time.time + Mathf.Max(0.05f, edgeStabilizationCheckInterval);
+        }
+
+        // 오토 종료 시점의 최종 키/쓰레숄드 로그
+        Debug.Log($"[CameraValue] Auto key color finished for '{gameObject.name}'. Final Key={keyColor}, Threshold={threshold:F3}, Transparent={currentPercent:F1}%, Target={targetPercent:F1}%, GoalReached={stoppedByGoal}, DeadlineReached={stoppedByDeadline}");
+
+        if (stoppedByGoal)
+        {
+            if (CurrentDirection == Direction.Left)
+            {
+                _cameraVisible.CameraOffLeft();
+            }
+            else if (CurrentDirection == Direction.Right)
+            {
+                _cameraVisible.CameraOffRight();
+            }
+            //IsRendered = false;
+            Debug.Log($"[CameraValue] Auto key goal reached. Camera rendering disabled for '{gameObject.name}'. Transparent={currentPercent:F1}% / Target={targetPercent:F1}%");
+        }
+
+        OffWarningText();
+        Debug.Log($"[CameraValue] Auto key color stopped for '{gameObject.name}'.");
+
+        // End this auto-key cycle strictly within the requested duration.
+        _autoKeyRoutine = null;
     }
 
     bool TryUpdateKeyAndThresholdFromWebcam(out Color sampledKeyColor, out float sampledThreshold, out bool thresholdGoalReached)
@@ -869,46 +988,6 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
                 );
             }
 
-            // Recalculate distances against the finalized key color using chroma-only distance.
-            List<float> keyDistances = new List<float>(inlierColors.Count);
-            float kr = sampledKeyColor.r;
-            float kg = sampledKeyColor.g;
-            float kb = sampledKeyColor.b;
-
-            float keyY = 0.299f * kr + 0.587f * kg + 0.114f * kb;
-            float keyCb = (kb - keyY) * 0.5f;
-            float keyCr = (kr - keyY) * 0.5f;
-
-            for (int i = 0; i < inlierColors.Count; i++)
-            {
-                Color32 c = inlierColors[i];
-                float r = c.r / 255f;
-                float g = c.g / 255f;
-                float b = c.b / 255f;
-
-                float y = 0.299f * r + 0.587f * g + 0.114f * b;
-                float cb = (b - y) * 0.5f;
-                float cr = (r - y) * 0.5f;
-
-                float dCb = cb - keyCb;
-                float dCr = cr - keyCr;
-                float keyDist = Mathf.Sqrt(dCb * dCb + dCr * dCr);
-                keyDistances.Add(keyDist);
-            }
-
-            if (keyDistances.Count > 0)
-            {
-                _autoKeyDistances = keyDistances;
-                _autoCurrentThreshold = 0f;
-                _autoMaxThresholdRuntime = Mathf.Clamp01(autoMaxThreshold);
-                _autoStepRuntime = Mathf.Max(0.0005f, autoThresholdStep);
-
-                // 키값을 갱신한 시점부터 1초 동안은 threshold를 0으로 유지하고, 그 뒤에 탐색 시작
-                _autoSearching = false;
-                _autoThresholdStartDelayUntil = Time.time + 1.0f; // 1초 대기 후 시작
-                _autoNextUpdateTime = _autoThresholdStartDelayUntil; // 첫 스텝 시간도 동일하게 설정
-            }
-
             // threshold는 일단 0에서 시작해서, Update()에서 단계적으로 올린다.
             sampledThreshold = 0f;
             thresholdGoalReached = false;
@@ -916,6 +995,145 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
         }
 
         return false;
+    }
+
+    bool TryComputeTransparentRatioFromCurrentFrame(
+        out float transparentRatio,
+        out int transparentCount,
+        out int totalCount,
+        bool useFullFrame = false,
+        bool useCenterExclusion = true)
+    {
+        transparentRatio = 0f;
+        transparentCount = 0;
+        totalCount = 0;
+
+        if (!TryGetProcessingPixels(out Color32[] pixels, out int w, out int h))
+        {
+            return false;
+        }
+
+        int x0 = useFullFrame ? 0 : (w / 4);
+        int y0 = useFullFrame ? 0 : (h / 4);
+        int x1 = useFullFrame ? w : ((w * 3) / 4);
+        int y1 = useFullFrame ? h : ((h * 3) / 4);
+
+        if (autoUseFixedPercentRoi)
+        {
+            float minX = Mathf.Clamp01(autoPercentRoiXMin);
+            float minY = Mathf.Clamp01(autoPercentRoiYMin);
+            float maxX = Mathf.Clamp01(autoPercentRoiXMax);
+            float maxY = Mathf.Clamp01(autoPercentRoiYMax);
+
+            if (maxX < minX)
+            {
+                float t = minX;
+                minX = maxX;
+                maxX = t;
+            }
+            if (maxY < minY)
+            {
+                float t = minY;
+                minY = maxY;
+                maxY = t;
+            }
+
+            x0 = Mathf.Clamp(Mathf.FloorToInt(minX * (w - 1)), 0, Mathf.Max(0, w - 1));
+            y0 = Mathf.Clamp(Mathf.FloorToInt(minY * (h - 1)), 0, Mathf.Max(0, h - 1));
+            x1 = Mathf.Clamp(Mathf.CeilToInt(maxX * (w - 1)) + 1, x0 + 1, w);
+            y1 = Mathf.Clamp(Mathf.CeilToInt(maxY * (h - 1)) + 1, y0 + 1, h);
+        }
+
+        int stepX = useFullFrame ? 1 : Mathf.Max(1, (x1 - x0) / 96);
+        int stepY = useFullFrame ? 1 : Mathf.Max(1, (y1 - y0) / 54);
+
+        int cx0 = x0;
+        int cy0 = y0;
+        int cx1 = x1;
+        int cy1 = y1;
+        if (useCenterExclusion && autoUseEdgeSampling)
+        {
+            float exclusion = Mathf.Clamp01(autoCenterExclusionRatio);
+            int roiW = x1 - x0;
+            int roiH = y1 - y0;
+            int padX = Mathf.RoundToInt((roiW * exclusion) * 0.5f);
+            int padY = Mathf.RoundToInt((roiH * exclusion) * 0.5f);
+            cx0 = x0 + padX;
+            cy0 = y0 + padY;
+            cx1 = x1 - padX;
+            cy1 = y1 - padY;
+        }
+
+        if (x1 <= x0 || y1 <= y0)
+        {
+            return false;
+        }
+
+        Color.RGBToHSV(keyColor, out float keyH, out float keyS, out float keyV);
+        float keySat = keyS;
+        float keyVal = keyV;
+        float wHue = 0.7f + (0.2f * keySat);
+        float wSat = 0.35f;
+        float wVal = Mathf.Lerp(0.45f, 0.12f, keySat);
+        wVal += Mathf.Clamp01((0.2f - keyVal) / 0.2f) * 0.12f;
+        float norm = Mathf.Sqrt((wHue * wHue) + (wSat * wSat) + (wVal * wVal));
+
+        float thresholdLocal = Mathf.Clamp01(threshold);
+        float smoothLocal = Mathf.Max(smoothness, 1e-5f);
+        float edgeLocal = Mathf.Max(1f, edgeContrast);
+        float midRange = Mathf.Clamp(midValueFilter, 0f, 0.49f);
+        float midMin = 0.5f - midRange;
+        float midMax = 0.5f + midRange;
+        float alphaCutoffLocal = Mathf.Clamp01(alphaCutoff);
+
+        for (int y = y0; y < y1; y += stepY)
+        {
+            int row = y * w;
+            for (int x = x0; x < x1; x += stepX)
+            {
+                if (useCenterExclusion && autoUseEdgeSampling && x >= cx0 && x < cx1 && y >= cy0 && y < cy1)
+                {
+                    continue;
+                }
+
+                Color32 c = pixels[row + x];
+                totalCount++;
+                Color.RGBToHSV(new Color(c.r / 255f, c.g / 255f, c.b / 255f), out float hsvH, out float hsvS, out float hsvV);
+
+                float hueDist = Mathf.Abs(hsvH - keyH);
+                hueDist = Mathf.Min(hueDist, 1f - hueDist) * 2f;
+                float satDist = Mathf.Abs(hsvS - keyS);
+                float valDist = Mathf.Abs(hsvV - keyV);
+
+                float dist = Mathf.Sqrt(
+                    (hueDist * hueDist * wHue * wHue) +
+                    (satDist * satDist * wSat * wSat) +
+                    (valDist * valDist * wVal * wVal)
+                );
+                float keyDist = dist / Mathf.Max(norm, 1e-5f);
+
+                float alpha = Mathf.Clamp01((keyDist - thresholdLocal) / smoothLocal);
+                alpha = Mathf.Clamp01((alpha - 0.5f) * edgeLocal + 0.5f);
+                if (alpha >= midMin && alpha <= midMax)
+                {
+                    alpha = 0f;
+                }
+                alpha = alpha >= alphaCutoffLocal ? 1f : 0f;
+
+                if (alpha < 0.5f)
+                {
+                    transparentCount++;
+                }
+            }
+        }
+
+        if (totalCount <= 0)
+        {
+            return false;
+        }
+
+        transparentRatio = (float)transparentCount / totalCount;
+        return true;
     }
 
     void Update()
@@ -931,49 +1149,168 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
             {
                 material.mainTexture = outputTexture;
             }
-        }
 
-        // 키값을 찾은 뒤 일정 시간(예: 1초)이 지난 후에만 autoSearching을 활성화
-        if (!_autoSearching && _autoKeyDistances != null && _autoKeyDistances.Count > 0)
-        {
-            if (Time.time >= _autoThresholdStartDelayUntil)
+            if (debugPercentEveryFrame && TryComputeTransparentRatioFromCurrentFrame(out float transparentRatio, out int transparentCount, out int totalCount))
             {
-                _autoSearching = true;
-                // _autoNextUpdateTime 은 TryUpdateKeyAndThresholdFromWebcam 에서 설정됨
+                Debug.Log($"[CameraValue] FramePercent '{gameObject.name}': Transparent={transparentRatio * 100f:F1}% ({transparentCount}/{totalCount}), Threshold={threshold:F3}, Key=({keyColor.r:F3},{keyColor.g:F3},{keyColor.b:F3})");
             }
-        }
 
-        // Auto threshold runtime stepping: increment in small steps with visual pause between updates.
-        if (_autoSearching && _autoKeyDistances != null && _autoKeyDistances.Count > 0)
-        {
-            if (Time.time >= _autoNextUpdateTime)
+            if (enableEdgeLineStabilization && _autoKeyRoutine == null && _edgeBaselineReady && Time.time >= _edgeNextCheckTime)
             {
-                int total = _autoKeyDistances.Count;
-                float targetTransparentRatio = Mathf.Clamp01(autoThresholdTransparentTarget);
-                float current = _autoCurrentThreshold;
+                _edgeNextCheckTime = Time.time + Mathf.Max(0.05f, edgeStabilizationCheckInterval);
 
-                int transparentCount = 0;
-                for (int i = 0; i < total; i++)
+                if (TryComputeEdgeBandRatios(out float leftNow, out float rightNow, out float topNow, out float bottomNow))
                 {
-                    if (_autoKeyDistances[i] <= current)
-                        transparentCount++;
-                }
+                    bool changed = false;
+                    int step = Mathf.Max(1, edgeStabilizationClipStep);
+                    int maxExtra = Mathf.Max(0, edgeStabilizationMaxExtraClip);
+                    float tolerance = Mathf.Max(0.0001f, edgeStabilizationTolerance);
 
-                float transparentRatio = (float)transparentCount / total;
-                threshold = Mathf.Clamp01(current);
+                    changed |= AdjustEdgeClipFromRatio(leftNow, _edgeBaselineLeftRatio, ref leftClipPixels, _edgeBaseLeftClip, step, maxExtra, tolerance);
+                    changed |= AdjustEdgeClipFromRatio(rightNow, _edgeBaselineRightRatio, ref rightClipPixels, _edgeBaseRightClip, step, maxExtra, tolerance);
+                    changed |= AdjustEdgeClipFromRatio(topNow, _edgeBaselineTopRatio, ref topClipPixels, _edgeBaseTopClip, step, maxExtra, tolerance);
+                    changed |= AdjustEdgeClipFromRatio(bottomNow, _edgeBaselineBottomRatio, ref bottomClipPixels, _edgeBaseBottomClip, step, maxExtra, tolerance);
 
-                if (transparentRatio >= targetTransparentRatio || current >= _autoMaxThresholdRuntime)
-                {
-                    _autoSearching = false;
-                    _autoKeyGoalReached = transparentRatio >= targetTransparentRatio;
-                }
-                else
-                {
-                    _autoCurrentThreshold = Mathf.Min(current + _autoStepRuntime, _autoMaxThresholdRuntime);
-                    _autoNextUpdateTime = Time.time + Mathf.Max(0.05f, autoThresholdStepInterval);
+                    if (verboseDebug && changed)
+                    {
+                        Debug.Log($"[CameraValue] EdgeStabilize '{gameObject.name}': L={leftClipPixels}, R={rightClipPixels}, T={topClipPixels}, B={bottomClipPixels} | EdgeNow(LRTB)=({leftNow * 100f:F1},{rightNow * 100f:F1},{topNow * 100f:F1},{bottomNow * 100f:F1}) | Base=({_edgeBaselineLeftRatio * 100f:F1},{_edgeBaselineRightRatio * 100f:F1},{_edgeBaselineTopRatio * 100f:F1},{_edgeBaselineBottomRatio * 100f:F1})");
+                    }
                 }
             }
         }
+    }
+
+    bool AdjustEdgeClipFromRatio(float nowRatio, float baselineRatio, ref int clipPixels, int baseClip, int step, int maxExtra, float tolerance)
+    {
+        float diff = nowRatio - baselineRatio;
+        int prev = clipPixels;
+        int maxClip = baseClip + maxExtra;
+
+        if (diff > tolerance)
+        {
+            clipPixels = Mathf.Min(maxClip, clipPixels + step);
+        }
+        else if (diff < (tolerance * 0.35f) && clipPixels > baseClip)
+        {
+            clipPixels = Mathf.Max(baseClip, clipPixels - step);
+        }
+
+        return prev != clipPixels;
+    }
+
+    bool TryComputeEdgeBandRatios(out float leftRatio, out float rightRatio, out float topRatio, out float bottomRatio)
+    {
+        leftRatio = 0f;
+        rightRatio = 0f;
+        topRatio = 0f;
+        bottomRatio = 0f;
+
+        if (!TryGetProcessingPixels(out Color32[] pixels, out int w, out int h))
+        {
+            return false;
+        }
+
+        if (w <= 1 || h <= 1)
+        {
+            return false;
+        }
+
+        int band = Mathf.Clamp(edgeStabilizationBandPixels, 1, Mathf.Min(w, h) / 2);
+        if (band <= 0)
+        {
+            return false;
+        }
+
+        Color.RGBToHSV(keyColor, out float keyH, out float keyS, out float keyV);
+        float keySat = keyS;
+        float keyVal = keyV;
+        float wHue = 0.7f + (0.2f * keySat);
+        float wSat = 0.35f;
+        float wVal = Mathf.Lerp(0.45f, 0.12f, keySat);
+        wVal += Mathf.Clamp01((0.2f - keyVal) / 0.2f) * 0.12f;
+        float norm = Mathf.Sqrt((wHue * wHue) + (wSat * wSat) + (wVal * wVal));
+
+        float thresholdLocal = Mathf.Clamp01(threshold);
+        float smoothLocal = Mathf.Max(smoothness, 1e-5f);
+        float edgeLocal = Mathf.Max(1f, edgeContrast);
+        float midRange = Mathf.Clamp(midValueFilter, 0f, 0.49f);
+        float midMin = 0.5f - midRange;
+        float midMax = 0.5f + midRange;
+        float alphaCutoffLocal = Mathf.Clamp01(alphaCutoff);
+
+        int leftTransparent = 0, leftTotal = 0;
+        int rightTransparent = 0, rightTotal = 0;
+        int topTransparent = 0, topTotal = 0;
+        int bottomTransparent = 0, bottomTotal = 0;
+
+        for (int y = 0; y < h; y++)
+        {
+            int row = y * w;
+            bool inTop = y >= (h - band);
+            bool inBottom = y < band;
+
+            for (int x = 0; x < w; x++)
+            {
+                bool inLeft = x < band;
+                bool inRight = x >= (w - band);
+
+                if (!inLeft && !inRight && !inTop && !inBottom)
+                {
+                    continue;
+                }
+
+                Color32 c = pixels[row + x];
+                Color.RGBToHSV(new Color(c.r / 255f, c.g / 255f, c.b / 255f), out float hsvH, out float hsvS, out float hsvV);
+
+                float hueDist = Mathf.Abs(hsvH - keyH);
+                hueDist = Mathf.Min(hueDist, 1f - hueDist) * 2f;
+                float satDist = Mathf.Abs(hsvS - keyS);
+                float valDist = Mathf.Abs(hsvV - keyV);
+
+                float dist = Mathf.Sqrt(
+                    (hueDist * hueDist * wHue * wHue) +
+                    (satDist * satDist * wSat * wSat) +
+                    (valDist * valDist * wVal * wVal)
+                );
+                float keyDist = dist / Mathf.Max(norm, 1e-5f);
+
+                float alpha = Mathf.Clamp01((keyDist - thresholdLocal) / smoothLocal);
+                alpha = Mathf.Clamp01((alpha - 0.5f) * edgeLocal + 0.5f);
+                if (alpha >= midMin && alpha <= midMax)
+                {
+                    alpha = 0f;
+                }
+                alpha = alpha >= alphaCutoffLocal ? 1f : 0f;
+                bool isTransparent = alpha < 0.5f;
+
+                if (inLeft)
+                {
+                    leftTotal++;
+                    if (isTransparent) leftTransparent++;
+                }
+                if (inRight)
+                {
+                    rightTotal++;
+                    if (isTransparent) rightTransparent++;
+                }
+                if (inTop)
+                {
+                    topTotal++;
+                    if (isTransparent) topTransparent++;
+                }
+                if (inBottom)
+                {
+                    bottomTotal++;
+                    if (isTransparent) bottomTransparent++;
+                }
+            }
+        }
+
+        leftRatio = leftTotal > 0 ? (float)leftTransparent / leftTotal : 0f;
+        rightRatio = rightTotal > 0 ? (float)rightTransparent / rightTotal : 0f;
+        topRatio = topTotal > 0 ? (float)topTransparent / topTotal : 0f;
+        bottomRatio = bottomTotal > 0 ? (float)bottomTransparent / bottomTotal : 0f;
+        return leftTotal > 0 && rightTotal > 0 && topTotal > 0 && bottomTotal > 0;
     }
 
     public void Initialize(JsonGenericUpData data)
@@ -1014,7 +1351,11 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
 
     public void StopAutoThreshold()
     {
-        _autoSearching = false;
-        _autoKeyDistances = null;
+        if (_autoKeyRoutine != null)
+        {
+            StopCoroutine(_autoKeyRoutine);
+            _autoKeyRoutine = null;
+        }
+        _edgeBaselineReady = false;
     }
 }

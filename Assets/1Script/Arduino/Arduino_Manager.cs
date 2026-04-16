@@ -58,6 +58,10 @@ public class Arduino_Manager : MonoBehaviour, IJsonGenericTarget
         {
             if (arduino.stream.IsOpen == false)
                 return;
+            else
+            {
+                arduino.LEDAllOff();
+            }
             arduino.StopArduino();
         }
 

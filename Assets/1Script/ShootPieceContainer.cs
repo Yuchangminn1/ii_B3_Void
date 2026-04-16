@@ -42,7 +42,7 @@ public class ShootPieceContainer : MonoBehaviour
     public GamePopup gamePopup;
 
 
-    public ShadowMaskContainer[] shadowMaskContainers;
+    //public ShadowMaskContainer[] shadowMaskContainers;
 
 
     bool _isClearLeft = false;
@@ -105,7 +105,7 @@ public class ShootPieceContainer : MonoBehaviour
     {
         PageController.Instance.OnReset += Reset;
 
-        shadowMaskContainers = FindObjectsOfType<ShadowMaskContainer>();
+        //shadowMaskContainers = FindObjectsOfType<ShadowMaskContainer>();
     }
 
 
@@ -209,10 +209,10 @@ public class ShootPieceContainer : MonoBehaviour
         count = 0;
 
 
-        foreach (var shadowMaskContainer in shadowMaskContainers)
-        {
-            shadowMaskContainer.CurrentIndex = CurrentIndex - 4;
-        }
+        // foreach (var shadowMaskContainer in shadowMaskContainers)
+        // {
+        //     shadowMaskContainer.CurrentIndex = CurrentIndex - 4;
+        // }
 
         showContainer.ShowSideImages(Direction.Left, leftPlayerTutorialShapeIndex[CurrentIndex / PieceGroupSize - 1], false, count);
         showContainer.ShowSideImages(Direction.Right, rightPlayerTutorialShapeIndex[CurrentIndex / PieceGroupSize - 1], false, count);
@@ -253,22 +253,22 @@ public class ShootPieceContainer : MonoBehaviour
         {
             if (_isClearLeft == false)
             {
-                foreach (var shadowMaskContainer in shadowMaskContainers)
-                {
-                    if (shadowMaskContainer.CurrentDirection == Direction.Left)
-                        shadowMaskContainer.CurrentIndex++;
-                }
+                // foreach (var shadowMaskContainer in shadowMaskContainers)
+                // {
+                //     if (shadowMaskContainer.CurrentDirection == Direction.Left)
+                //         shadowMaskContainer.CurrentIndex++;
+                // }
                 showContainer.ShowSideImages(Direction.Left, leftPlayerTutorialShapeIndex[CurrentIndex / PieceGroupSize - 1], false, count);
 
             }
             if (_isClearRight == false)
             {
-                foreach (var shadowMaskContainer in shadowMaskContainers)
-                {
-                    if (shadowMaskContainer.CurrentDirection == Direction.Right)
-                        shadowMaskContainer.CurrentIndex++;
+                // foreach (var shadowMaskContainer in shadowMaskContainers)
+                // {
+                //     if (shadowMaskContainer.CurrentDirection == Direction.Right)
+                //         shadowMaskContainer.CurrentIndex++;
 
-                }
+                // }
                 showContainer.ShowSideImages(Direction.Right, rightPlayerTutorialShapeIndex[CurrentIndex / PieceGroupSize - 1], false, count);
             }
 

@@ -50,10 +50,10 @@ public class TutorialAcCheck : AcCheck
 
         Debug.Log("AcCheck - StartCheck: " + CurrentDirection);
 
-        if (shadowMaskContainer != null)
-        {
-            shadowMaskContainer.CurrentIndex = 0;
-        }
+        // if (shadowMaskContainer != null)
+        // {
+        //     shadowMaskContainer.CurrentIndex = 0;
+        // }
 
         if (outputText != null)
         {

@@ -78,7 +78,6 @@
     <Compile Include="Assets\1Script\3Singleton\GameManager.cs" />
     <Compile Include="Assets\1Script\StopMotionCreate.cs" />
     <Compile Include="Assets\1Script\ShhotPiecePosContainer.cs" />
-    <Compile Include="Assets\1Script\CamraVisible.cs" />
     <Compile Include="Assets\1Script\SaveShadowTexContainer.cs" />
     <Compile Include="Assets\1Script\CoroutineReturnManager.cs" />
     <Compile Include="Assets\Unity-Logs-Viewer\Reporter\Test\Rotate.cs" />
@@ -121,7 +120,6 @@
     <Compile Include="Assets\1Script\AnswerStamp.cs" />
     <Compile Include="Assets\1Script\ShootPieceContainer.cs" />
     <Compile Include="Assets\1Script\3Singleton\QuestionManager.cs" />
-    <Compile Include="Assets\1Script\ShadowMaskContainer.cs" />
     <Compile Include="Assets\1Script\2PageSequence\SequenceScript.cs" />
     <Compile Include="Assets\1Script\2PageSequence\PageButton.cs" />
     <Compile Include="Assets\Unity-Logs-Viewer\Reporter\Reporter.cs" />
@@ -145,6 +143,7 @@
     <Compile Include="Assets\1Script\2PageSequence\MainPage.cs" />
     <Compile Include="Assets\1Script\AcCheckStep.cs" />
     <Compile Include="Assets\1Script\TutorialAcCheck.cs" />
+    <Compile Include="Assets\1Script\CameraVisible.cs" />
     <Compile Include="Assets\1Script\ShootPiece.cs" />
     <Compile Include="Assets\1Script\SaveShadowTex.cs" />
     <Compile Include="Assets\1Script\3Singleton\SoundManager.cs" />

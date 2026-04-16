@@ -35,7 +35,7 @@
     "floatParams": {
       "threshold": 0.05,
       "smoothness": 0.0,
-      "autoThresholdTransparentTarget": 0.88
+      "autoThresholdTransparentTarget": 0.98
     },
     "boolParams": {},
     "stringParams": {}
@@ -45,7 +45,7 @@
     "floatParams": {
       "threshold": 0.01,
       "smoothness": 0.0,
-      "autoThresholdTransparentTarget": 0.88
+      "autoThresholdTransparentTarget": 0.98
     },
     "boolParams": {},
     "stringParams": {}
@@ -76,7 +76,7 @@
       "ClearShadowSoundVolume": 1.0,
       "SecondSound3Volume": 1.0,
       "SecondSound5Volume": 1.0,
-      "QuestionSoundVolume": 4.0,
+      "QuestionSoundVolume": 6.0,
       "StartSoundVolume": 1.0,
       "SecondSound10Volume": 1.0,
       "AllReadySoundVolume": 1.0,

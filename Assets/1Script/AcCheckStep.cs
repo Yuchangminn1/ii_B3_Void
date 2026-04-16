@@ -66,6 +66,8 @@ public class AcCheckStep : AcCheck
     {
         base.Start();
 
+        //matchedAdjustPercent += ;
+
         //protrusionAdjustPercent += 8f;
 
 

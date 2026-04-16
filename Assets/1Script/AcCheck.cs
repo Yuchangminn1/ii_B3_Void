@@ -49,14 +49,14 @@ public class AcCheck : MonoBehaviour
     [Tooltip("MatchedPercent: 기존 방식(matched/target). ProtrusionOverTarget: 삐져나온 픽 기준(target). ProtrusionOverOverlap: 삐져나온 픽을 겹친 픽 기준으로 계산.")]
     public DetectionMode detectionMode = DetectionMode.MatchedPercent;
 
-    public ShadowMaskContainer shadowMaskContainer;
+    //public ShadowMaskContainer shadowMaskContainer;
 
     [Header("결과를 표시할 UI Text (선택)")]
     [SerializeField] protected Text outputText;
     [Header("텍스트 포맷 예시: {0:F1}%")]
     [SerializeField] string outputFormat = "{0:F1}%";
 
-    CameraValue cameraValue = null;
+    CameraValue _cameraValue = null;
 
     //영역 채우기 임계값
     const int MatchedPercentThreshold = 50;
@@ -112,14 +112,23 @@ public class AcCheck : MonoBehaviour
     {
         PageController.Instance.OnReset += Reset;
 
-        foreach (ShadowMaskContainer tmp in FindObjectsOfType<ShadowMaskContainer>())
+        // foreach (ShadowMaskContainer tmp in FindObjectsOfType<ShadowMaskContainer>())
+        // {
+        //     if (tmp.CurrentDirection == CurrentDirection)
+        //     {
+        //         shadowMaskContainer = tmp;
+        //         break;
+        //     }
+
+        // }
+
+        foreach (CameraValue tmp in FindObjectsOfType<CameraValue>())
         {
             if (tmp.CurrentDirection == CurrentDirection)
             {
-                shadowMaskContainer = tmp;
+                _cameraValue = tmp;
                 break;
             }
-
         }
     }
 
@@ -185,10 +194,12 @@ public class AcCheck : MonoBehaviour
         _isClear = false;
         ApplyOverlayShaderMaskFromTarget();
 
+        _cameraValue.GuideTextOn();
+
         Debug.Log("AcCheck - StartCheck: " + CurrentDirection);
 
 
-        shadowMaskContainer.CurrentIndex++;
+        //shadowMaskContainer.CurrentIndex++;
 
         if (outputText != null)
         {
@@ -211,8 +222,11 @@ public class AcCheck : MonoBehaviour
     {
 
         _isCheck = false;
+        _cameraValue?.CloseCamera();
+        _cameraValue.GuideTextOff();
+
         ClearOverlayShaderMask();
-        shadowMaskContainer.HideShadowMasks();
+        //shadowMaskContainer.HideShadowMasks();
 
 
         if (outputText != null)
@@ -277,12 +291,12 @@ public class AcCheck : MonoBehaviour
             return;
         }
 
-        if (cameraValue == null)
-        {
-            cameraValue = overlayRawImage.GetComponent<CameraValue>();
-        }
+        // if (cameraValue == null)
+        // {
+        //     cameraValue = overlayRawImage.GetComponent<CameraValue>();
+        // }
 
-        if (cameraValue.CameraOnDelay)
+        if (_cameraValue.CameraOnDelay)
         {
             return;
         }
@@ -514,7 +528,7 @@ public class AcCheck : MonoBehaviour
         // Combine ratios with higher weight on matchedRatio (inside coverage).
         // matchedRatio 비중을 3배로, protrusionRatio 비중을 1배로 줌.
         //float combinedRatio = (matchedRatio * 3f + protrusionRatio * 1f) / 4f;
-        float combinedPercent = (100f / MatchedPercentThreshold) * matchedRatio * 100f;
+        float combinedPercent = (100f / (MatchedPercentThreshold - matchedAdjustPercent)) * matchedRatio * 100f;
 
 
 
@@ -647,15 +661,8 @@ public class AcCheck : MonoBehaviour
 
         if (rawImage == null) return false;
 
-        // If RawImage has a material (shader) we usually render material output into RT.
-        // However, target-mask shader path relies on UI mesh local coordinates and can break in Graphics.Blit.
+        // If RawImage has a material (shader), render material output into RT so readback follows shader result.
         bool canUseMaterialReadback = rawImage.material != null;
-        if (canUseMaterialReadback
-            && rawImage.material.HasProperty(ShaderPropTargetMaskEnabled)
-            && rawImage.material.GetFloat(ShaderPropTargetMaskEnabled) > 0.5f)
-        {
-            canUseMaterialReadback = false;
-        }
 
         if (canUseMaterialReadback)
         {
@@ -681,9 +688,18 @@ public class AcCheck : MonoBehaviour
 
             RenderTexture rt = new RenderTexture(w, h, 0, RenderTextureFormat.ARGB32);
             RenderTexture prev = RenderTexture.active;
+            bool hasTargetMaskProp = rawImage.material.HasProperty(ShaderPropTargetMaskEnabled);
+            float originalTargetMaskEnabled = hasTargetMaskProp ? rawImage.material.GetFloat(ShaderPropTargetMaskEnabled) : 0f;
             try
             {
                 rt.Create();
+                if (hasTargetMaskProp)
+                {
+                    // Graphics.Blit does not preserve UI mesh-local coordinates used by target-mask clipping.
+                    // Disable only mask clipping during readback; geometric overlap is handled in CPU matching logic.
+                    rawImage.material.SetFloat(ShaderPropTargetMaskEnabled, 0f);
+                }
+
                 // Blit using the RawImage's material so shader output is rendered into RT
                 Graphics.Blit(src, rt, rawImage.material);
 
@@ -698,6 +714,11 @@ public class AcCheck : MonoBehaviour
             }
             finally
             {
+                if (hasTargetMaskProp)
+                {
+                    rawImage.material.SetFloat(ShaderPropTargetMaskEnabled, originalTargetMaskEnabled);
+                }
+
                 RenderTexture.active = prev;
 
                 // Safety guard: never release an RT while it is still active.
@@ -878,6 +899,12 @@ public class AcCheck : MonoBehaviour
         if (overlayMaterial == null) return;
 
         if (!overlayMaterial.HasProperty(ShaderPropTargetMaskEnabled)) return;
+
+        //_cameraValue?.CloseCamera();
+
+
         overlayMaterial.SetFloat(ShaderPropTargetMaskEnabled, 0f);
+
+
     }
 }
