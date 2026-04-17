@@ -522,7 +522,7 @@ public class AcCheck : MonoBehaviour
 
         float matchedRatio = effMatchedThreshold > 0f ? Mathf.Clamp01(matchedPercent / effMatchedThreshold) : 1f;
 
-        Debug.LogWarning($"matchedRatio = {matchedRatio}");
+        //Debug.LogWarning($"matchedRatio = {matchedRatio}");
         //float protrusionRatio = effProtrusionThreshold > 0f ? Mathf.Clamp01(protrusionOverTargetPercent / effProtrusionThreshold) : 1f;
 
         // Combine ratios with higher weight on matchedRatio (inside coverage).
