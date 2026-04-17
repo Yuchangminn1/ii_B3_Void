@@ -59,15 +59,6 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
     [Range(0f, 1f)] public float autoPercentRoiXMax = 0.75f;
     [Range(0f, 1f)] public float autoPercentRoiYMax = 0.75f;
 
-    [Header("Post Focus Edge Stabilization")]
-    [Tooltip("After focus completes, stabilize only the outer border lines without changing global threshold.")]
-    public bool enableEdgeLineStabilization = true;
-    [Range(2, 64)] public int edgeStabilizationBandPixels = 12;
-    [Range(0.005f, 0.3f)] public float edgeStabilizationTolerance = 0.04f;
-    [Range(1, 20)] public int edgeStabilizationClipStep = 2;
-    [Range(0, 80)] public int edgeStabilizationMaxExtraClip = 24;
-    [Range(0.05f, 2f)] public float edgeStabilizationCheckInterval = 0.2f;
-
     [Header("Output Settings")]
     [Tooltip("Toggle camera rendering/visibility with a bool value.")]
     [SerializeField] private bool renderByBool = false;
@@ -102,17 +93,6 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
     private bool _autoKeyGoalReached;
 
     [System.NonSerialized] private float _autoFocusDeadlineTime = 0f;
-    [System.NonSerialized] private bool _edgeBaselineReady = false;
-    [System.NonSerialized] private float _edgeBaselineLeftRatio = 0f;
-    [System.NonSerialized] private float _edgeBaselineRightRatio = 0f;
-    [System.NonSerialized] private float _edgeBaselineTopRatio = 0f;
-    [System.NonSerialized] private float _edgeBaselineBottomRatio = 0f;
-    [System.NonSerialized] private int _edgeBaseLeftClip = 0;
-    [System.NonSerialized] private int _edgeBaseRightClip = 0;
-    [System.NonSerialized] private int _edgeBaseTopClip = 0;
-    [System.NonSerialized] private int _edgeBaseBottomClip = 0;
-    [System.NonSerialized] private float _edgeNextCheckTime = 0f;
-
 
     public Text GuideText;
 
@@ -651,7 +631,6 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
         }
 
         _autoKeyGoalReached = false;
-        _edgeBaselineReady = false;
 
         float initialDuration = Mathf.Max(0.05f, seconds);
         float maxDuration = keepUntilGoal ? float.PositiveInfinity : initialDuration;
@@ -759,22 +738,6 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
         bool stoppedByDeadline = Time.time >= _autoFocusDeadlineTime;
         float currentPercent = Mathf.Clamp01(currentTransparentRatio < 0f ? 0f : currentTransparentRatio) * 100f;
         float targetPercent = targetTransparentRatio * 100f;
-
-        if (TryComputeEdgeBandRatios(out float leftRatio, out float rightRatio, out float topRatio, out float bottomRatio))
-        {
-            _edgeBaselineLeftRatio = leftRatio;
-            _edgeBaselineRightRatio = rightRatio;
-            _edgeBaselineTopRatio = topRatio;
-            _edgeBaselineBottomRatio = bottomRatio;
-
-            _edgeBaseLeftClip = leftClipPixels;
-            _edgeBaseRightClip = rightClipPixels;
-            _edgeBaseTopClip = topClipPixels;
-            _edgeBaseBottomClip = bottomClipPixels;
-
-            _edgeBaselineReady = true;
-            _edgeNextCheckTime = Time.time + Mathf.Max(0.05f, edgeStabilizationCheckInterval);
-        }
 
         // 오토 종료 시점의 최종 키/쓰레숄드 로그
         Debug.Log($"[CameraValue] Auto key color finished for '{gameObject.name}'. Final Key={keyColor}, Threshold={threshold:F3}, Transparent={currentPercent:F1}%, Target={targetPercent:F1}%, GoalReached={stoppedByGoal}, DeadlineReached={stoppedByDeadline}");
@@ -1166,166 +1129,10 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
             {
                 Debug.Log($"[CameraValue] FramePercent '{gameObject.name}': Transparent={transparentRatio * 100f:F1}% ({transparentCount}/{totalCount}), Threshold={threshold:F3}, Key=({keyColor.r:F3},{keyColor.g:F3},{keyColor.b:F3})");
             }
-
-            if (enableEdgeLineStabilization && _autoKeyRoutine == null && _edgeBaselineReady && Time.time >= _edgeNextCheckTime)
-            {
-                _edgeNextCheckTime = Time.time + Mathf.Max(0.05f, edgeStabilizationCheckInterval);
-
-                if (TryComputeEdgeBandRatios(out float leftNow, out float rightNow, out float topNow, out float bottomNow))
-                {
-                    bool changed = false;
-                    int step = Mathf.Max(1, edgeStabilizationClipStep);
-                    int maxExtra = Mathf.Max(0, edgeStabilizationMaxExtraClip);
-                    float tolerance = Mathf.Max(0.0001f, edgeStabilizationTolerance);
-
-                    changed |= AdjustEdgeClipFromRatio(leftNow, _edgeBaselineLeftRatio, ref leftClipPixels, _edgeBaseLeftClip, step, maxExtra, tolerance);
-                    changed |= AdjustEdgeClipFromRatio(rightNow, _edgeBaselineRightRatio, ref rightClipPixels, _edgeBaseRightClip, step, maxExtra, tolerance);
-                    changed |= AdjustEdgeClipFromRatio(topNow, _edgeBaselineTopRatio, ref topClipPixels, _edgeBaseTopClip, step, maxExtra, tolerance);
-                    changed |= AdjustEdgeClipFromRatio(bottomNow, _edgeBaselineBottomRatio, ref bottomClipPixels, _edgeBaseBottomClip, step, maxExtra, tolerance);
-
-                    if (verboseDebug && changed)
-                    {
-                        Debug.Log($"[CameraValue] EdgeStabilize '{gameObject.name}': L={leftClipPixels}, R={rightClipPixels}, T={topClipPixels}, B={bottomClipPixels} | EdgeNow(LRTB)=({leftNow * 100f:F1},{rightNow * 100f:F1},{topNow * 100f:F1},{bottomNow * 100f:F1}) | Base=({_edgeBaselineLeftRatio * 100f:F1},{_edgeBaselineRightRatio * 100f:F1},{_edgeBaselineTopRatio * 100f:F1},{_edgeBaselineBottomRatio * 100f:F1})");
-                    }
-                }
-            }
         }
     }
 
-    bool AdjustEdgeClipFromRatio(float nowRatio, float baselineRatio, ref int clipPixels, int baseClip, int step, int maxExtra, float tolerance)
-    {
-        float diff = nowRatio - baselineRatio;
-        int prev = clipPixels;
-        int maxClip = baseClip + maxExtra;
-
-        if (diff > tolerance)
-        {
-            clipPixels = Mathf.Min(maxClip, clipPixels + step);
-        }
-        else if (diff < (tolerance * 0.35f) && clipPixels > baseClip)
-        {
-            clipPixels = Mathf.Max(baseClip, clipPixels - step);
-        }
-
-        return prev != clipPixels;
-    }
-
-    bool TryComputeEdgeBandRatios(out float leftRatio, out float rightRatio, out float topRatio, out float bottomRatio)
-    {
-        leftRatio = 0f;
-        rightRatio = 0f;
-        topRatio = 0f;
-        bottomRatio = 0f;
-
-        if (!TryGetProcessingPixels(out Color32[] pixels, out int w, out int h))
-        {
-            return false;
-        }
-
-        if (w <= 1 || h <= 1)
-        {
-            return false;
-        }
-
-        int band = Mathf.Clamp(edgeStabilizationBandPixels, 1, Mathf.Min(w, h) / 2);
-        if (band <= 0)
-        {
-            return false;
-        }
-
-        Color.RGBToHSV(keyColor, out float keyH, out float keyS, out float keyV);
-        float keySat = keyS;
-        float keyVal = keyV;
-        float wHue = 0.7f + (0.2f * keySat);
-        float wSat = 0.35f;
-        float wVal = Mathf.Lerp(0.45f, 0.12f, keySat);
-        wVal += Mathf.Clamp01((0.2f - keyVal) / 0.2f) * 0.12f;
-        float norm = Mathf.Sqrt((wHue * wHue) + (wSat * wSat) + (wVal * wVal));
-
-        float thresholdLocal = Mathf.Clamp01(threshold);
-        float smoothLocal = Mathf.Max(smoothness, 1e-5f);
-        float edgeLocal = Mathf.Max(1f, edgeContrast);
-        float midRange = Mathf.Clamp(midValueFilter, 0f, 0.49f);
-        float midMin = 0.5f - midRange;
-        float midMax = 0.5f + midRange;
-        float alphaCutoffLocal = Mathf.Clamp01(alphaCutoff);
-
-        int leftTransparent = 0, leftTotal = 0;
-        int rightTransparent = 0, rightTotal = 0;
-        int topTransparent = 0, topTotal = 0;
-        int bottomTransparent = 0, bottomTotal = 0;
-
-        for (int y = 0; y < h; y++)
-        {
-            int row = y * w;
-            bool inTop = y >= (h - band);
-            bool inBottom = y < band;
-
-            for (int x = 0; x < w; x++)
-            {
-                bool inLeft = x < band;
-                bool inRight = x >= (w - band);
-
-                if (!inLeft && !inRight && !inTop && !inBottom)
-                {
-                    continue;
-                }
-
-                Color32 c = pixels[row + x];
-                Color.RGBToHSV(new Color(c.r / 255f, c.g / 255f, c.b / 255f), out float hsvH, out float hsvS, out float hsvV);
-
-                float hueDist = Mathf.Abs(hsvH - keyH);
-                hueDist = Mathf.Min(hueDist, 1f - hueDist) * 2f;
-                float satDist = Mathf.Abs(hsvS - keyS);
-                float valDist = Mathf.Abs(hsvV - keyV);
-
-                float dist = Mathf.Sqrt(
-                    (hueDist * hueDist * wHue * wHue) +
-                    (satDist * satDist * wSat * wSat) +
-                    (valDist * valDist * wVal * wVal)
-                );
-                float keyDist = dist / Mathf.Max(norm, 1e-5f);
-
-                float alpha = Mathf.Clamp01((keyDist - thresholdLocal) / smoothLocal);
-                alpha = Mathf.Clamp01((alpha - 0.5f) * edgeLocal + 0.5f);
-                if (alpha >= midMin && alpha <= midMax)
-                {
-                    alpha = 0f;
-                }
-                alpha = alpha >= alphaCutoffLocal ? 1f : 0f;
-                bool isTransparent = alpha < 0.5f;
-
-                if (inLeft)
-                {
-                    leftTotal++;
-                    if (isTransparent) leftTransparent++;
-                }
-                if (inRight)
-                {
-                    rightTotal++;
-                    if (isTransparent) rightTransparent++;
-                }
-                if (inTop)
-                {
-                    topTotal++;
-                    if (isTransparent) topTransparent++;
-                }
-                if (inBottom)
-                {
-                    bottomTotal++;
-                    if (isTransparent) bottomTransparent++;
-                }
-            }
-        }
-
-        leftRatio = leftTotal > 0 ? (float)leftTransparent / leftTotal : 0f;
-        rightRatio = rightTotal > 0 ? (float)rightTransparent / rightTotal : 0f;
-        topRatio = topTotal > 0 ? (float)topTransparent / topTotal : 0f;
-        bottomRatio = bottomTotal > 0 ? (float)bottomTransparent / bottomTotal : 0f;
-        return leftTotal > 0 && rightTotal > 0 && topTotal > 0 && bottomTotal > 0;
-    }
-
-    void ResolveCurrentMaskTargetRawImage()
+void ResolveCurrentMaskTargetRawImage()
     {
         if (_targetRawImage == null)
         {
@@ -1398,6 +1205,5 @@ public class CameraValue : MonoBehaviour, IJsonGenericTarget
             StopCoroutine(_autoKeyRoutine);
             _autoKeyRoutine = null;
         }
-        _edgeBaselineReady = false;
     }
 }
