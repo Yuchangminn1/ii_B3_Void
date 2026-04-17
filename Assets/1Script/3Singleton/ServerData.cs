@@ -209,7 +209,7 @@ public class ServerData : MonoBehaviour
 
                 if (Time.time - serverTime > 2f)
                 {
-                    Debug.LogWarning($"{_url} / 서버 요청 지연 시간" + TimeSpan.FromSeconds(Time.time - serverTime).ToString(@"hh\\:mm\\:ss"));
+                    Debug.LogWarning($"{_url} / 서버 요청 지연 시간" + TimeSpan.FromSeconds(Time.time - serverTime).ToString(@"hh\:mm\:ss"));
                 }
 
                 if (www.result == UnityWebRequest.Result.Success)
@@ -249,7 +249,7 @@ public class ServerData : MonoBehaviour
 
                 if (Time.time - serverTime > 2f)
                 {
-                    Debug.LogWarning($"{_url} / 서버 요청 지연 시간" + TimeSpan.FromSeconds(Time.time - serverTime).ToString(@"hh\\:mm\\:ss"));
+                    Debug.LogWarning($"{_url} / 서버 요청 지연 시간" + TimeSpan.FromSeconds(Time.time - serverTime).ToString(@"hh\:mm\:ss"));
                 }
 
                 if (www.result == UnityWebRequest.Result.Success)

@@ -35,7 +35,7 @@
     "floatParams": {
       "threshold": 0.05,
       "smoothness": 0.0,
-      "autoThresholdTransparentTarget": 0.98
+      "autoThresholdTransparentTarget": 0.985
     },
     "boolParams": {},
     "stringParams": {}
@@ -45,7 +45,7 @@
     "floatParams": {
       "threshold": 0.01,
       "smoothness": 0.0,
-      "autoThresholdTransparentTarget": 0.98
+      "autoThresholdTransparentTarget": 0.985
     },
     "boolParams": {},
     "stringParams": {}

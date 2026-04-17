@@ -346,7 +346,7 @@ public class UserDataManager : MonoBehaviour
     public IEnumerator RequestCartridgeInfo()
     {
         if (userDataCache == null) yield break;
-        yield return ServerData.Instance.RequestDataCoroutine($"http://192.168.0.252:8500/api/getCartridgeContent.cfm?cartridge={userDataCache["CARTRIDGE"]}", SetCartridge);
+        yield return ServerData.Instance.RequestDataCoroutine($"http://192.168.0.252:8500/api/getCartridgeContent.cfm?cartridge={userDataCache["BLOCK_CODE"]}", SetCartridge);
     }
 
     public IEnumerator RequestPieceDataUpdate()
@@ -541,7 +541,12 @@ public class UserDataManager : MonoBehaviour
             {
                 if (onUserUIDSet != null) onUserUIDSet.Invoke();
             }
-            StartCoroutine(RequestCartridgeInfo());
+
+            SetCartridge(FindValue("BLOCK_CODE"));
+
+            //StartCoroutine(RequestCartridgeInfo());
+
+
 
 
 
@@ -748,10 +753,10 @@ public class UserDataManager : MonoBehaviour
             }
         }
         Debug.Log($"RELATION = {FindValue("RELATION")}");
-        //_relation = int.Parse(FindValue("RELATION")?.Trim() ?? "1");
-        //Debug.Log($"RELATION = {_relation}");
+        _relation = int.TryParse(FindValue("RELATION")?.Trim() ?? "1", out int relationResult) ? relationResult : 1;
+        Debug.Log($"RELATION = {_relation}");
 
-        //QuestionManager.Instance.SetRELATION(_relation);
+        QuestionManager.Instance.SetRELATION(_relation);
 
 
 
