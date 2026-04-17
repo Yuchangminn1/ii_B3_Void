@@ -34,6 +34,11 @@ public class ScoreStampContainer : ResultStampContainer
     {
         base.Reset();
         currentStampIndex = -1;
+
+        foreach (var stamp in answerStamps)
+        {
+            stamp.color = defaultColor;
+        }
     }
     public void ScoreStamp(int value)
     {

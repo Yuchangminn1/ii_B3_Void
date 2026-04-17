@@ -95,6 +95,8 @@ public class StepDataManager : Singleton<StepDataManager>
     {
         _currentScore = 0;
 
+        _currentStamp = 0;
+
         for (int i = 0; i < leftSuccess.Length; i++)
         {
             leftSuccess[i] = false;

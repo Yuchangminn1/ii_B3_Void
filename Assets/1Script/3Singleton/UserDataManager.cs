@@ -667,7 +667,7 @@ public class UserDataManager : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.T))
         {
-            if (userDataCache == null)
+            if (players[0] == null)
                 TestKey();
         }
     }
@@ -697,6 +697,11 @@ public class UserDataManager : MonoBehaviour
 
         foreach (var code in contentCodes)
         {
+            if (code[0] == ServerData.Instance.Code[0])
+            {
+                Debug.Log($"현재 콘텐츠 코드 {code}는 피스 계산에서 제외됩니다.");
+                continue;
+            }
             Debug.Log($"콘텐츠 코드 {code}에 대한 피스 수 계산 시작.");
             pieceValue = FindValue("PIECE_" + code);
 
@@ -719,6 +724,11 @@ public class UserDataManager : MonoBehaviour
         bool isLastContent = true;
         foreach (var code in contentCodes)
         {
+            if (code[0] == ServerData.Instance.Code[0])
+            {
+                Debug.Log($"현재 콘텐츠 코드 {code}는 피스 계산에서 제외됩니다.");
+                continue;
+            }
             if (code == ServerData.Instance.Code)
             {
                 Debug.Log($"현재 콘텐츠 코드 {code}는 피스 계산에서 제외됩니다.");

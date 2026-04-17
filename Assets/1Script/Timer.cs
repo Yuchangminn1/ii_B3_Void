@@ -184,7 +184,7 @@ public class Timer : MonoBehaviour
         {
             Debug.Log($"Under3SecondsCoroutine 재사용: time {time}");
             OnUnder3Seconds?.Invoke();
-            yield return CoroutineReturnManager.GetWaitForSeconds(0.275f);
+            yield return CoroutineReturnManager.GetWaitForSeconds(0.31f);
         }
         under3SecondsCoroutine = null;
     }
