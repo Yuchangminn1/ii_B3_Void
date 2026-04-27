@@ -756,6 +756,31 @@ public class UserDataManager : MonoBehaviour
         _relation = int.TryParse(FindValue("RELATION")?.Trim() ?? "1", out int relationResult) ? relationResult : 1;
         Debug.Log($"RELATION = {_relation}");
 
+        string cartridge = FindValue("CARTRIDGE");
+
+        if (cartridge == "A")
+        {
+            Debug.Log("카트리지 A");
+            _relation += 0;
+        }
+        else if (cartridge == "B")
+        {
+            Debug.Log("카트리지 B");
+
+            _relation += 5;
+        }
+        else if (cartridge == "C")
+        {
+            Debug.Log("카트리지 C");
+            _relation += 10;
+        }
+        else if (cartridge == "D")
+        {
+            Debug.Log("카트리지 D");
+            _relation += 15;
+        }
+
+
         QuestionManager.Instance.SetRELATION(_relation);
 
 
