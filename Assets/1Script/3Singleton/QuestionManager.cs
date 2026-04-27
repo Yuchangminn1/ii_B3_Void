@@ -4,11 +4,18 @@ using UnityEngine;
 
 public class QuestionInfo
 {
-    string _question;
-    public string Question
+    string _questionL;
+    string _questionR;
+
+    public string QuestionL
     {
-        get { return _question; }
-        set { _question = value; }
+        get { return _questionL; }
+        set { _questionL = value; }
+    }
+    public string QuestionR
+    {
+        get { return _questionR; }
+        set { _questionR = value; }
     }
 
 }
@@ -37,14 +44,20 @@ public class QuestionManager : Singleton<QuestionManager>, IQuestionTarget
 
 
 
-    public string CurrentQuestionText
+    public string CurrentQuestionTextLeft
     {
         get
         {
-            return questionInfos[_currentIndex].Question;
+            return questionInfos[_currentIndex].QuestionL;
         }
     }
-
+    public string CurrentQuestionTextRight
+    {
+        get
+        {
+            return questionInfos[_currentIndex].QuestionR;
+        }
+    }
     public QuestionInfo CurrentMorsePass
     {
         get { return morsePass; }
@@ -67,7 +80,9 @@ public class QuestionManager : Singleton<QuestionManager>, IQuestionTarget
     {
         for (int i = 0; i < items.Count; i++)
         {
-            Debug.Log($"{i} : {items[i].Question}");
+            Debug.Log($"{i} : {items[i].QuestionL}");
+            Debug.Log($"{i} : {items[i].QuestionR}");
+
         }
         questionInfos = items;
 
@@ -109,7 +124,10 @@ public class QuestionManager : Singleton<QuestionManager>, IQuestionTarget
 
         foreach (var cartridge in _cachedRELATIONs)
         {
-            Debug.Log($"카트리지 질문 수: {cartridge?.Count ?? 0}");
+            foreach (var question in cartridge)
+            {
+                Debug.Log($"카트리지 질문: {question.QuestionL} | {question.QuestionR}");
+            }
         }
     }
 }

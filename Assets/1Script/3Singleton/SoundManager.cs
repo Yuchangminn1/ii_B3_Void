@@ -234,10 +234,14 @@ public class SoundManager : MonoBehaviour, IJsonGenericTarget
 
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        foreach (var soundVolume in _soundVolume)
+        for (int i = 0; i < _soundVolume.Length; i++)
         {
-            Debug.Log("Loaded sound volume: " + soundVolume);
+            Debug.Log(" Loaded sound volume for " + ((EffectSoundNum)i).ToString() + ": " + _soundVolume[i]);
         }
+        // foreach (var soundVolume in _soundVolume)
+        // {
+        //     Debug.Log(" Loaded sound volume: " + soundVolume);
+        // }
 #endif
 
     }
