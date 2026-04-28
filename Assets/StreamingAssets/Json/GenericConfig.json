@@ -54,10 +54,13 @@
     "intParams": {},
     "floatParams": {},
     "boolParams": {},
-    "stringParams": {
-      "LeftPlayerArduinoButton": "COM4",
-      "RightPlayerArduinoButton": "COM3"
-    }
+    "stringParams": {}
+  },
+  "CustomSerialController": {
+    "intParams": {},
+    "floatParams": {},
+    "boolParams": {},
+    "stringParams": { "LeftButton": "COM3", "RightButton": "COM6" }
   },
 
   "SoundManager": {

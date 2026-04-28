@@ -79,13 +79,18 @@ public class WaitCheck : MonoBehaviour
 
     protected virtual void Start()
     {
-        Arduino_SelectButton[] buttons = FindObjectsByType<Arduino_SelectButton>(FindObjectsSortMode.None);
+        // Arduino_SelectButton[] buttons = FindObjectsByType<Arduino_SelectButton>(FindObjectsSortMode.None);
 
-        foreach (var button in buttons)
-        {
-            button._onDebugPlayerLeft += LeftPlayerDebug;
-            button._onDebugPlayerRight += RightPlayerDebug;
-        }
+        CustomSerialController controllers = FindObjectOfType<CustomSerialController>();
+
+
+        // foreach (var button in buttons)
+        // {
+        //     button._onDebugPlayerLeft += LeftPlayerDebug;
+        //     button._onDebugPlayerRight += RightPlayerDebug;
+        // }
+        controllers._onDebugPlayerLeft += LeftPlayerDebug;
+        controllers._onDebugPlayerRight += RightPlayerDebug;
         PageController.Instance.OnReset += Reset;
     }
 

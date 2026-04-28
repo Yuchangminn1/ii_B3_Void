@@ -122,39 +122,6 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!1 &1491746
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1491747}
-  m_Layer: 0
-  m_Name: ArduinoButtons
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1491747
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1491746}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 767137423}
-  - {fileID: 958936568}
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &3189435
 GameObject:
   m_ObjectHideFlags: 0
@@ -936,7 +903,7 @@ MonoBehaviour:
   triggerCallback:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 958936569}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: Arduino_SelectButton, Assembly-CSharp
         m_MethodName: LEDAllOff
         m_Mode: 1
@@ -3901,7 +3868,7 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
-      - m_Target: {fileID: 767137424}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: Arduino_SelectButton, Assembly-CSharp
         m_MethodName: LEDAllOn
         m_Mode: 1
@@ -3913,7 +3880,7 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
-      - m_Target: {fileID: 958936569}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: Arduino_SelectButton, Assembly-CSharp
         m_MethodName: LEDAllOn
         m_Mode: 1
@@ -3928,7 +3895,7 @@ MonoBehaviour:
   triggerCallback:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 767137424}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: Arduino_SelectButton, Assembly-CSharp
         m_MethodName: LEDAllOff
         m_Mode: 1
@@ -4439,6 +4406,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8ad5445171a67ba469f72a24f7ed4685, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  CurrentDirection: 0
   shootPieceContainer: {fileID: 786953139}
   timer: {fileID: 479460347}
   questionShadow: {fileID: 1028438940}
@@ -7453,6 +7421,55 @@ MonoBehaviour:
   FadeInCanvasGroups: []
   FadeOutCanvasGroups: []
   CustomFadeDuration: -1
+--- !u!1 &309331984
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 309331985}
+  - component: {fileID: 309331986}
+  m_Layer: 0
+  m_Name: CustomSerialController
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &309331985
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 309331984}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1572174865}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &309331986
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 309331984}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b019295de9552474992770392d930180, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  baudRate: 9600
+  messageListener: {fileID: 309331984}
+  reconnectionDelay: 1000
+  maxUnreadMessages: 1
+  ButtonDirection: 0
 --- !u!1 &312954114
 GameObject:
   m_ObjectHideFlags: 0
@@ -17444,78 +17461,6 @@ MonoBehaviour:
   FadeInCanvasGroups: []
   FadeOutCanvasGroups: []
   CustomFadeDuration: 0.05
---- !u!1 &767137422
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 767137423}
-  - component: {fileID: 767137424}
-  m_Layer: 0
-  m_Name: Left_ArduinoButton
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &767137423
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 767137422}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1491747}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &767137424
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 767137422}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: aa21e468a2d70cb4999c23bf0a58df96, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  InputType: 0
-  PlayerIndex: 0
-  readTimeoutMs: 1000
-  reconnectAfterTimeoutCount: 3
-  reconnectDelaySeconds: 0.8
-  enablePingPong: 1
-  pingMessage: Ping
-  pongMessage: Pong
-  pingIntervalSeconds: 1
-  noResponseRestartCount: 3
-  maxReconnectAttempts: 5
-  reconnectCooldownSeconds: 2
-  openStabilizeSeconds: 2
-  SerialPortNames:
-  - COM101
-  ButtonDirection: 0
-  touchDelayRetrySeconds: 0.3
-  commandAckTimeoutSeconds: 0.8
-  soundOnAckMessages:
-  - SoundOn
-  - Sound_On
-  - SoundOnAck
-  ledAllOnAckMessages:
-  - LEDAllOn
-  - LEDAllOnAck
-  ledAllOffAckMessages:
-  - LEDAllOff
-  - LEDAllOffAck
 --- !u!1 &769280711
 GameObject:
   m_ObjectHideFlags: 0
@@ -22756,78 +22701,6 @@ MonoBehaviour:
   FadeInCanvasGroups: []
   FadeOutCanvasGroups: []
   CustomFadeDuration: 0.05
---- !u!1 &958936567
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 958936568}
-  - component: {fileID: 958936569}
-  m_Layer: 0
-  m_Name: Right_ArduinoButton
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &958936568
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 958936567}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1491747}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &958936569
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 958936567}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: aa21e468a2d70cb4999c23bf0a58df96, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  InputType: 0
-  PlayerIndex: 0
-  readTimeoutMs: 1000
-  reconnectAfterTimeoutCount: 3
-  reconnectDelaySeconds: 0.8
-  enablePingPong: 1
-  pingMessage: Ping
-  pongMessage: Pong
-  pingIntervalSeconds: 1
-  noResponseRestartCount: 3
-  maxReconnectAttempts: 5
-  reconnectCooldownSeconds: 2
-  openStabilizeSeconds: 2
-  SerialPortNames:
-  - COM101
-  ButtonDirection: 1
-  touchDelayRetrySeconds: 0.3
-  commandAckTimeoutSeconds: 0.8
-  soundOnAckMessages:
-  - SoundOn
-  - Sound_On
-  - SoundOnAck
-  ledAllOnAckMessages:
-  - LEDAllOn
-  - LEDAllOnAck
-  ledAllOffAckMessages:
-  - LEDAllOff
-  - LEDAllOffAck
 --- !u!1 &962794851
 GameObject:
   m_ObjectHideFlags: 0
@@ -27349,7 +27222,7 @@ MonoBehaviour:
   triggerCallback:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 958936569}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: Arduino_SelectButton, Assembly-CSharp
         m_MethodName: LEDAllOff
         m_Mode: 1
@@ -37857,7 +37730,7 @@ MonoBehaviour:
   OnSequenceStart:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 767137424}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: Arduino_SelectButton, Assembly-CSharp
         m_MethodName: LEDAllOn
         m_Mode: 1
@@ -37869,7 +37742,7 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
-      - m_Target: {fileID: 958936569}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: Arduino_SelectButton, Assembly-CSharp
         m_MethodName: LEDAllOn
         m_Mode: 1
@@ -37896,7 +37769,7 @@ MonoBehaviour:
   triggerCallback:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 767137424}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: Arduino_SelectButton, Assembly-CSharp
         m_MethodName: LEDAllOff
         m_Mode: 1
@@ -39560,6 +39433,7 @@ Transform:
   - {fileID: 502347205}
   - {fileID: 2130737505}
   - {fileID: 1731202511}
+  - {fileID: 309331985}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1572784873
@@ -52707,7 +52581,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &2130737505
 Transform:
   m_ObjectHideFlags: 0
@@ -52736,8 +52610,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   arduino_SelectButtons:
-  - {fileID: 767137424}
-  - {fileID: 958936569}
+  - {fileID: 0}
+  - {fileID: 0}
 --- !u!1 &2132941661
 GameObject:
   m_ObjectHideFlags: 0
@@ -53301,7 +53175,6 @@ SceneRoots:
   - {fileID: 554747645}
   - {fileID: 922891880}
   - {fileID: 810707952}
-  - {fileID: 1491747}
   - {fileID: 1906963990}
   - {fileID: 1572174865}
   - {fileID: 643071141}
