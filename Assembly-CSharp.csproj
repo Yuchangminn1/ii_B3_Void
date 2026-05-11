@@ -104,6 +104,7 @@
     <Compile Include="Assets/1Script/WaitACCheck.cs" />
     <Compile Include="Assets/1Script/SoundObject.cs" />
     <Compile Include="Assets/1Script/Timer.cs" />
+    <Compile Include="Assets/1Script/CustomSerialController.cs" />
     <Compile Include="Assets/1Script/Arduino/Arduino_SelectButton.cs" />
     <Compile Include="Assets/Unity-Logs-Viewer/Reporter/ReporterMessageReceiver.cs" />
     <Compile Include="Assets/1Script/2PageSequence/PlayerPageController.cs" />
