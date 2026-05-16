@@ -802,6 +802,7 @@ public class UserDataManager : MonoBehaviour
 
 
         Debug.Log($"총 피스 수 계산: {pieceCount}, 클리어된 콘텐츠 수: {clearContentCount} ");
+        
 
 
         players[0] = new Player(FindValue("RESERVATION_FIRST_NAME_LEFT"), Direction.Left, FindValue("COLOR_LEFT"), pieceCount, isLastContent);

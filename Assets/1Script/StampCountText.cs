@@ -21,6 +21,7 @@ public class StampCountText : MonoBehaviour
             originText = _text.text;
         if (_text != null)
         {
+            Debug.Log($"얻음{UserDataManager.Instance.GetPlayer().PieceCount} + 기존  {UserDataManager.Instance.GetPlayer().AddPiece}");
             if (IsTotal)
                 _text.text = _text.text.Replace("Count", (UserDataManager.Instance.GetPlayer().PieceCount + UserDataManager.Instance.GetPlayer().AddPiece).ToString());
             else
