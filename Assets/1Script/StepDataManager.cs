@@ -26,7 +26,7 @@ public class StepDataManager : Singleton<StepDataManager>
             if (_currentScore != value)
             {
                 _currentScore = value;
-                UserDataManager.Instance.GetPlayer().PieceCount = _currentScore;
+                //UserDataManager.Instance.GetPlayer().PieceCount = _currentScore;
 
                 OnScoreDataChanged?.Invoke(_currentScore);
 

@@ -8,6 +8,7 @@ using UnityEngine.UI;
 
 public class QuestionScript : MonoBehaviour
 {
+    public Direction CurrentDirection;
     const int MAX_QUESTION_COUNT = 15;
 
     public ShootPieceContainer shootPieceContainer;
@@ -57,9 +58,20 @@ public class QuestionScript : MonoBehaviour
             return;
 
         Reset();
-        for (int i = 0; i < QuestionText.Length; i++)
+        if (CurrentDirection == Direction.Left)
         {
-            QuestionText[i].text = QuestionManager.Instance.CurrentQuestionText;
+            for (int i = 0; i < QuestionText.Length; i++)
+            {
+                QuestionText[i].text = QuestionManager.Instance.CurrentQuestionTextLeft;
+            }
+        }
+
+        else if (CurrentDirection == Direction.Right)
+        {
+            for (int i = 0; i < QuestionText.Length; i++)
+            {
+                QuestionText[i].text = QuestionManager.Instance.CurrentQuestionTextRight;
+            }
         }
 
         Debug.Log($"현재 질문 : {QuestionText[0].text}");
@@ -82,9 +94,20 @@ public class QuestionScript : MonoBehaviour
     public void Reset()
     {
         QuestionManager.Instance.CurrentIndex = 0;
-        for (int i = 0; i < QuestionText.Length; i++)
+        if (CurrentDirection == Direction.Left)
         {
-            QuestionText[i].text = QuestionManager.Instance.CurrentQuestionText;
+            for (int i = 0; i < QuestionText.Length; i++)
+            {
+                QuestionText[i].text = QuestionManager.Instance.CurrentQuestionTextLeft;
+            }
+        }
+
+        else if (CurrentDirection == Direction.Right)
+        {
+            for (int i = 0; i < QuestionText.Length; i++)
+            {
+                QuestionText[i].text = QuestionManager.Instance.CurrentQuestionTextRight;
+            }
         }
     }
 
@@ -168,7 +191,17 @@ public class QuestionScript : MonoBehaviour
         {
             pageBase[i]?.ResetValue();
         }
-        string nextQuestion = QuestionManager.Instance.CurrentQuestionText;
+        string nextQuestion;
+        if (CurrentDirection == Direction.Left)
+        {
+            nextQuestion = QuestionManager.Instance.CurrentQuestionTextLeft;
+        }
+        else
+        {
+            nextQuestion = QuestionManager.Instance.CurrentQuestionTextRight;
+        }
+
+
         for (int i = 0; i < QuestionText.Length; i++)
         {
             QuestionText[i].text = nextQuestion;

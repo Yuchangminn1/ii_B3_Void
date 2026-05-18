@@ -68,6 +68,7 @@
       "BaseVolume": 1.8,
       "SaveSoundVolume": 1.0,
       "SoulPieceSoundVolume": 1.0,
+
       "ConfirmSoundVolume": 1.0,
       "PopupSoundVolume": 1.0,
       "ActiveSoundVolume": 1.0,

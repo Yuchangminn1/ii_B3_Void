@@ -4423,7 +4423,7 @@ CanvasGroup:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 181101392}
   m_Enabled: 1
-  m_Alpha: 0
+  m_Alpha: 1
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
@@ -4439,6 +4439,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8ad5445171a67ba469f72a24f7ed4685, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  CurrentDirection: 0
   shootPieceContainer: {fileID: 786953139}
   timer: {fileID: 479460347}
   questionShadow: {fileID: 1028438940}
@@ -12993,7 +12994,7 @@ MonoBehaviour:
       m_Calls: []
   m_FontData:
     m_Font: {fileID: 12800000, guid: 1586ff5cc5a26414fb1fc87d32168c35, type: 3}
-    m_FontSize: 55
+    m_FontSize: 48
     m_FontStyle: 0
     m_BestFit: 0
     m_MinSize: 0
@@ -23332,7 +23333,7 @@ CanvasGroup:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 969615728}
   m_Enabled: 1
-  m_Alpha: 1
+  m_Alpha: 0
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
@@ -43021,7 +43022,7 @@ MonoBehaviour:
       m_Calls: []
   m_FontData:
     m_Font: {fileID: 12800000, guid: 1586ff5cc5a26414fb1fc87d32168c35, type: 3}
-    m_FontSize: 55
+    m_FontSize: 48
     m_FontStyle: 0
     m_BestFit: 0
     m_MinSize: 0
@@ -43032,8 +43033,8 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: "Q. \uB098\uB294 \uC0C1\uB300\uBC29\uC758 \uAE30\uBD84\uC744 \uD5E4\uC544\uB9AC\uAE30
-    \uC704\uD574 \uB9CE\uC740 \uC5D0\uB108\uC9C0\uB97C \uC3DF\uB294\uB2E4."
+  m_Text: "Q. \uC0C1\uB300\uBC29\uC774 \uB098\uB97C \uC5BC\uB9C8\uB098 \uC18C\uC911\uD788
+    \uC5EC\uAE30\uB294\uC9C0 \uC218\uC2DC\uB85C \uB290\uB07C\uACE0 \uC2F6\uB2E4."
 --- !u!222 &1706649673
 CanvasRenderer:
   m_ObjectHideFlags: 0

@@ -39,11 +39,26 @@ public class JsonManager : MonoBehaviour
 
     readonly QuestionLoader[] _questionLoaders = new QuestionLoader[]
      {
-        new QuestionLoader("Json/QuestionConfig1.json"),
-        new QuestionLoader("Json/QuestionConfig2.json"),
-        new QuestionLoader("Json/QuestionConfig3.json"),
-        new QuestionLoader("Json/QuestionConfig4.json"),
-        new QuestionLoader("Json/QuestionConfig5.json")
+        new QuestionLoader("Json/QuestionConfigA1.json"),
+        new QuestionLoader("Json/QuestionConfigA2.json"),
+        new QuestionLoader("Json/QuestionConfigA3.json"),
+        new QuestionLoader("Json/QuestionConfigA4.json"),
+        new QuestionLoader("Json/QuestionConfigA5.json"),
+        new QuestionLoader("Json/QuestionConfigB1.json"),
+        new QuestionLoader("Json/QuestionConfigB2.json"),
+        new QuestionLoader("Json/QuestionConfigB3.json"),
+        new QuestionLoader("Json/QuestionConfigB4.json"),
+        new QuestionLoader("Json/QuestionConfigB5.json"),
+        new QuestionLoader("Json/QuestionConfigC1.json"),
+        new QuestionLoader("Json/QuestionConfigC2.json"),
+        new QuestionLoader("Json/QuestionConfigC3.json"),
+        new QuestionLoader("Json/QuestionConfigC4.json"),
+        new QuestionLoader("Json/QuestionConfigC5.json"),
+        new QuestionLoader("Json/QuestionConfigD1.json"),
+        new QuestionLoader("Json/QuestionConfigD2.json"),
+        new QuestionLoader("Json/QuestionConfigD3.json"),
+        new QuestionLoader("Json/QuestionConfigD4.json"),
+        new QuestionLoader("Json/QuestionConfigD5.json")
      };
     public QuestionLoader GetQuestionLoader { get { return _questionLoaders[0]; } }
     readonly List<IQuestionTarget> _questionTargets = new List<IQuestionTarget>();
