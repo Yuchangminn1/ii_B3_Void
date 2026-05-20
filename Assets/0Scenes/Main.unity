@@ -17490,33 +17490,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   InputType: 0
+  _isRunning: 0
   PlayerIndex: 0
   readTimeoutMs: 1000
-  reconnectAfterTimeoutCount: 3
-  reconnectDelaySeconds: 0.8
-  enablePingPong: 1
-  pingMessage: Ping
-  pongMessage: Pong
-  pingIntervalSeconds: 1
-  noResponseRestartCount: 3
-  maxReconnectAttempts: 5
-  reconnectCooldownSeconds: 2
-  openStabilizeSeconds: 2
   SerialPortNames:
   - COM101
   ButtonDirection: 0
-  touchDelayRetrySeconds: 0.3
-  commandAckTimeoutSeconds: 0.8
-  soundOnAckMessages:
-  - SoundOn
-  - Sound_On
-  - SoundOnAck
-  ledAllOnAckMessages:
-  - LEDAllOn
-  - LEDAllOnAck
-  ledAllOffAckMessages:
-  - LEDAllOff
-  - LEDAllOffAck
 --- !u!1 &769280711
 GameObject:
   m_ObjectHideFlags: 0
@@ -21889,18 +21868,6 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
-      - m_Target: {fileID: 2130737506}
-        m_TargetAssemblyTypeName: Arduino_Manager, Assembly-CSharp
-        m_MethodName: ArduinoStop
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
   triggerCallback:
     m_PersistentCalls:
       m_Calls: []
@@ -22802,33 +22769,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   InputType: 0
+  _isRunning: 0
   PlayerIndex: 0
   readTimeoutMs: 1000
-  reconnectAfterTimeoutCount: 3
-  reconnectDelaySeconds: 0.8
-  enablePingPong: 1
-  pingMessage: Ping
-  pongMessage: Pong
-  pingIntervalSeconds: 1
-  noResponseRestartCount: 3
-  maxReconnectAttempts: 5
-  reconnectCooldownSeconds: 2
-  openStabilizeSeconds: 2
   SerialPortNames:
   - COM101
   ButtonDirection: 1
-  touchDelayRetrySeconds: 0.3
-  commandAckTimeoutSeconds: 0.8
-  soundOnAckMessages:
-  - SoundOn
-  - Sound_On
-  - SoundOnAck
-  ledAllOnAckMessages:
-  - LEDAllOn
-  - LEDAllOnAck
-  ledAllOffAckMessages:
-  - LEDAllOff
-  - LEDAllOffAck
 --- !u!1 &962794851
 GameObject:
   m_ObjectHideFlags: 0

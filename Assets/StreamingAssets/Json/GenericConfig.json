@@ -55,8 +55,8 @@
     "floatParams": {},
     "boolParams": {},
     "stringParams": {
-      "LeftPlayerArduinoButton": "COM4",
-      "RightPlayerArduinoButton": "COM3"
+      "LeftPlayerArduinoButton": "Left_Btn",
+      "RightPlayerArduinoButton": "Right_Btn"
     }
   },
 

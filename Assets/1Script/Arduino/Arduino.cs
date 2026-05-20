@@ -1,81 +1,48 @@
 using System;
 using System.Collections;
 using System.IO.Ports;
-using TMPro;
 using UnityEngine;
 
-public class Arduino : MonoBehaviour
+
+public interface IPortSetup
+{
+    public void SetupPort(string portName);
+
+    public void StartArduino();
+}
+
+public class Arduino : MonoBehaviour, IPortSetup
 {
     protected Action<Arduino> _onArduinoStart;
     protected Action<Arduino> _onArduinoDisconnected;
 
     public InputType InputType = InputType.Touch;
 
-    protected bool isStop = false;
-
-
-    protected bool _isRunning = false;
+    public bool _isRunning = false;
     protected bool _isDisconnectedNotified = false;
 
 
     public int PlayerIndex = 0;
     protected bool enableSerialDebugLog = false;
     [SerializeField] protected int readTimeoutMs = 1000;
-    [SerializeField] protected int reconnectAfterTimeoutCount = 3;
-    [SerializeField] protected float reconnectDelaySeconds = 0.8f;
-    [SerializeField] protected bool enablePingPong = true;
-    [SerializeField] protected string pingMessage = "Ping";
-    [SerializeField] protected string pongMessage = "Pong";
-    [SerializeField] protected float pingIntervalSeconds = 1f;
-    [SerializeField] protected int noResponseRestartCount = 3;
-    [SerializeField] protected int maxReconnectAttempts = 5;
-    [SerializeField] protected float reconnectCooldownSeconds = 2f;
-    [SerializeField] protected float openStabilizeSeconds = 2f;
 
-    public string[] SerialPortNames =
-    {
-        "COM101"
-    };
+    public string SerialPortName = "COM101";
+
     public SerialPort stream;
-    protected Coroutine readMessageCoroutine;
-    protected int timeoutCount = 0;
-    protected bool isReconnecting = false;
-    protected int noResponseCount = 0;
-    protected float nextPingAt = 0f;
-    protected float lastPortOpenAt = -999f;
-    protected float lastReconnectAt = -999f;
+    protected Coroutine readMessageCoroutine = null;
 
-    protected void RequestReconnect(string reason)
-    {
-        if (!_isRunning)
-            return;
-
-        if (isReconnecting)
-            return;
-
-        Debug.LogWarning($"[{name}] 재연결 요청: {reason}");
-
-        StartCoroutine(ReopenPortAfterTimeout());
-    }
-
-    protected virtual IEnumerator OnReconnectSucceeded()
-    {
-        yield break;
-    }
 
     protected virtual void Start()
     {
+
     }
-
-
 
     virtual public void StartArduino()
     {
+
         _isRunning = true;
         _isDisconnectedNotified = false;
-        timeoutCount = 0;
-        noResponseCount = 0;
-        nextPingAt = Time.realtimeSinceStartup + Mathf.Max(0.1f, pingIntervalSeconds);
+
         Debug.Log($"{name} StartArduino  ");
 
         if (!TryOpenPort("StartArduino"))
@@ -83,14 +50,27 @@ public class Arduino : MonoBehaviour
 
         _onArduinoStart?.Invoke(this);
         StartReadMessageLoop();
-
     }
 
+    public void StartArduinoDelayed(float delaySeconds)
+    {
+        StartCoroutine(StartArduinoAfterDelay(delaySeconds));
+    }
+
+    IEnumerator StartArduinoAfterDelay(float delaySeconds)
+    {
+        _isRunning = true;
+        _isDisconnectedNotified = false;
+
+        Debug.Log($"{name} StartArduino (delayed {delaySeconds}s)");
+
+        if (!TryOpenPort("StartArduinoDelayed"))
+            yield break;
 
 
-
-
-
+        _onArduinoStart?.Invoke(this);
+        StartReadMessageLoop();
+    }
 
     public void AddOnCheckStartListener(Action<Arduino> listener)
     {
@@ -122,7 +102,7 @@ public class Arduino : MonoBehaviour
 
         _isDisconnectedNotified = true;
 
-        string portName = GetConfiguredPortName();
+        string portName = SerialPortName;
 
         if (e != null)
         {
@@ -139,11 +119,14 @@ public class Arduino : MonoBehaviour
         {
             if (stream != null && stream.IsOpen)
                 stream.Close();
+
+            Debug.LogWarning($"[{name}] 포트 닫힘: {portName}");
         }
         catch (Exception closeEx)
         {
             Debug.LogWarning($"[{name}] 연결 끊김 후 포트 닫기 실패: {closeEx.Message} / {portName}");
         }
+
 
         try
         {
@@ -156,32 +139,21 @@ public class Arduino : MonoBehaviour
         stream = null;
         readMessageCoroutine = null;
 
-        RequestReconnect("Disconnected");
-
-    }
-
-
-    IEnumerator RestartArduino()
-    {
-        Debug.Log("Arduino 재시작 시도...");
-
-        while (stream != null && stream.IsOpen)
-        {
-            yield return CoroutineReturnManager.GetWaitForSeconds(2f);
-            StartArduino();
-        }
-
     }
 
     public virtual void StopArduino()
     {
-        Debug.Log($"{SerialPortNames} StopArduino  ");
+        Debug.LogWarning($"{SerialPortName} StopArduino  ");
         _isRunning = false;
-        StopAllCoroutines();
-        readMessageCoroutine = null;
-        timeoutCount = 0;
-        noResponseCount = 0;
-        nextPingAt = 0f;
+
+
+
+        if (readMessageCoroutine != null)
+        {
+            StopCoroutine(readMessageCoroutine);
+            readMessageCoroutine = null;
+
+        }
 
         if (stream == null)
             return;
@@ -189,28 +161,41 @@ public class Arduino : MonoBehaviour
         try
         {
             if (stream.IsOpen)
+            {
                 stream.Close();
+                Debug.LogWarning($"[{name}] 포트 닫힘: {SerialPortName}");
+                stream.Dispose();
+                stream = null;
+            }
         }
         catch (Exception e)
         {
-            Debug.LogWarning("시리얼 포트 종료 중 오류 발생: " + e.Message + " / " + stream.PortName);
+            Debug.LogWarning("시리얼 포트 종료 중 오류 발생: " + e.Message + " / " + SerialPortName);
         }
     }
 
-    protected string GetConfiguredPortName()
+    // protected string GetConfiguredPortName()
+    // {
+    //     if (stream != null)
+    //         return stream.PortName;
+
+    //     if (SerialPortNames != null && SerialPortNames.Length > 0 && !string.IsNullOrWhiteSpace(SerialPortNames[0]))
+    //         return SerialPortNames[0];
+
+    //     return "UNKNOWN";
+    // }
+
+    public void SetupPort(string portName)
     {
-        if (stream != null)
-            return stream.PortName;
-
-        if (SerialPortNames != null && SerialPortNames.Length > 0 && !string.IsNullOrWhiteSpace(SerialPortNames[0]))
-            return SerialPortNames[0];
-
-        return "UNKNOWN";
+        TryOpenPort("StartArduino", portName);
+        // 기본 구현에서는 포트 설정을 하지 않음
+        // 필요에 따라 서브 클래스에서 이 메서드를 오버라이드하여 포트를 설정할 수 있음
     }
-
-    protected bool TryOpenPort(string reason)
+    protected bool TryOpenPort(string reason, string receivePortName = "")
     {
-        string portName = GetConfiguredPortName();
+        string portName = string.IsNullOrEmpty(receivePortName) ? SerialPortName : receivePortName;
+
+
 
         if (portName == "UNKNOWN")
         {
@@ -225,16 +210,15 @@ public class Arduino : MonoBehaviour
             stream.DtrEnable = false;
             stream.RtsEnable = false;
         }
-
         try
         {
             if (!stream.IsOpen)
             {
                 stream.Open();
-                lastPortOpenAt = Time.realtimeSinceStartup;
                 Debug.Log($"시리얼 포트 열림: {stream.PortName} / {PlayerIndex} / reason={reason}");
+                _isRunning = true;
+                SerialPortName = stream.PortName;
             }
-
             return true;
         }
         catch (Exception e)
@@ -243,85 +227,6 @@ public class Arduino : MonoBehaviour
             return false;
         }
     }
-
-    protected IEnumerator ReopenPortAfterTimeout()
-    {
-        if (isReconnecting)
-            yield break;
-
-        float now = Time.realtimeSinceStartup;
-        float minGap = Mathf.Max(0f, reconnectCooldownSeconds);
-        float elapsedSinceLastReconnect = now - lastReconnectAt;
-        if (elapsedSinceLastReconnect < minGap)
-        {
-            float wait = minGap - elapsedSinceLastReconnect;
-            if (wait > 0f)
-                yield return CoroutineReturnManager.GetWaitForSeconds(wait);
-        }
-
-        isReconnecting = true;
-        lastReconnectAt = Time.realtimeSinceStartup;
-        string portName = GetConfiguredPortName();
-
-        Debug.LogWarning($"[{name}] 타임아웃 누적({timeoutCount})으로 포트 재연결 시도: {portName}");
-
-        try
-        {
-            if (stream != null && stream.IsOpen)
-                stream.Close();
-        }
-        catch (Exception e)
-        {
-            Debug.LogWarning($"[{name}] 포트 닫기 실패: {e.Message} / {portName}");
-        }
-
-        try
-        {
-            stream?.Dispose();
-        }
-        catch
-        {
-        }
-
-        stream = null;
-
-        int reconnectAttempt = 0;
-        int maxAttempts = Mathf.Max(1, maxReconnectAttempts);
-
-        while (_isRunning && reconnectAttempt < maxAttempts)
-        {
-            yield return CoroutineReturnManager.GetWaitForSeconds(reconnectDelaySeconds);
-            reconnectAttempt++;
-
-            if (!TryOpenPort("TimeoutReconnect"))
-            {
-                Debug.LogWarning($"[{name}] 포트 재연결 실패 ({reconnectAttempt}/{maxAttempts}). {reconnectDelaySeconds}초 후 재시도: {portName}");
-            }
-            else
-            {
-                timeoutCount = 0;
-                noResponseCount = 0;
-                float stabilize = Mathf.Max(0f, openStabilizeSeconds);
-                nextPingAt = Time.realtimeSinceStartup + Mathf.Max(Mathf.Max(0.1f, pingIntervalSeconds), stabilize);
-                _isDisconnectedNotified = false;
-                Debug.LogWarning($"[{name}] 포트 재연결 성공: {portName}");
-
-                isReconnecting = false;
-                StartReadMessageLoop();
-                yield return StartCoroutine(OnReconnectSucceeded());
-                yield break;
-            }
-        }
-
-        isReconnecting = false;
-
-        if (_isRunning)
-        {
-            Debug.LogError($"[{name}] 포트 재연결 {maxAttempts}회 모두 실패. Arduino를 중지합니다: {portName}");
-            StopArduino();
-        }
-    }
-
     protected void OnApplicationQuit()
     {
         StopArduino();
@@ -338,124 +243,40 @@ public class Arduino : MonoBehaviour
                 yield break;
             }
 
-            if (enablePingPong && !isReconnecting)
-            {
-                float now = Time.realtimeSinceStartup;
-                if (now - lastPortOpenAt < Mathf.Max(0f, openStabilizeSeconds))
-                {
-                    yield return CoroutineReturnManager.GetWaitForSeconds(0.05f);
-                    continue;
-                }
-
-                if (now >= nextPingAt)
-                {
-                    try
-                    {
-                        stream.WriteLine(pingMessage);
-                    }
-                    catch (Exception e)
-                    {
-                        NotifyDisconnected(e);
-                        yield break;
-                    }
-
-                    noResponseCount++;
-                    nextPingAt = now + Mathf.Max(0.1f, pingIntervalSeconds);
-
-                    if (enableSerialDebugLog)
-                        Debug.Log($"[{name}] Ping 전송: {pingMessage} / noResponseCount={noResponseCount}");
-
-                    if (noResponseCount >= Mathf.Max(1, noResponseRestartCount))
-                    {
-                        Debug.LogWarning($"[{name}] 핑퐁 무응답 누적({noResponseCount})으로 포트 재연결 시도");
-                        yield return StartCoroutine(ReopenPortAfterTimeout());
-                        yield return CoroutineReturnManager.GetWaitForSeconds(0.1f);
-                        continue;
-                    }
-                }
-            }
-
             if (IsReadingMessage())
             {
                 if (stream.IsOpen && stream.BytesToRead > 0)
                 {
-                    //bool isInput = false;
                     received = "";
-                    bool isError = false;
-
                     try
                     {
                         received = stream.ReadLine();
-                        timeoutCount = 0;
 
                         if (enableSerialDebugLog)
                             Debug.Log($"[{name}] Received from Arduino({stream.PortName}): {received}");
                     }
                     catch (TimeoutException)
                     {
-                        timeoutCount++;
-                        Debug.LogError($"타임아웃 발생 {stream.PortName} / timeoutCount={timeoutCount}");
+                        Debug.LogWarning($"타임아웃 발생 {stream.PortName} ");
 
                         Debug.LogWarning($"[{name}] 타임아웃 시점 버퍼 길이: {stream.BytesToRead}");
-
-                        isError = true;
-
-
-
+                        continue;
 
                     }
                     catch (Exception e)
                     {
                         // 타임아웃 외의 다른 에러(연결 끊김 등) 처리
                         Debug.LogError($"오류 발생: {stream.PortName} / {e.Message}");
-                        isError = true;
                         NotifyDisconnected(e);
-                        break;
-                    }
-                    if (isError)
-                    {
-                        if (timeoutCount >= reconnectAfterTimeoutCount)
-                        {
-                            yield return StartCoroutine(ReopenPortAfterTimeout());
-                        }
-
-                        yield return CoroutineReturnManager.GetWaitForSeconds(1f);
                         continue;
                     }
-
-                    if (enablePingPong && string.Equals(received?.Trim(), pongMessage, StringComparison.OrdinalIgnoreCase))
-                    {
-                        noResponseCount = 0;
-
-                        if (enableSerialDebugLog)
-                            Debug.Log($"[{name}] Pong 수신: {received}");
-
-                        continue;
-                    }
-
                     ReadMessageProcess(received);
                 }
             }
             yield return CoroutineReturnManager.GetWaitForSeconds(0.25f);
         }
-
         readMessageCoroutine = null;
     }
-
-    protected IEnumerator SendMessage()
-    {
-        while (_isRunning)
-        {
-            // 숫자 1키를 누르면 긴 문장을 보냄
-
-            if (IsSendingMessage())
-            {
-                SendMessageProcess();
-            }
-            yield return CoroutineReturnManager.GetWaitForSeconds(0.15f);
-        }
-    }
-
 
 
     /// <summary>
@@ -466,13 +287,7 @@ public class Arduino : MonoBehaviour
     {
         return true;
     }
-    /// <summary>
-    /// 메세지 전송 로직
-    /// </summary>
-    virtual public void SendMessageProcess()
-    {
-        ;
-    }
+
     /// <summary>
     /// 메세지 리드 지속 조건 
     /// </summary>

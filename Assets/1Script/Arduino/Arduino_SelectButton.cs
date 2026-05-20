@@ -1,11 +1,9 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class Arduino_SelectButton : Arduino
 {
-
     public Direction ButtonDirection;
     bool enableButtonDebugLog = false;
 
@@ -25,78 +23,23 @@ public class Arduino_SelectButton : Arduino
         "5Off"
     };
 
-
-    bool _isUse = false;
-
-
     public Action _onDebugPlayerLeft;
-
     public Action _onDebugPlayerRight;
 
     Coroutine debugCoroutine = null;
     Coroutine touchDelayCoroutine = null;
 
-    [SerializeField] float touchDelayRetrySeconds = 0.3f;
-    [SerializeField] float commandAckTimeoutSeconds = 0.8f;
-
-    [SerializeField]
-    string[] soundOnAckMessages = {
-        "SoundOn",
-        "Sound_On",
-        "SoundOnAck"
-    };
-
-    [SerializeField]
-    string[] ledAllOnAckMessages = {
-        "LEDAllOn",
-        "LEDAllOnAck"
-    };
-    [SerializeField]
-    string[] ledAllOffAckMessages = {
-        "LEDAllOff",
-
-        "LEDAllOffAck"
-    };
-    bool isWaitingCommandAck = false;
-    bool isCommandAckReceived = false;
-    string[] currentAckMessages = null;
-    string currentCommandName = string.Empty;
-
-
-
-    override protected bool IsReadingMessage()
-    {
-        return true;
-    }
-
 
     override public void ReadMessageProcess(string received)
     {
-        if (PopupManager.Instance.currentInputType != InputType.Button && !isReconnecting)
+        if (PopupManager.Instance.currentInputType != InputType.Button)
             return;
         if (string.IsNullOrEmpty(received))
             return;
 
+        Debug.Log($"[SelectButton:{ButtonDirection}] 메세지 수신 ({stream?.PortName ?? "포트없음"}): {received}");
         if (enableButtonDebugLog)
             Debug.Log($"[SelectButton:{ButtonDirection}] Raw message: {received}");
-
-        if (isWaitingCommandAck && currentAckMessages != null && currentAckMessages.Length > 0)
-        {
-            for (int i = 0; i < currentAckMessages.Length; i++)
-            {
-                string ackMessage = currentAckMessages[i];
-                if (string.IsNullOrEmpty(ackMessage))
-                    continue;
-
-                if (received.IndexOf(ackMessage, StringComparison.OrdinalIgnoreCase) >= 0)
-                {
-                    isCommandAckReceived = true;
-                    if (enableButtonDebugLog)
-                        Debug.Log($"[SelectButton:{ButtonDirection}] ACK 수신: command={currentCommandName}, ack={ackMessage}, raw={received}");
-                    return;
-                }
-            }
-        }
 
         int tmp = 0;
 
@@ -109,13 +52,15 @@ public class Arduino_SelectButton : Arduino
             }
         }
 
-
-        for (int i = 0; i < _offMessage.Length; i++)
+        if (tmp == 0)
         {
-            if (received.Contains(_offMessage[i]))
+            for (int i = 0; i < _offMessage.Length; i++)
             {
-                tmp = i + 1;
-                break;
+                if (received.Contains(_offMessage[i]))
+                {
+                    tmp = i + 1;
+                    break;
+                }
             }
         }
 
@@ -126,63 +71,33 @@ public class Arduino_SelectButton : Arduino
             return;
         }
 
-        if (tmp != 0)
+        if (PageController.Instance.CurrentPage == 3)
         {
-            if (PageController.Instance.CurrentPage == 3)
+            if (UserDataManager.Instance.GetPlayer(ButtonDirection).Answers[QuestionManager.Instance.CurrentIndex] == Player.noneAnswer)
             {
-                if (UserDataManager.Instance.GetPlayer(ButtonDirection).Answers[QuestionManager.Instance.CurrentIndex] == Player.noneAnswer)
-                {
-                    UserDataManager.Instance.GetPlayer(ButtonDirection).Answers[QuestionManager.Instance.CurrentIndex] = tmp;
-                    StartCoroutine(UserDataManager.Instance.RequestUserDataUpdate(QuestionManager.Instance.CurrentIndex + 1, tmp, ButtonDirection));
-                    Debug.Log($"버튼 입력 감지:{ButtonDirection}의 {QuestionManager.Instance.CurrentIndex + 1} 번째 답변이 {tmp}로 설정되었습니다.");
-                }
-
-
+                UserDataManager.Instance.GetPlayer(ButtonDirection).Answers[QuestionManager.Instance.CurrentIndex] = tmp;
+                StartCoroutine(UserDataManager.Instance.RequestUserDataUpdate(QuestionManager.Instance.CurrentIndex + 1, tmp, ButtonDirection));
+                Debug.Log($"버튼 입력 감지:{ButtonDirection}의 {QuestionManager.Instance.CurrentIndex + 1} 번째 답변이 {tmp}로 설정되었습니다.");
             }
-
-
-            if (ButtonDirection == Direction.Left)
-                _onDebugPlayerLeft?.Invoke();
-
-            else if (ButtonDirection == Direction.Right)
-                _onDebugPlayerRight?.Invoke();
-
-
-            GameManager.Instance.GoToIdleCheck();
-
-            if (enableButtonDebugLog)
-                Debug.Log($"[SelectButton:{ButtonDirection}] 유효 입력 처리 완료: value={tmp}");
-
-
         }
 
+        if (ButtonDirection == Direction.Left)
+            _onDebugPlayerLeft?.Invoke();
+        else if (ButtonDirection == Direction.Right)
+            _onDebugPlayerRight?.Invoke();
+
+        GameManager.Instance.GoToIdleCheck();
+
+        if (enableButtonDebugLog)
+            Debug.Log($"[SelectButton:{ButtonDirection}] 유효 입력 처리 완료: value={tmp}");
     }
 
-    protected void FixedUpdate()
+    protected void Update()
     {
-        if (Input.GetKey(KeyCode.Z))
-        {
-            if (ButtonDirection == Direction.Left)
-                DebugF();
-        }
-        if (Input.GetKey(KeyCode.X))
-        {
-            if (ButtonDirection == Direction.Right)
-                DebugF();
-        }
-    }
-
-    protected override void Start()
-    {
-        base.Start();
-        // if (ButtonDirection == Direction.Left)
-        // {
-        //     _onDebugPlayerLeft += DebugTest;
-        // }
-        // else if (ButtonDirection == Direction.Right)
-        // {
-        //     _onDebugPlayerRight += DebugTest;
-        // }
+        if (Input.GetKeyDown(KeyCode.Z) && ButtonDirection == Direction.Left)
+            DebugF();
+        if (Input.GetKeyDown(KeyCode.X) && ButtonDirection == Direction.Right)
+            DebugF();
     }
 
     public void LEDAllOn()
@@ -191,7 +106,7 @@ public class Arduino_SelectButton : Arduino
         {
             if (!TryOpenPort("LEDAllOn"))
             {
-                Debug.LogWarning("시리얼 포트가 열려 있지 않음: " + SerialPortNames[0]);
+                Debug.LogWarning("시리얼 포트가 열려 있지 않음: " + SerialPortName);
                 return;
             }
         }
@@ -204,12 +119,7 @@ public class Arduino_SelectButton : Arduino
                     StopCoroutine(touchDelayCoroutine);
 
                 touchDelayCoroutine = StartCoroutine(TouchDelay());
-
-
                 PopupManager.Instance.SetInputType(InputType.Button);
-
-
-
                 Debug.Log("LEDAllOn 명령 전송: " + stream.PortName);
             }
             catch (Exception e)
@@ -219,28 +129,27 @@ public class Arduino_SelectButton : Arduino
         }
     }
 
-    protected override IEnumerator OnReconnectSucceeded()
+    public void LEDAllOff()
     {
-        if (PopupManager.Instance.currentInputType != InputType.Button)
-            yield break;
+        if (stream == null || !stream.IsOpen)
+        {
+            Debug.LogWarning($"[SelectButton:{ButtonDirection}] LEDAllOff 요청 무시: 포트가 열려있지 않음");
+            return;
+        }
+        if (!_isRunning)
+        {
+            Debug.LogWarning($"[SelectButton:{ButtonDirection}] LEDAllOff 요청 무시: Arduino가 동작 중이 아님");
+            return;
+        }
 
-        if (touchDelayCoroutine != null)
-            StopCoroutine(touchDelayCoroutine);
-
-        touchDelayCoroutine = StartCoroutine(TouchDelay());
+        stream.WriteLine("LEDAllOff");
+        Debug.Log("LEDAllOff 명령 전송: " + stream.PortName);
     }
 
     IEnumerator TouchDelay()
     {
-        if (!_isRunning)
+        if (!_isRunning || stream == null || !stream.IsOpen)
         {
-            touchDelayCoroutine = null;
-            yield break;
-        }
-
-        if (stream == null || !stream.IsOpen)
-        {
-            RequestReconnect("TouchDelay 시작 전 포트 미오픈");
             touchDelayCoroutine = null;
             yield break;
         }
@@ -254,22 +163,14 @@ public class Arduino_SelectButton : Arduino
         catch (Exception e)
         {
             Debug.LogWarning($"SoundOn 전송 실패: {e.Message}");
-            RequestReconnect("SoundOn 전송 실패");
             touchDelayCoroutine = null;
             yield break;
         }
 
         yield return CoroutineReturnManager.GetWaitForSeconds(0.1f);
 
-        if (!_isRunning)
+        if (!_isRunning || stream == null || !stream.IsOpen)
         {
-            touchDelayCoroutine = null;
-            yield break;
-        }
-
-        if (stream == null || !stream.IsOpen)
-        {
-            RequestReconnect("LEDAllOn 전송 전 포트 미오픈");
             touchDelayCoroutine = null;
             yield break;
         }
@@ -283,7 +184,6 @@ public class Arduino_SelectButton : Arduino
         catch (Exception e)
         {
             Debug.LogWarning($"LEDAllOn 전송 실패: {e.Message}");
-            RequestReconnect("LEDAllOn 전송 실패");
             touchDelayCoroutine = null;
             yield break;
         }
@@ -291,204 +191,19 @@ public class Arduino_SelectButton : Arduino
         touchDelayCoroutine = null;
     }
 
-    IEnumerator SendCommandWithAckRetry(string commandMessage, string[] ackMessages)
-    {
-        while (_isRunning)
-        {
-            if (stream == null || !stream.IsOpen)
-            {
-                RequestReconnect($"{commandMessage} 전송 전 포트 미오픈");
-
-                while (_isRunning && isReconnecting)
-                    yield return CoroutineReturnManager.GetWaitForSeconds(0.05f);
-
-                if (!_isRunning)
-                    yield break;
-
-                if (stream == null || !stream.IsOpen)
-                {
-                    yield return CoroutineReturnManager.GetWaitForSeconds(touchDelayRetrySeconds);
-                    continue;
-                }
-            }
-
-            if (isReconnecting)
-            {
-                while (_isRunning && isReconnecting)
-                    yield return CoroutineReturnManager.GetWaitForSeconds(0.05f);
-
-                if (!_isRunning)
-                    yield break;
-
-                if (stream == null || !stream.IsOpen)
-                {
-                    yield return CoroutineReturnManager.GetWaitForSeconds(touchDelayRetrySeconds);
-                    continue;
-                }
-
-                // 재연결 직후 장치 수신 버퍼가 안정될 시간을 약간 준 뒤 명령을 다시 보낸다.
-                yield return CoroutineReturnManager.GetWaitForSeconds(0.05f);
-                continue;
-            }
-
-            isCommandAckReceived = false;
-            isWaitingCommandAck = true;
-            currentAckMessages = ackMessages;
-            currentCommandName = commandMessage;
-
-            bool sendFailed = false;
-
-            try
-            {
-                stream.WriteLine(commandMessage);
-                if (enableButtonDebugLog)
-                    Debug.Log($"[SelectButton:{ButtonDirection}] 명령 전송: {commandMessage}");
-            }
-            catch (Exception e)
-            {
-                sendFailed = true;
-                isWaitingCommandAck = false;
-                currentAckMessages = null;
-                currentCommandName = string.Empty;
-
-                Debug.LogWarning($"{commandMessage} 전송 실패, 재연결 재시도: {e.Message}");
-                RequestReconnect($"{commandMessage} 전송 실패");
-            }
-
-            if (sendFailed)
-            {
-                yield return CoroutineReturnManager.GetWaitForSeconds(touchDelayRetrySeconds);
-                continue;
-            }
-
-            float endAt = Time.realtimeSinceStartup + Mathf.Max(0.1f, commandAckTimeoutSeconds);
-
-            while (_isRunning && Time.realtimeSinceStartup < endAt)
-            {
-                if (isCommandAckReceived)
-                    break;
-
-                // ACK 대기 중 재연결이 시작되면 현재 대기를 끊고, 재연결 후 같은 명령을 재전송한다.
-                if (isReconnecting)
-                    break;
-
-                yield return CoroutineReturnManager.GetWaitForSeconds(0.02f);
-            }
-
-            bool ackReceived = isCommandAckReceived;
-            isWaitingCommandAck = false;
-            isCommandAckReceived = false;
-            currentAckMessages = null;
-            currentCommandName = string.Empty;
-
-            if (ackReceived)
-                yield break;
-
-            if (!_isRunning)
-                yield break;
-
-            if (isReconnecting)
-            {
-                while (_isRunning && isReconnecting)
-                    yield return CoroutineReturnManager.GetWaitForSeconds(0.05f);
-
-                if (!_isRunning)
-                    yield break;
-
-                yield return CoroutineReturnManager.GetWaitForSeconds(0.05f);
-                continue;
-            }
-
-            Debug.LogWarning($"{commandMessage} ACK 대기 타임아웃, 재전송 재시도");
-            RequestReconnect($"{commandMessage} ACK 타임아웃");
-
-            while (_isRunning && isReconnecting)
-                yield return CoroutineReturnManager.GetWaitForSeconds(0.05f);
-
-            if (!_isRunning)
-                yield break;
-
-            yield return CoroutineReturnManager.GetWaitForSeconds(0.05f);
-        }
-    }
-    public void LEDAllOff()
-    {
-        if (stream.IsOpen == false)
-            return;
-        if (!_isRunning)
-        {
-            Debug.LogWarning($"[SelectButton:{ButtonDirection}] LEDAllOff 요청 무시: Arduino가 동작 중이 아님");
-            return;
-        }
-
-        stream.WriteLine("LEDAllOff");
-        Debug.Log("LEDAllOff 명령 전송: " + stream.PortName);
-        // if (touchDelayCoroutine != null)
-        //     StopCoroutine(touchDelayCoroutine);
-
-        //touchDelayCoroutine = StartCoroutine(SendCommandWithAckRetry("LEDAllOff", ledAllOffAckMessages));
-
-        if (stream != null && stream.IsOpen)
-            Debug.Log("LEDAllOff ACK 확인 전송 시작: " + stream.PortName);
-        else
-            Debug.LogWarning($"[SelectButton:{ButtonDirection}] LEDAllOff 전송 전 포트 미오픈, 재연결 후 재시도 예정");
-    }
-
-
     public void DebugF()
     {
-
-        if (ButtonDirection == Direction.Left)
-        {
-            if (debugCoroutine == null)
-                debugCoroutine = StartCoroutine(TestCoroutine());
-        }
-        else if (ButtonDirection == Direction.Right)
-        {
-            if (debugCoroutine == null)
-                debugCoroutine = StartCoroutine(TestCoroutine());
-
-        }
+        debugCoroutine ??= StartCoroutine(TestCoroutine());
     }
+
     public IEnumerator TestCoroutine()
     {
         if (ButtonDirection == Direction.Left)
-        {
             _onDebugPlayerLeft?.Invoke();
-        }
         else if (ButtonDirection == Direction.Right)
-        {
             _onDebugPlayerRight?.Invoke();
-        }
+
         yield return CoroutineReturnManager.GetWaitForSeconds(0.2f);
-
         debugCoroutine = null;
-
-
-    }
-
-
-
-    // public void DebugTest()
-    // {
-    //     int currentAnswerIndex = QuestionManager.Instance.CurrentIndex;
-
-    //     int answerValue = UnityEngine.Random.Range(1, 6);
-
-    //     UserDataManager.Instance.GetPlayer(ButtonDirection).Answers[currentAnswerIndex] = answerValue;
-
-    //     StartCoroutine(UserDataManager.Instance.RequestUserDataUpdate(currentAnswerIndex + 1, answerValue, ButtonDirection));
-
-
-    //     Debug.Log("버튼 입력 감지: " + _onMessage[0] + $"index = {currentAnswerIndex + 1} - " + ButtonDirection + "의 답변이 " + answerValue + "로 설정되었습니다.");
-    // }
-
-    override protected bool IsSendingMessage()
-    {
-        return false;
-    }
-    override public void SendMessageProcess()
-    {
-        ;
     }
 }
